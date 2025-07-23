@@ -1,58 +1,304 @@
-# Prototyp spolujizdy
+# 🚗 Spolujízda - Platforma pro sdílenou dopravu
 
-## Cíl aplikace
+> Moderní webová aplikace pro sdílené jízdy autem - vyvinutá pro studenty a další uživatele, kteří chtějí efektivně sdílet cestu a snížit náklady na dopravu.
+
+## 📋 Obsah
+- [Popis aplikace](#popis-aplikace)
+- [Funkce](#funkce)
+- [Technologie](#technologie)
+- [Instalace](#instalace)
+- [Spuštění](#spuštění)
+- [API dokumentace](#api-dokumentace)
+- [Struktura databáze](#struktura-databáze)
+
+## 🎯 Popis aplikace
+
+Spolujízda je full-stack webová aplikace umožňující uživatelům:
+- **Nabídnout jízdu** - řidiči mohou nabídnout volná místa ve svém autě
+- **Vyhledat jízdu** - pasažéři mohou najít vhodnou cestu
+- **Komunikovat** - integrovaný chat pro domluvu detailů
+- **Hodnotit** - systém hodnocení pro budování důvěry
+- **Spravovat** - kompletní správa jízd, rezervací a vozového parku
+
+## ✨ Funkce
+
+### 👤 Uživatelský účet
+- ✅ Registrace a přihlášení s JWT autentizací
+- ✅ Správa profilu (jméno, bio, profilová fotka)
+- ✅ Změna hesla
+- ✅ Správa vozového parku
+- ✅ Blokování uživatelů
+- ✅ Historie jízd
+
+### 🚗 Správa jízd
+- ✅ Vytvoření nové jízdy s detaily (místo, čas, cena, počet míst)
+- ✅ Výběr vozidla z osobního vozového parku
+- ✅ Správa rezervací (přijetí/odmítnutí pasažérů)
+- ✅ Zrušení jízdy
+- ✅ Přehled mých jízd s filtrováním podle stavu
+
+### 🔍 Vyhledávání
+- ✅ Pokročilé vyhledávání podle místa, data a dalších kritérií
+- ✅ Zobrazení detailů jízdy včetně informací o řidiči a vozidle
+- ✅ Rezervace místa s možností přidat poznámku
+
+### 💬 Komunikace
+- ✅ Skupinový chat pro každou jízdu
+- ✅ Přístup pouze pro účastníky jízdy (řidič + přijatí pasažéři)
+- ✅ Real-time aktualizace zpráv (polling)
+- ✅ Osobní chat mezi uživateli
+
+### ⭐ Hodnocení
+- ✅ Hodnocení ostatních účastníků po skončení jízdy
+- ✅ Oddělené hodnocení pro role řidiče a pasažéra
+- ✅ Zobrazení průměrného hodnocení na profilu
+
+### 🚙 Správa vozidel
+- ✅ Přidávání, úprava a mazání vozidel
+- ✅ Nastavení primárního vozidla
+- ✅ Validace SPZ podle českých standardů
+
+## 🛠 Technologie
+
+### Backend
+- **Python 3.13** - programovací jazyk
+- **Flask** - webový framework
+- **SQLAlchemy** - ORM pro databáze
+- **SQLite** - databáze (vývoj) / PostgreSQL (produkce)
+- **Flask-JWT-Extended** - JWT autentizace
+- **Flask-CORS** - podpora CORS
+- **bcrypt** - hashování hesel
+
+### Frontend
+- **React 18.2.0** - UI framework
+- **React Router** - routing
+- **Axios** - HTTP klient
+- **Context API** - state management
+- **CSS3** - stylování s moderním designem
+
+### Vývojové nástroje
+- **Git** - verzování kódu
+- **npm** - správa závislostí pro frontend
+- **pip** - správa závislostí pro backend
+- **Virtual Environment** - izolace Python prostředí
+
+## 🚀 Instalace
+
+### Předpoklady
+- Python 3.9+
+- Node.js 16+
+- Git
+
+### 1. Klonování repozitáře
+```bash
+git clone https://github.com/your-username/spolujizda-pt.git
+cd spolujizda-pt
+```
+
+### 2. Backend setup
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+```
+
+### 3. Frontend setup
+```bash
+cd frontend
+npm install
+```
+
+## ▶️ Spuštění
+
+### Backend
+```bash
+cd backend
+venv\Scripts\activate  # Windows
+python app.py
+```
+Backend běží na: `http://localhost:5000`
+
+### Frontend
+```bash
+cd frontend
+npm start
+```
+Frontend běží na: `http://localhost:3000`
+
+## 📡 API dokumentace
+
+### Autentizace
+```
+POST /api/auth/register - Registrace nového uživatele
+POST /api/auth/login - Přihlášení uživatele
+GET /api/auth/me - Získání informací o aktuálním uživateli
+PUT /api/auth/change-password - Změna hesla
+```
+
+### Jízdy
+```
+GET /api/jizdy/vyhledat - Vyhledání jízd s filtry
+GET /api/jizdy/moje - Moje jízdy (jako řidič i pasažér)
+POST /api/jizdy - Vytvoření nové jízdy
+PUT /api/jizdy/{id} - Úprava jízdy
+DELETE /api/jizdy/{id} - Zrušení jízdy
+```
+
+### Rezervace
+```
+GET /api/rezervace/moje - Moje rezervace (odeslané i přijaté)
+POST /api/rezervace - Vytvoření rezervace
+PUT /api/rezervace/{id}/prijmout - Přijetí rezervace
+PUT /api/rezervace/{id}/odmitnout - Odmítnutí rezervace
+DELETE /api/rezervace/{id} - Zrušení rezervace
+```
+
+### Vozidla
+```
+GET /api/auta/moje - Moje vozidla
+POST /api/auta - Přidání vozidla
+PUT /api/auta/{id} - Úprava vozidla
+DELETE /api/auta/{id} - Smazání vozidla
+```
+
+### Chat
+```
+GET /api/chat/jizda/{id} - Získání zpráv chatu jízdy
+POST /api/chat/jizda/{id}/zprava - Odeslání zprávy do chatu jízdy
+```
+
+## 🗄 Struktura databáze
+
+Aplikace používá následující hlavní entity:
+
+- **Uzivatel** - uživatelské účty s autentizací
+- **Profil** - rozšířené informace o uživateli
+- **Auto** - vozidla uživatelů
+- **Jizda** - nabídnuté jízdy s detaily
+- **Rezervace** - rezervace míst v jízdách
+- **Chat** - chatové místnosti
+- **Zprava** - zprávy v chatech
+- **Hodnoceni** - hodnocení mezi uživateli
+- **Blokace** - blokování uživatelů
+
+Detailní diagramy najdete v složce `docs/`:
+- [Class Diagram](docs/classDiagram.md)
+- [Database Diagram](docs/databaseDiagram.md)
+
+## 🔐 Bezpečnost
+
+- JWT tokeny pro autentizaci
+- Bcrypt hashování hesel
+- Validace vstupních dat
+- CORS konfigurace
+- Autorizace na úrovni endpointů
+
+## 🎨 Design
+
+Aplikace využívá moderní design s:
+- Responzivní layout pro všechna zařízení
+- Gradientní pozadí a moderní UI komponenty
+- Intuitivní navigace a UX
+- Konzistentní barevná paleta
+- Smooth animace a přechody
+
+## 📱 Mobilní podpora
+
+Frontend je plně responzivní a optimalizovaný pro:
+- Mobilní telefony (320px+)
+- Tablety (768px+)
+- Desktop (1024px+)
+
+## 🔄 Budoucí vylepšení
+
+- 🔄 WebSocket pro real-time chat
+- 📧 Email notifikace
+- 🗺 Integrace s mapami
+- 📊 Rozšířené analytics
+- 🌍 Lokalizace do více jazyků
+- 🔔 Push notifikace
+- 💳 Platební systém
+
+## 🤝 Přispívání
+
+1. Forkněte repozitář
+2. Vytvořte feature branch (`git checkout -b feature/amazing-feature`)
+3. Commitněte změny (`git commit -m 'Add amazing feature'`)
+4. Pushněte do branch (`git push origin feature/amazing-feature`)
+5. Otevřete Pull Request
+
+## 📄 Licence
+
+Tento projekt je licencován pod MIT licencí - viz [LICENSE](LICENSE) soubor pro detaily.
+
+## 👥 Tým
+
+- **Vývojář**: [Vaše jméno]
+- **Kontakt**: your.email@example.com
+
+---
+
+*Vytvořeno s ❤️ pro komunitu student a všechny, kdo chtějí sdílet cestu*
 Platforma pro sdílenou dopravu autem pro studenty (řidiči a pasažéři) do školy, kteří si mohou vytvářet jízdy, rezervovat si místo, komunikovat v chatu a hodnotit se navzájem. 
 
-## Role uživatelů
-- Řidič – může vytvářet jízdy, potvrzovat rezervace, používat auto, hodnotit ostatní
-- Pasažér – může vyhledávat jízdy, posílat rezervace, hodnotit ostatní
-- (Technicky jsou všichni uživatelé stejný model, role se rozlišuje až v kontextu konkrétní jízdy)
+## 🚀 Rychlé spuštění
 
-## Funkce uživatelského účtu
-- Registrace, přihlášení, změna hesla
-- Úprava profilu (jméno, bio, fotka)
-- Přidávání a úprava aut
-- Možnost blokovat jiné uživatele
-- Možnost hodnotit ostatní po jízdě (zvlášť jako řidiče a jako pasažéra)
-- Možnost chatovat s ostatními
-- Možnost prohlížet si cizí profily
-- Možnost vidět historii svých jízd
+### Automatické spuštění (doporučeno)
 
-## Jízdy
-### Řidič může:
-- Vytvořit jízdu (jednu nebo víc najednou)
-- Vybrat auto (primární nebo jiné, včetně možnosti přidat nové auto při vytváření jízdy)
-- Spravovat rezervace (přijmout, odmítnout)
+**Windows:**
+```cmd
+# Double-click na start.bat
+# nebo v PowerShell:
+.\start.ps1
+```
 
-### Každá jízda:
-- Má místo odjezdu a příjezdu
-- Datum a čas
-- Počet volných míst, cenu
-- Stav (aktivní, zrušená, proběhlá...)
+**Linux/macOS:**
+```bash
+./start.sh
+```
 
-## Vyhledávání jízd
-- Podle data, odkud a kam
-- Vidět detail jízdy, řidiče, auta i ostatních pasažérů
-- Možnost odeslat rezervaci a připojit zprávu (poznámku)
+### Manuální spuštění
 
-## Chat
-- Každá jízda má vlastní skupinový chat
-- Chat je přístupný pouze přijatým účastníkům (řidič + schválení pasažéři)
-- Po čase příjezdu je chat archivován jako součást historie
-- Dále každý uživatel může chatovat s libovolným jiným uživatelem
+Podrobný návod najdete v [SETUP.md](SETUP.md)
 
-## Hodnocení
-- Po jízdě má každý účastník možnost ohodnotit ostatní (zvlášť jako řidiče a jako pasažéry)
-- Hodnocení je přístupné na profilu každého uživatele
+### Backend (Flask)
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+python app.py
+```
 
-## Návrh databáze (PostgreSQL)
-- TODO
+### Frontend (React)
+```bash
+cd frontend
+npm install
+npm start
+```
 
-##  Tech stack
-Frontend: React (zatím návrh na papíře)
-Backend: Flask
-Databáze: SQLite pro vývoj, později PostgreSQL
-ORM: SQLAlchemy (možná s Flask-SQLAlchemy) ???
+Aplikace běží na http://localhost:3000
+
+## 🏗️ Architektura
+
+### Backend
+- **Flask** - Python web framework
+- **SQLAlchemy** - ORM pro databázi
+- **JWT** - Autentizace
+- **SQLite** - Databáze (vývoj)
+- **Flask-SocketIO** - WebSocket pro chat
+
+### Frontend
+- **React** - JavaScript framework
+- **React Router** - Routing
+- **Axios** - HTTP klient
+- **Context API** - State management
+
+## 📊 Databázový model
+
+Viz [docs/databaseDiagram.md](docs/databaseDiagram.md) pro PlantUML diagram
 
 ## Frontend návrh
 ### Sidebar (to, co je vidět na všech stránkách)
