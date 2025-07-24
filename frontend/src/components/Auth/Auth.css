@@ -84,11 +84,11 @@
 .auth-link {
     text-align: center;
     margin-top: 1.5rem;
-    color: #666;
+    color: #b2db0f;
 }
 
 .auth-link a {
-    color: #667eea;
+    color: #0027d6;
     text-decoration: none;
     font-weight: 500;
 }
