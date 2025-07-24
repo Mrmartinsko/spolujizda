@@ -10,6 +10,11 @@ import MyRidesPage from './pages/MyRidesPage';
 import CarManager from './components/cars/CarManager';
 import ReservationManager from './components/reservations/ReservationManager';
 import PrivateRoute from './components/auth/PrivateRoute';
+import MujProfil from './pages/MujProfil';
+import Nastaveni from './pages/Nastaveni';
+import Chat from './pages/Chat';
+import VyhledatJizdu from './pages/VyhledatJizdu';
+
 
 function App() {
     return (
@@ -38,6 +43,26 @@ function App() {
                         <Route path="rezervace" element={
                             <PrivateRoute>
                                 <ReservationManager />
+                            </PrivateRoute>
+                        } />
+                        <Route path="profil" element={
+                            <PrivateRoute>
+                                <MujProfil />
+                            </PrivateRoute>
+                        } />
+                        <Route path="nastaveni" element={
+                            <PrivateRoute>
+                                <Nastaveni />
+                            </PrivateRoute>
+                        } />
+                        <Route path="vyhledat-jizdu" element={
+                            <PrivateRoute>
+                                <VyhledatJizdu />
+                            </PrivateRoute>
+                        } />
+                        <Route path="chat" element={
+                            <PrivateRoute>
+                                <Chat />
                             </PrivateRoute>
                         } />
                     </Route>
