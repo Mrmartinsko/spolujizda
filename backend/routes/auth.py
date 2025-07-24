@@ -14,18 +14,19 @@ auth_bp = Blueprint("auth", __name__)
 def register():
     """Registrace nového uživatele"""
     data = request.get_json()
+    print("prijata data: ", data)
 
     # Validace vstupních dat
     if (
         not data
         or not data.get("email")
-        or not data.get("heslo")
+        or not data.get("password")
         or not data.get("jmeno")
-    ):
+    ):  
         return jsonify({"error": "Email, heslo a jméno jsou povinné"}), 400
 
     email = data["email"].lower()
-    heslo = data["heslo"]
+    heslo = data["password"]
     jmeno = data["jmeno"]
     bio = data.get("bio", "")
 
@@ -73,12 +74,12 @@ def register():
 def login():
     """Přihlášení uživatele"""
     data = request.get_json()
-
-    if not data or not data.get("email") or not data.get("heslo"):
+    print("prijata data", data)
+    if not data or not data.get("email") or not data.get("password"):
         return jsonify({"error": "Email a heslo jsou povinné"}), 400
 
     email = data["email"].lower()
-    heslo = data["heslo"]
+    heslo = data["password"]
 
     # Nalezení uživatele
     uzivatel = Uzivatel.query.filter_by(email=email).first()
