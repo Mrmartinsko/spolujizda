@@ -2,14 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
 import HomePage from './pages/HomePage';
 import CreateRidePage from './pages/CreateRidePage';
 import MyRidesPage from './pages/MyRidesPage';
 import CarManager from './components/cars/CarManager';
 import ReservationManager from './components/reservations/ReservationManager';
-import PrivateRoute from './components/Auth/PrivateRoute';
+import PrivateRoute from './components/auth/PrivateRoute';
 
 function App() {
     return (
