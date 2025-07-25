@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { searchProfiles } from '../../services/search';
+import api from '../../services/api';
+
 
 
 const Header = () => {
@@ -15,11 +16,28 @@ const Header = () => {
 
     const toggleSearchBar = () => {
         setShowSearchBar(!showSearchBar);
+        if (!showSearchBar) {
+            setSearchQuery('');
+            setSearchResults([]);
+        }
+    };
+
+    // Funkce pro vyhledávání uživatelů
+    const searchUsers = async (query) => {
+        try {
+            const response = await api.get('/uzivatele/hledat', {
+                params: { q: query }
+            });
+            return response.data.uzivatele || [];
+        } catch (error) {
+            console.error('Chyba při vyhledávání:', error);
+            return [];
+        }
     };
 
     // Debounced vyhledávání
     useEffect(() => {
-        if (searchQuery.trim().length > 2) {
+        if (searchQuery.trim().length >= 2) {
             if (searchTimeoutRef.current) {
                 clearTimeout(searchTimeoutRef.current);
             }
@@ -27,9 +45,10 @@ const Header = () => {
             searchTimeoutRef.current = setTimeout(async () => {
                 setIsSearching(true);
                 try {
-                    const results = await searchProfiles(searchQuery);
+                    const results = await searchUsers(searchQuery);
                     setSearchResults(results);
                 } catch (error) {
+                    console.error('Chyba při vyhledávání:', error);
                     setSearchResults([]);
                 } finally {
                     setIsSearching(false);
@@ -37,6 +56,7 @@ const Header = () => {
             }, 300);
         } else {
             setSearchResults([]);
+            setIsSearching(false);
         }
 
         return () => {
@@ -136,23 +156,34 @@ const Header = () => {
                                             }}
                                         >
                                             <div style={{
-                                                width: '24px',
-                                                height: '24px',
+                                                width: '32px',
+                                                height: '32px',
                                                 borderRadius: '50%',
-                                                backgroundColor: '#007bff',
+                                                backgroundColor: profil.fotka ? 'transparent' : '#007bff',
+                                                backgroundImage: profil.fotka ? `url(${profil.fotka})` : 'none',
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 color: 'white',
-                                                fontSize: '12px',
+                                                fontSize: '14px',
                                                 fontWeight: 'bold'
                                             }}>
-                                                {profil.jmeno?.charAt(0)?.toUpperCase() || 'U'}
+                                                {!profil.fotka && (profil.jmeno?.charAt(0)?.toUpperCase() || 'U')}
                                             </div>
-                                            <div>
+                                            <div style={{ flex: 1 }}>
                                                 <div style={{fontWeight: 'bold'}}>{profil.jmeno}</div>
-                                                <div style={{fontSize: '12px', color: 'var(--text-secondary)'}}>
-                                                    {profil.email}
+                                                <div style={{fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '10px'}}>
+                                                    {profil.hodnoceni_ridic && (
+                                                        <span>Řidič: ⭐ {profil.hodnoceni_ridic.toFixed(1)}</span>
+                                                    )}
+                                                    {profil.hodnoceni_pasazer && (
+                                                        <span>Pasažér: ⭐ {profil.hodnoceni_pasazer.toFixed(1)}</span>
+                                                    )}
+                                                    {!profil.hodnoceni_ridic && !profil.hodnoceni_pasazer && (
+                                                        <span>Nový uživatel</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </Link>

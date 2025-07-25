@@ -87,7 +87,7 @@ def get_uzivatel_profil(uzivatel_id):
 def hledat_uzivatele():
     """Vyhledávání uživatelů podle jména"""
     query = request.args.get("q", "")
-
+    print('cau')
     if len(query) < 2:
         return jsonify({"error": "Vyhledávací dotaz musí mít alespoň 2 znaky"}), 400
 
