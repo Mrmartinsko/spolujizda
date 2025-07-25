@@ -15,6 +15,7 @@ import MujProfil from './pages/MujProfil';
 import Nastaveni from './pages/Nastaveni';
 import Chat from './pages/Chat';
 import VyhledatJizdu from './pages/VyhledatJizdu';
+import ProfilUzivatele from './pages/ProfilUzivatele';
 import './styles/theme.css';
 
 
@@ -51,6 +52,11 @@ function App() {
                             <Route path="profil" element={
                                 <PrivateRoute>
                                     <MujProfil />
+                                </PrivateRoute>
+                            } />
+                            <Route path="profil/:id" element={
+                                <PrivateRoute>
+                                    <ProfilUzivatele />
                                 </PrivateRoute>
                             } />
                             <Route path="nastaveni" element={
