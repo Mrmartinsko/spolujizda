@@ -8,10 +8,12 @@ from utils.validators import validate_spz
 auta_bp = Blueprint("auta", __name__)
 
 
-@auta_bp.route("/", methods=["GET"])
+
+@auta_bp.route("/moje", methods=["GET"])
 @jwt_required()
-def get_auta():
+def get_moje_auta():
     """Získání aut aktuálního uživatele"""
+    print("GET /moje called")
     uzivatel_id = get_jwt_identity()
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
 
@@ -19,11 +21,11 @@ def get_auta():
         return jsonify({"auta": []})
 
     auta = Auto.query.filter_by(profil_id=uzivatel.profil.id).all()
-
     return jsonify({"auta": [auto.to_dict() for auto in auta]})
 
 
-@auta_bp.route("/", methods=["POST"])
+
+@auta_bp.route("/moje", methods=["POST"])
 @jwt_required()
 def create_auto():
     """Vytvoření nového auta"""
@@ -38,7 +40,6 @@ def create_auto():
     if not data or not data.get("znacka") or not data.get("model"):
         return jsonify({"error": "Značka a model jsou povinné"}), 400
 
-    # Validace SPZ
     if data.get("spz") and not validate_spz(data["spz"]):
         return jsonify({"error": "Neplatný formát SPZ"}), 400
 
@@ -53,7 +54,7 @@ def create_auto():
             docasne=data.get("docasne", False),
         )
 
-        # Pokud je auto nastaveno jako primární, zruší primární u ostatních
+        # Pokud je auto primární, zruší "primární" u ostatních
         if auto.primarni:
             Auto.query.filter_by(profil_id=uzivatel.profil.id, primarni=True).update(
                 {"primarni": False}
@@ -67,6 +68,7 @@ def create_auto():
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Chyba při vytváření auta"}), 500
+
 
 
 @auta_bp.route("/<int:auto_id>", methods=["PUT"])
