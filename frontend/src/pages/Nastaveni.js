@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 
 const Nastaveni = () => {
+    const { darkMode, toggleTheme } = useTheme();
     const [passwordData, setPasswordData] = useState({
         stare_heslo: '',
         nove_heslo: '',
@@ -91,7 +93,11 @@ const Nastaveni = () => {
 
                 <div className="form-group">
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input type="checkbox" />
+                        <input
+                            type="checkbox"
+                            checked={darkMode}
+                            onChange={toggleTheme}
+                        />
                         Tmavý režim
                     </label>
                 </div>
@@ -111,25 +117,21 @@ const Nastaveni = () => {
             <div className="card">
                 <h3>Změna hesla</h3>
                 {message && (
-                    <div style={{
+                    <div className="message-success" style={{
                         padding: '10px',
-                        backgroundColor: '#d4edda',
-                        color: '#155724',
                         borderRadius: '4px',
                         marginBottom: '15px',
-                        border: '1px solid #c3e6cb'
+                        border: '1px solid'
                     }}>
                         {message}
                     </div>
                 )}
                 {error && (
-                    <div style={{
+                    <div className="message-error" style={{
                         padding: '10px',
-                        backgroundColor: '#f8d7da',
-                        color: '#721c24',
                         borderRadius: '4px',
                         marginBottom: '15px',
-                        border: '1px solid #f5c6cb'
+                        border: '1px solid'
                     }}>
                         {error}
                     </div>
