@@ -185,6 +185,7 @@ def update_jizda(jizda_id):
 def delete_jizda(jizda_id):
     """Zrušení jízdy"""
     uzivatel_id = get_jwt_identity()
+    print("JWT identity type:", type(uzivatel_id), "value:", uzivatel_id)
     jizda = Jizda.query.get_or_404(jizda_id)
 
     # Pouze řidič může zrušit svou jízdu
@@ -206,8 +207,8 @@ def delete_jizda(jizda_id):
 @jwt_required()
 def get_moje_jizdy():
     """Získání jízd aktuálního uživatele"""
-    uzivatel_id = get_jwt_identity()
-
+    uzivatel_id = int(get_jwt_identity())
+    print("JWT identity type:", type(uzivatel_id), "value:", uzivatel_id)
     # Jízdy jako řidič
     jizdy_ridic = Jizda.query.filter_by(ridic_id=uzivatel_id).all()
 
