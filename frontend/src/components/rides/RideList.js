@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+import { mapRideData } from '../../utils/apiMapper';
 import './RideList.css';
 
 const RideList = ({ rides, onRideUpdate }) => {
@@ -61,58 +62,63 @@ const RideList = ({ rides, onRideUpdate }) => {
 
     return (
         <div className="ride-list">
-            {rides.map(ride => (
-                <div key={ride.id} className="ride-card">
-                    <div className="ride-header">
-                        <h3>{ride.odkud} → {ride.kam}</h3>
-                        <span className="ride-price">{ride.cena} Kč</span>
-                    </div>
+            {rides.map(ride => {
+                // Mapuj data pro konzistentní přístup
+                const mappedRide = mapRideData(ride);
+                
+                return (
+                    <div key={mappedRide.id} className="ride-card">
+                        <div className="ride-header">
+                            <h3>{mappedRide.odkud} → {mappedRide.kam}</h3>
+                            <span className="ride-price">{mappedRide.cena} Kč</span>
+                        </div>
 
-                    <div className="ride-details">
-                        <div className="ride-time">
-                            <strong>Odjezd:</strong> {formatDate(ride.casOdjezdu)}
-                        </div>
-                        <div className="ride-time">
-                            <strong>Příjezd:</strong> {formatDate(ride.casPrijezdu)}
-                        </div>
-                        <div className="ride-info">
-                            <strong>Volná místa:</strong> {ride.pocetMist - (ride.pasazeri ? ride.pasazeri.length : 0)} / {ride.pocetMist}
-                        </div>
-                        <div className="ride-info">
-                            <strong>Řidič:</strong> {ride.ridic?.profil?.jmeno || 'Neznámý'}
-                        </div>
-                        {ride.auto && (
-                            <div className="ride-info">
-                                <strong>Auto:</strong> {ride.auto.znacka} {ride.auto.model} ({ride.auto.spz})
+                        <div className="ride-details">
+                            <div className="ride-time">
+                                <strong>Odjezd:</strong> {formatDate(mappedRide.casOdjezdu)}
                             </div>
-                        )}
-                        <div className="ride-status">
-                            <strong>Status:</strong>
-                            <span className={`status ${ride.status}`}>{ride.status}</span>
+                            <div className="ride-time">
+                                <strong>Příjezd:</strong> {formatDate(mappedRide.casPrijezdu)}
+                            </div>
+                            <div className="ride-info">
+                                <strong>Volná místa:</strong> {mappedRide.volnaMista || (mappedRide.pocetMist - (mappedRide.pasazeri ? mappedRide.pasazeri.length : 0))} / {mappedRide.pocetMist}
+                            </div>
+                            <div className="ride-info">
+                                <strong>Řidič:</strong> {mappedRide.ridic?.jmeno || 'Neznámý'}
+                            </div>
+                            {mappedRide.auto && (
+                                <div className="ride-info">
+                                    <strong>Auto:</strong> {mappedRide.auto.znacka} {mappedRide.auto.model} ({mappedRide.auto.spz})
+                                </div>
+                            )}
+                            <div className="ride-status">
+                                <strong>Status:</strong>
+                                <span className={`status ${mappedRide.status}`}>{mappedRide.status}</span>
+                            </div>
+                        </div>
+
+                        <div className="ride-actions">
+                            {user && mappedRide.ridicId !== user.id && mappedRide.status === 'aktivni' && (
+                                <button
+                                    className="btn-reserve"
+                                    onClick={() => handleReservation(mappedRide.id)}
+                                >
+                                    Rezervovat
+                                </button>
+                            )}
+
+                            {user && mappedRide.ridicId === user.id && (
+                                <button
+                                    className="btn-delete"
+                                    onClick={() => handleDeleteRide(mappedRide.id)}
+                                >
+                                    Zrušit jízdu
+                                </button>
+                            )}
                         </div>
                     </div>
-
-                    <div className="ride-actions">
-                        {user && ride.ridic_id !== user.id && ride.status === 'aktivni' && (
-                            <button
-                                className="btn-reserve"
-                                onClick={() => handleReservation(ride.id)}
-                            >
-                                Rezervovat
-                            </button>
-                        )}
-
-                        {user && ride.ridic_id === user.id && (
-                            <button
-                                className="btn-delete"
-                                onClick={() => handleDeleteRide(ride.id)}
-                            >
-                                Zrušit jízdu
-                            </button>
-                        )}
-                    </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 };
