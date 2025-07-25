@@ -48,6 +48,11 @@ const RideSearch = ({ onSearchResults }) => {
 
             const response = await axios.get(`http://localhost:5000/api/jizdy/vyhledat?${params}`);
 
+            console.log(response.data);
+
+            // Uložíme výsledky do lokálního state
+            setSearchResults(response.data);
+
             if (onSearchResults) {
                 onSearchResults(response.data);
             }

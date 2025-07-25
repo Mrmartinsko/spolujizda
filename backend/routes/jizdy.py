@@ -228,7 +228,7 @@ def vyhledat_jizdy():
     odkud = request.args.get("odkud", "").strip()
     kam = request.args.get("kam", "").strip()
     datum = request.args.get("datum", "").strip()
-    print(odkud, kam, datum)
+    print(f"DEBUG: Parsed - odkud: '{odkud}', kam: '{kam}', datum: '{datum}'")
 
     # Základní query - pouze aktivní jízdy
     query = Jizda.query.filter_by(status="aktivni")
