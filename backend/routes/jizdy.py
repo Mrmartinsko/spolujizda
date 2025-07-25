@@ -64,7 +64,7 @@ def get_jizda(jizda_id):
 @jwt_required()
 def create_jizda():
     """Vytvoření nové jízdy"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     data = request.get_json()
 
     # Validace povinných polí
@@ -131,7 +131,7 @@ def create_jizda():
 @jwt_required()
 def update_jizda(jizda_id):
     """Aktualizace jízdy"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
     # Pouze řidič může upravovat svou jízdu
@@ -184,7 +184,7 @@ def update_jizda(jizda_id):
 @jwt_required()
 def delete_jizda(jizda_id):
     """Zrušení jízdy"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     print("JWT identity type:", type(uzivatel_id), "value:", uzivatel_id)
     jizda = Jizda.query.get_or_404(jizda_id)
 
@@ -228,6 +228,7 @@ def vyhledat_jizdy():
     odkud = request.args.get("odkud", "").strip()
     kam = request.args.get("kam", "").strip()
     datum = request.args.get("datum", "").strip()
+    print(odkud, kam, datum)
 
     # Základní query - pouze aktivní jízdy
     query = Jizda.query.filter_by(status="aktivni")
