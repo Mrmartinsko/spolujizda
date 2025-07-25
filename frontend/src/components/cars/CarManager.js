@@ -51,7 +51,7 @@ const CarManager = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post('http://localhost:5000/api/auta', formData, {
+                await axios.post('http://localhost:5000/api/auta/moje-nove', formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -108,7 +108,34 @@ const CarManager = () => {
     };
 
     return (
+
+
         <div className="car-manager">
+            <h1>Moje auta</h1>
+            <div className="car-list">
+                {auta.length === 0 ? (
+                    <p>Zatím nemáte žádné auto přidané.</p>
+                ) : (
+                    <div className="cars-grid">
+                        {auta.map(auto => (
+                            <div key={auto.id} className="car-card">
+                                <div className="car-header">
+                                    <h4>{auto.znacka} {auto.model}</h4>
+                                    {auto.primarni && <span className="primary-badge">Primární</span>}
+                                </div>
+                                <div className="car-details">
+                                    <p><strong>Barva:</strong> {auto.barva}</p>
+                                    {auto.spz && <p><strong>SPZ:</strong> {auto.spz}</p>}
+                                </div>
+                                <div className="car-actions">
+                                    <button onClick={() => handleEdit(auto)}>Upravit</button>
+                                    <button onClick={() => handleDelete(auto.id)}>Smazat</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
             <h2>Správa aut</h2>
 
             {error && <div className="error-message">{error}</div>}
@@ -187,31 +214,6 @@ const CarManager = () => {
                 </form>
             </div>
 
-            <div className="car-list">
-                <h3>Moje auta</h3>
-                {auta.length === 0 ? (
-                    <p>Zatím nemáte žádné auto přidané.</p>
-                ) : (
-                    <div className="cars-grid">
-                        {auta.map(auto => (
-                            <div key={auto.id} className="car-card">
-                                <div className="car-header">
-                                    <h4>{auto.znacka} {auto.model}</h4>
-                                    {auto.primarni && <span className="primary-badge">Primární</span>}
-                                </div>
-                                <div className="car-details">
-                                    <p><strong>Barva:</strong> {auto.barva}</p>
-                                    {auto.spz && <p><strong>SPZ:</strong> {auto.spz}</p>}
-                                </div>
-                                <div className="car-actions">
-                                    <button onClick={() => handleEdit(auto)}>Upravit</button>
-                                    <button onClick={() => handleDelete(auto.id)}>Smazat</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
         </div>
     );
 };

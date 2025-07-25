@@ -1,15 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import CarManager from "../components/cars/CarManager";
 
 const MujProfil = () => {
     const { user, setUser } = useAuth();
     const [editMode, setEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [auta, setAuta] = useState([]);
+    const [showAuta, setShowAuta] = useState(false);
     const [formData, setFormData] = useState({
         jmeno: user?.profil?.jmeno || '',
         bio: user?.profil?.bio || ''
     });
+
+    useEffect(() => {
+        if (showAuta) {
+            fetchAuta();
+        }
+    }, []);
+
+    const fetchAuta = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:5000/api/auta/moje', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAuta(response.data);
+        } catch (err) {
+            console.error('Chyba při načítání aut:', err);
+            setAuta([]);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -63,6 +85,8 @@ const MujProfil = () => {
         }
     };
 
+
+
     return (
         <div>
             <h1>Můj profil</h1>
@@ -72,7 +96,7 @@ const MujProfil = () => {
                     <div>
                         {editMode ? (
                             <div>
-                                <div style={{ marginBottom: '15px' }}>
+                                <div style={{marginBottom: '15px'}}>
                                     <label><strong>Jméno:</strong></label>
                                     <input
                                         type="text"
@@ -80,21 +104,21 @@ const MujProfil = () => {
                                         value={formData.jmeno}
                                         onChange={handleInputChange}
                                         className="form-control"
-                                        style={{ marginTop: '5px' }}
+                                        style={{marginTop: '5px'}}
                                     />
                                 </div>
-                                <div style={{ marginBottom: '15px' }}>
+                                <div style={{marginBottom: '15px'}}>
                                     <label><strong>Email:</strong></label>
                                     <input
                                         type="email"
                                         value={user.email}
                                         disabled
                                         className="form-control"
-                                        style={{ marginTop: '5px', backgroundColor: '#f5f5f5' }}
+                                        style={{marginTop: '5px', backgroundColor: '#f5f5f5'}}
                                     />
-                                    <small style={{ color: '#666' }}>Email nelze změnit</small>
+                                    <small style={{color: '#666'}}>Email nelze změnit</small>
                                 </div>
-                                <div style={{ marginBottom: '15px' }}>
+                                <div style={{marginBottom: '15px'}}>
                                     <label><strong>Bio:</strong></label>
                                     <textarea
                                         name="bio"
@@ -102,7 +126,7 @@ const MujProfil = () => {
                                         onChange={handleInputChange}
                                         className="form-control"
                                         rows="3"
-                                        style={{ marginTop: '5px' }}
+                                        style={{marginTop: '5px'}}
                                         placeholder="Napište něco o sobě..."
                                     />
                                 </div>
@@ -122,12 +146,12 @@ const MujProfil = () => {
                     <p>Profil nenalezen</p>
                 )}
 
-                <div style={{ marginTop: '20px' }}>
+                <div style={{marginTop: '20px'}}>
                     {editMode ? (
                         <>
                             <button
                                 className="btn btn-success"
-                                style={{ marginRight: '10px' }}
+                                style={{marginRight: '10px'}}
                                 onClick={handleSaveChanges}
                                 disabled={loading}
                             >
@@ -145,19 +169,20 @@ const MujProfil = () => {
                         <>
                             <button
                                 className="btn btn-primary"
-                                style={{ marginRight: '10px' }}
+                                style={{marginRight: '10px'}}
                                 onClick={handleEditClick}
                             >
                                 Upravit profil
                             </button>
-                            <button className="btn btn-secondary">
-                                Spravovat auta
-                            </button>
+
                         </>
                     )}
                 </div>
             </div>
+            <CarManager
+            />
         </div>
+
     );
 };
 
