@@ -12,7 +12,7 @@ rezervace_bp = Blueprint("rezervace", __name__)
 @jwt_required()
 def create_rezervace():
     """Vytvoření nové rezervace"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     data = request.get_json()
 
     if not data or "jizda_id" not in data:
@@ -62,7 +62,7 @@ def create_rezervace():
 @jwt_required()
 def prijmout_rezervaci(rezervace_id):
     """Přijetí rezervace (pouze řidič)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
@@ -90,7 +90,7 @@ def prijmout_rezervaci(rezervace_id):
 @jwt_required()
 def odmitnout_rezervaci(rezervace_id):
     """Odmítnutí rezervace (pouze řidič)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
@@ -118,7 +118,7 @@ def odmitnout_rezervaci(rezervace_id):
 @jwt_required()
 def zrusit_rezervaci(rezervace_id):
     """Zrušení rezervace (uživatel nebo řidič)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
@@ -143,7 +143,7 @@ def zrusit_rezervaci(rezervace_id):
 @jwt_required()
 def get_moje_rezervace():
     """Získání rezervací aktuálního uživatele"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     # Rezervace, které jsem odeslal
     moje_rezervace = Rezervace.query.filter_by(uzivatel_id=uzivatel_id).all()
@@ -177,7 +177,7 @@ def get_moje_rezervace():
 @jwt_required()
 def get_rezervace_jizdy(jizda_id):
     """Získání rezervací pro konkrétní jízdu (pouze pro řidiče)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     jizda = Jizda.query.get_or_404(jizda_id)
 
