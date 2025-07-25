@@ -17,7 +17,7 @@ const RideForm = ({ onRideCreated }) => {
     const [auta, setAuta] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    
+
 
     useEffect(() => {
         fetchUserCars();
@@ -28,7 +28,11 @@ const RideForm = ({ onRideCreated }) => {
             const response = await axios.get('http://localhost:5000/api/auta/moje', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setAuta(response.data.auta || []);
+            setAuta(response.data || []);
+            setFormData(prev => ({
+                ...prev,
+                auto_id: response.data[0]?.id || ''
+            }));
         } catch (err) {
             console.error('Chyba při načítání aut:', err);
         }
@@ -42,46 +46,50 @@ const RideForm = ({ onRideCreated }) => {
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    const payload = {
-        auto_id: formData.auto_id,
-        odkud: formData.odkud,
-        kam: formData.kam,
-        cas_odjezdu: formData.casOdjezdu,
-        cas_prijezdu: formData.casPrijezdu,
-        cena: formData.cena,
-        pocet_mist: formData.pocetMist
-    };
+        const payload = {
+            auto_id: formData.auto_id,
+            odkud: formData.odkud,
+            kam: formData.kam,
+            cas_odjezdu: formData.casOdjezdu,
+            cas_prijezdu: formData.casPrijezdu,
+            cena: formData.cena,
+            pocet_mist: formData.pocetMist
+        };
 
-    try {
-        const response = await axios.post('http://localhost:5000/api/jizdy', payload, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        console.log(payload);
 
-        if (onRideCreated) {
-            onRideCreated(response.data);
+        try {
+            const response = await axios.post('http://localhost:5000/api/jizdy/', payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            console.log(response);
+
+            if (onRideCreated) {
+                onRideCreated(response.data);
+            }
+
+            setFormData({
+                odkud: '',
+                kam: '',
+                casOdjezdu: '',
+                casPrijezdu: '',
+                cena: '',
+                pocetMist: 1,
+                auto_id: ''
+            });
+
+            alert('Jízda byla úspěšně nabídnuta!');
+        } catch (err) {
+            setError(err.response?.data?.error || 'Chyba při vytváření jízdy');
+        } finally {
+            setLoading(false);
         }
-
-        setFormData({
-            odkud: '',
-            kam: '',
-            casOdjezdu: '',
-            casPrijezdu: '',
-            cena: '',
-            pocetMist: 1,
-            auto_id: ''
-        });
-
-        alert('Jízda byla úspěšně nabídnuta!');
-    } catch (err) {
-        setError(err.response?.data?.error || 'Chyba při vytváření jízdy');
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
 
     return (
