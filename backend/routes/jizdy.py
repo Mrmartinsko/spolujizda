@@ -83,7 +83,7 @@ def create_jizda():
             return jsonify({"error": f"Pole {field} je povinné"}), 400
 
     # Ověření, že auto patří uživateli
-    auto = Auto.query.filter_by(id=data["auto_id"], uzivatel_id=uzivatel_id).first()
+    auto = Auto.query.filter_by(id=data["auto_id"], profil_id=uzivatel_id).first()
     if not auto:
         return jsonify({"error": "Auto nenalezeno nebo nepatří uživateli"}), 404
 
