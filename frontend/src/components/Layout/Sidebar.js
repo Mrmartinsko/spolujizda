@@ -15,13 +15,19 @@ const Sidebar = () => {
     return (
         <div style={{
             width: '250px',
-            backgroundColor: '#343a40',
-            color: 'white',
+            backgroundColor: 'var(--sidebar-bg)',
+            color: 'var(--text-color)',
             padding: '20px',
-            minHeight: '100vh'
+            minHeight: '100vh',
+            borderRight: '1px solid var(--sidebar-border)',
+            transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease'
         }}>
             <div style={{ marginBottom: '30px' }}>
-                <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                <h2 style={{
+                    color: 'var(--btn-primary-bg)',
+                    marginBottom: '10px',
+                    transition: 'color 0.3s ease'
+                }}>
                     🚗 Spolujízda
                 </h2>
             </div>
@@ -36,14 +42,14 @@ const Sidebar = () => {
                             padding: '12px 16px',
                             marginBottom: '5px',
                             textDecoration: 'none',
-                            color: 'white',
+                            color: 'var(--text-color)',
                             borderRadius: '4px',
-                            backgroundColor: location.pathname === item.path ? '#007bff' : 'transparent',
-                            transition: 'background-color 0.2s'
+                            backgroundColor: location.pathname === item.path ? 'var(--btn-primary-bg)' : 'transparent',
+                            transition: 'background-color 0.2s, color 0.3s ease'
                         }}
                         onMouseOver={(e) => {
                             if (location.pathname !== item.path) {
-                                e.target.style.backgroundColor = '#495057';
+                                e.target.style.backgroundColor = 'var(--bg-secondary)';
                             }
                         }}
                         onMouseOut={(e) => {

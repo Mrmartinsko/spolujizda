@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import RideSearch from '../components/rides/RideSearch';
+import RideList from '../components/rides/RideList';
 
 const VyhledatJizdu = () => {
     return (
-        <div>
+        <div className="search-page">
             <h1>Vyhledat jízdu</h1>
-            <div className="card">
-                <p>Zde bude vyhledávání jízd s filtry.</p>
-                <p>Implementace bude doplněna...</p>
+            <div className="search-section">
+                <RideSearch />
             </div>
         </div>
     );

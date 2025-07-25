@@ -1,0 +1,166 @@
+/* CSS proměnné pro tmavý/světlý režim */
+:root[data-theme="light"] {
+    --bg-color: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --card-bg: #ffffff;
+    --card-border: #e0e0e0;
+    --input-bg: #ffffff;
+    --input-border: #ddd;
+    --btn-primary-bg: #007bff;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #6c757d;
+    --btn-secondary-text: #ffffff;
+    --success-bg: #d4edda;
+    --success-border: #c3e6cb;
+    --success-text: #155724;
+    --error-bg: #f8d7da;
+    --error-border: #f5c6cb;
+    --error-text: #721c24;
+    --navbar-bg: #343a40;
+    --navbar-text: #ffffff;
+    --sidebar-bg: #f8f9fa;
+    --sidebar-border: #dee2e6;
+}
+
+:root[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-color: #ffffff;
+    --text-secondary: #cccccc;
+    --card-bg: #2d2d2d;
+    --card-border: #404040;
+    --input-bg: #404040;
+    --input-border: #555555;
+    --btn-primary-bg: #0d6efd;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #6c757d;
+    --btn-secondary-text: #ffffff;
+    --success-bg: #1e4620;
+    --success-border: #2d5a31;
+    --success-text: #75dd79;
+    --error-bg: #4a1e1e;
+    --error-border: #6a2c2c;
+    --error-text: #ff6b6b;
+    --navbar-bg: #212529;
+    --navbar-text: #ffffff;
+    --sidebar-bg: #343a40;
+    --sidebar-border: #495057;
+}
+
+/* Aplikace proměnných na elementy */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.form-input {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.form-input:focus {
+    background-color: var(--input-bg);
+    border-color: var(--btn-primary-bg);
+    color: var(--text-color);
+}
+
+.form-input:disabled {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.form-label {
+    color: var(--text-color);
+}
+
+.btn.btn-primary {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border-color: var(--btn-primary-bg);
+}
+
+.btn.btn-secondary {
+    background-color: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border-color: var(--btn-secondary-bg);
+}
+
+.btn.btn-success {
+    background-color: #198754;
+    color: #ffffff;
+    border-color: #198754;
+}
+
+/* Navbar styly */
+.navbar {
+    background-color: var(--navbar-bg) !important;
+    color: var(--navbar-text);
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link {
+    color: var(--navbar-text) !important;
+}
+
+/* Sidebar styly */
+.sidebar {
+    background-color: var(--sidebar-bg);
+    border-color: var(--sidebar-border);
+    color: var(--text-color);
+}
+
+.sidebar .nav-link {
+    color: var(--text-color);
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--bg-secondary);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+}
+
+/* Úspěšné a chybové zprávy */
+.message-success {
+    background-color: var(--success-bg) !important;
+    color: var(--success-text) !important;
+    border-color: var(--success-border) !important;
+}
+
+.message-error {
+    background-color: var(--error-bg) !important;
+    color: var(--error-text) !important;
+    border-color: var(--error-border) !important;
+}
+
+/* Scrollbar pro tmavý režim */
+:root[data-theme="dark"] ::-webkit-scrollbar {
+    width: 8px;
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
