@@ -53,7 +53,7 @@ def register():
         db.session.commit()
 
         # Vytvoření JWT tokenu
-        access_token = create_access_token(identity=uzivatel.id)
+        access_token = create_access_token(identity=str(uzivatel.id))
 
         return jsonify(
             {
@@ -73,6 +73,8 @@ def register():
 def login():
     """Přihlášení uživatele"""
     data = request.get_json()
+
+    
     if not data or not data.get("email") or not data.get("password"):
         return jsonify({"error": "Email a heslo jsou povinné"}), 400
 
@@ -86,7 +88,7 @@ def login():
         return jsonify({"error": "Neplatné přihlašovací údaje"}), 401
 
     # Vytvoření JWT tokenu
-    access_token = create_access_token(identity=uzivatel.id)
+    access_token = create_access_token(identity=str(uzivatel.id))
 
     return jsonify(
         {

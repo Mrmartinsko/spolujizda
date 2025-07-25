@@ -12,21 +12,29 @@ const MyRidesPage = () => {
     const [filter, setFilter] = useState('all'); // all, active, completed, cancelled
 
     useEffect(() => {
+    if (token) {
         fetchMojeJizdy();
-    }, []);
+    } else {
+        console.log("Token není dostupný");
+    }
+}, [token]);
+
+
 
     const fetchMojeJizdy = async () => {
-        try {
-            const response = await axios.get('http://localhost:5000/api/jizdy/moje', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMojeJizdy(response.data);
-        } catch (err) {
-            setError('Chyba při načítání jízd');
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+        const response = await axios.get('http://localhost:5000/api/jizdy/moje', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setMojeJizdy(response.data);
+    } catch (err) {
+        console.log("Chyba při fetchMojeJizdy:", err.response?.data || err.message);
+        setError('Chyba při načítání jízd');
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     const handleRideUpdate = () => {
         fetchMojeJizdy();
