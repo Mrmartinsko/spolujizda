@@ -208,7 +208,6 @@ def delete_jizda(jizda_id):
 def get_moje_jizdy():
     """Získání jízd aktuálního uživatele"""
     uzivatel_id = int(get_jwt_identity())
-    print("JWT identity type:", type(uzivatel_id), "value:", uzivatel_id)
     # Jízdy jako řidič
     jizdy_ridic = Jizda.query.filter_by(ridic_id=uzivatel_id).all()
 
@@ -217,6 +216,7 @@ def get_moje_jizdy():
     jizdy_pasazer = uzivatel.jizdy_pasazer if uzivatel else []
 
     # Kombinace obou seznamů
+    print(jizdy_ridic[0].to_dict())
     vsechny_jizdy = jizdy_ridic + list(jizdy_pasazer)
 
     return jsonify([jizda.to_dict() for jizda in vsechny_jizdy])
