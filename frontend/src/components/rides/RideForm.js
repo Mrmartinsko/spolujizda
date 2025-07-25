@@ -17,37 +17,12 @@ const RideForm = ({ onRideCreated }) => {
     const [auta, setAuta] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [add_car, setAdd_car] = useState(false);
-    const [new_car_data, setNew_car_data] = usestate({
-        znacka: '',
-        model: '',
-        barva: '',
-        spz: ''
-    });
     
-    const handleNewCarChange = (e) => {
-        setNew_car_data({
-            ...new_car_data,
-            [e.target.name]: e.target.valu
-        });
-    };
 
     useEffect(() => {
         fetchUserCars();
     }, []);
-    const handleAddCar = async () => {
-        try {
-            const response = await axios.post('http://localhost:5000/api/auta/moje-nove', new_car_data, {
-            headers: { Authorization: `Bearer ${token}` }
-            });
-            alert('Auto přidáno!');
-            setShowAddCarForm(false);
-            await fetchUserCars();
-            setFormData({ ...formData, auto_id: response.data.auto.id }); // vyber nové auto
-        } catch (err) {
-            alert(err.response?.data?.error || 'Chyba při přidávání auta');
-    }
-    };
+
     const fetchUserCars = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/auta/moje', {
