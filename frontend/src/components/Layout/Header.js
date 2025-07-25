@@ -8,12 +8,14 @@ const Header = () => {
 
     return (
         <header style={{
-            backgroundColor: 'white',
+            backgroundColor: 'var(--card-bg)',
             padding: '15px 20px',
-            borderBottom: '1px solid #dee2e6',
+            borderBottom: '1px solid var(--card-border)',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            color: 'var(--text-color)',
+            transition: 'background-color 0.3s ease, border-color 0.3s ease'
         }}>
             <div>
                 {/* Místo pro breadcrumbs nebo aktuální stránku */}
@@ -26,7 +28,9 @@ const Header = () => {
                     border: 'none',
                     fontSize: '20px',
                     cursor: 'pointer',
-                    padding: '5px'
+                    padding: '5px',
+                    color: 'var(--text-color)',
+                    transition: 'color 0.3s ease'
                 }}>
                     🔍
                 </button>
@@ -37,7 +41,9 @@ const Header = () => {
                     border: 'none',
                     fontSize: '20px',
                     cursor: 'pointer',
-                    padding: '5px'
+                    padding: '5px',
+                    color: 'var(--text-color)',
+                    transition: 'color 0.3s ease'
                 }}>
                     🔔
                 </button>
@@ -71,7 +77,10 @@ const Header = () => {
                             {user?.profil?.jmeno?.charAt(0)?.toUpperCase() || 'U'}
                         </div>
                         <span>{user?.profil?.jmeno || 'Uživatel'}</span>
-                        <span style={{ fontSize: '12px' }}>▼</span>
+                        <span style={{
+                            fontSize: '12px',
+                            color: 'var(--text-secondary)'
+                        }}>▼</span>
                     </button>
 
                     {showDropdown && (
@@ -79,12 +88,13 @@ const Header = () => {
                             position: 'absolute',
                             top: '100%',
                             right: 0,
-                            backgroundColor: 'white',
-                            border: '1px solid #dee2e6',
+                            backgroundColor: 'var(--card-bg)',
+                            border: '1px solid var(--card-border)',
                             borderRadius: '4px',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             minWidth: '150px',
-                            zIndex: 1000
+                            zIndex: 1000,
+                            transition: 'background-color 0.3s ease, border-color 0.3s ease'
                         }}>
                             <Link
                                 to="/profil"
@@ -92,8 +102,9 @@ const Header = () => {
                                     display: 'block',
                                     padding: '10px 15px',
                                     textDecoration: 'none',
-                                    color: '#333',
-                                    borderBottom: '1px solid #f8f9fa'
+                                    color: 'var(--text-color)',
+                                    borderBottom: '1px solid var(--card-border)',
+                                    transition: 'color 0.3s ease, border-color 0.3s ease'
                                 }}
                                 onClick={() => setShowDropdown(false)}
                             >
@@ -105,8 +116,9 @@ const Header = () => {
                                     display: 'block',
                                     padding: '10px 15px',
                                     textDecoration: 'none',
-                                    color: '#333',
-                                    borderBottom: '1px solid #f8f9fa'
+                                    color: 'var(--text-color)',
+                                    borderBottom: '1px solid var(--card-border)',
+                                    transition: 'color 0.3s ease, border-color 0.3s ease'
                                 }}
                                 onClick={() => setShowDropdown(false)}
                             >

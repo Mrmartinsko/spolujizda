@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout/Layout';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -14,61 +15,64 @@ import MujProfil from './pages/MujProfil';
 import Nastaveni from './pages/Nastaveni';
 import Chat from './pages/Chat';
 import VyhledatJizdu from './pages/VyhledatJizdu';
+import './styles/theme.css';
 
 
 function App() {
     return (
-        <AuthProvider>
-            <Router>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/" element={<Layout />}>
-                        <Route index element={<HomePage />} />
-                        <Route path="nabidnout-jizdu" element={
-                            <PrivateRoute>
-                                <CreateRidePage />
-                            </PrivateRoute>
-                        } />
-                        <Route path="moje-jizdy" element={
-                            <PrivateRoute>
-                                <MyRidesPage />
-                            </PrivateRoute>
-                        } />
-                        <Route path="auta" element={
-                            <PrivateRoute>
-                                <CarManager />
-                            </PrivateRoute>
-                        } />
-                        <Route path="rezervace" element={
-                            <PrivateRoute>
-                                <ReservationManager />
-                            </PrivateRoute>
-                        } />
-                        <Route path="profil" element={
-                            <PrivateRoute>
-                                <MujProfil />
-                            </PrivateRoute>
-                        } />
-                        <Route path="nastaveni" element={
-                            <PrivateRoute>
-                                <Nastaveni />
-                            </PrivateRoute>
-                        } />
-                        <Route path="vyhledat-jizdu" element={
-                            <PrivateRoute>
-                                <VyhledatJizdu />
-                            </PrivateRoute>
-                        } />
-                        <Route path="chat" element={
-                            <PrivateRoute>
-                                <Chat />
-                            </PrivateRoute>
-                        } />
-                    </Route>
-                </Routes>
-            </Router>
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthProvider>
+                <Router>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/" element={<Layout />}>
+                            <Route index element={<HomePage />} />
+                            <Route path="nabidnout-jizdu" element={
+                                <PrivateRoute>
+                                    <CreateRidePage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="moje-jizdy" element={
+                                <PrivateRoute>
+                                    <MyRidesPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="auta" element={
+                                <PrivateRoute>
+                                    <CarManager />
+                                </PrivateRoute>
+                            } />
+                            <Route path="rezervace" element={
+                                <PrivateRoute>
+                                    <ReservationManager />
+                                </PrivateRoute>
+                            } />
+                            <Route path="profil" element={
+                                <PrivateRoute>
+                                    <MujProfil />
+                                </PrivateRoute>
+                            } />
+                            <Route path="nastaveni" element={
+                                <PrivateRoute>
+                                    <Nastaveni />
+                                </PrivateRoute>
+                            } />
+                            <Route path="vyhledat-jizdu" element={
+                                <PrivateRoute>
+                                    <VyhledatJizdu />
+                                </PrivateRoute>
+                            } />
+                            <Route path="chat" element={
+                                <PrivateRoute>
+                                    <Chat />
+                                </PrivateRoute>
+                            } />
+                        </Route>
+                    </Routes>
+                </Router>
+            </AuthProvider>
+        </ThemeProvider>
     );
 }
 

@@ -20,7 +20,11 @@ const Layout = () => {
             <Sidebar />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <main style={{ flex: 1, padding: '20px', backgroundColor: '#f5f5f5' }}>
+                <main style={{
+                    flex: 1,
+                    padding: '20px',
+                    backgroundColor: 'var(--bg-secondary)'
+                }}>
                     <div className="container">
                         <Outlet />
                     </div>
