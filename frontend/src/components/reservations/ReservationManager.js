@@ -129,9 +129,9 @@ const ReservationManager = () => {
 
                             <div className="reservation-details">
                                 <div className="ride-info">
-                                    <p><strong>Odjezd:</strong> {formatDate(rezervace.jizda.casOdjezdu)}</p>
+                                    <p><strong>Odjezd:</strong> {formatDate(rezervace.jizda.cas_odjezdu)}</p>
                                     <p><strong>Cena:</strong> {rezervace.jizda.cena} Kč</p>
-                                    <p><strong>Řidič:</strong> {rezervace.jizda.ridic?.profil?.jmeno || 'Neznámý'}</p>
+                                    <p><strong>Řidič:</strong> {rezervace.jizda.ridic?.jmeno || 'Neznámý'}</p>
                                     {rezervace.jizda.auto && (
                                         <p><strong>Auto:</strong> {rezervace.jizda.auto.znacka} {rezervace.jizda.auto.model}</p>
                                     )}
