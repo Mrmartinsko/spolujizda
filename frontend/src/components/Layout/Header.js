@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { searchProfiles } from '../../services/search';
 
 
 const Header = () => {
@@ -16,35 +15,6 @@ const Header = () => {
     const toggleSearchBar = () => {
         setShowSearchBar(!showSearchBar);
     };
-
-    // Debounced vyhledávání
-    useEffect(() => {
-        if (searchQuery.trim().length > 2) {
-            if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current);
-            }
-
-            searchTimeoutRef.current = setTimeout(async () => {
-                setIsSearching(true);
-                try {
-                    const results = await searchProfiles(searchQuery);
-                    setSearchResults(results);
-                } catch (error) {
-                    setSearchResults([]);
-                } finally {
-                    setIsSearching(false);
-                }
-            }, 300);
-        } else {
-            setSearchResults([]);
-        }
-
-        return () => {
-            if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current);
-            }
-        };
-    }, [searchQuery]);
 
     return (
         <header style={{
@@ -68,11 +38,11 @@ const Header = () => {
 
 
 
-                <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
 
                     {/* Vyhledávací řádek vedle lupy */}
                     {showSearchBar && (
-                        <div style={{position: 'relative'}}>
+                        <div style={{ position: 'relative' }}>
                             <input
                                 type="text"
                                 placeholder="Vyhledat profil..."
@@ -150,8 +120,8 @@ const Header = () => {
                                                 {profil.jmeno?.charAt(0)?.toUpperCase() || 'U'}
                                             </div>
                                             <div>
-                                                <div style={{fontWeight: 'bold'}}>{profil.jmeno}</div>
-                                                <div style={{fontSize: '12px', color: 'var(--text-secondary)'}}>
+                                                <div style={{ fontWeight: 'bold' }}>{profil.jmeno}</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                                     {profil.email}
                                                 </div>
                                             </div>
@@ -173,8 +143,8 @@ const Header = () => {
                         color: 'var(--text-color)',
                         transition: 'color 0.3s ease',
                     }}
-                            title="Vyhledat profil"
-                            onClick={toggleSearchBar}
+                        title="Vyhledat profil"
+                        onClick={toggleSearchBar}
                     >
                         🔍
                     </button>
@@ -190,13 +160,13 @@ const Header = () => {
                         color: 'var(--text-color)',
                         transition: 'color 0.3s ease'
                     }}
-                            title="Oznámení"
+                        title="Oznámení"
                     >
                         🔔
                     </button>
 
                     {/* Profil dropdown */}
-                    <div style={{position: 'relative'}}>
+                    <div style={{ position: 'relative' }}>
                         <button
                             onClick={() => setShowDropdown(!showDropdown)}
                             style={{
