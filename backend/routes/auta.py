@@ -18,18 +18,18 @@ def get_moje_auta():
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
 
     if not uzivatel.profil:
-        return jsonify({"auta": []})
+        return jsonify([])
 
     auta = Auto.query.filter_by(profil_id=uzivatel.profil.id).all()
-    return jsonify({"auta": [auto.to_dict() for auto in auta]})
+    return jsonify([auto.to_dict() for auto in auta])
 
 
 
-@auta_bp.route("/moje", methods=["POST"])
+@auta_bp.route("/moje-nove", methods=["POST"])
 @jwt_required()
 def create_auto():
     """Vytvoření nového auta"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
 
     if not uzivatel.profil:
@@ -75,8 +75,13 @@ def create_auto():
 @jwt_required()
 def update_auto(auto_id):
     """Aktualizace auta"""
-    uzivatel_id = get_jwt_identity()
-    auto = Auto.query.filter_by(id=auto_id, uzivatel_id=uzivatel_id).first_or_404()
+    uzivatel_id = int(get_jwt_identity())
+    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
+
+    if not uzivatel.profil:
+        return jsonify({"error": "Profil nenalezen"}), 404
+
+    auto = Auto.query.filter_by(id=auto_id, profil_id=uzivatel.profil.id).first_or_404()
 
     data = request.get_json()
 
@@ -99,10 +104,10 @@ def update_auto(auto_id):
             # Pokud je auto nastaveno jako primární, zruší primární u ostatních
             if auto.primarni:
                 Auto.query.filter(
-                    Auto.uzivatel_id == uzivatel_id,
+                    Auto.profil_id == uzivatel.profil.id,
                     Auto.id != auto_id,
                     Auto.primarni == True,
-                ).update({"primarni": False})
+                    ).update({"primarni": False})
         if "docasne" in data:
             auto.docasne = data["docasne"]
 
@@ -116,13 +121,17 @@ def update_auto(auto_id):
         db.session.rollback()
         return jsonify({"error": "Chyba při aktualizaci auta"}), 500
 
-
 @auta_bp.route("/<int:auto_id>", methods=["DELETE"])
 @jwt_required()
 def delete_auto(auto_id):
     """Smazání auta"""
     uzivatel_id = get_jwt_identity()
-    auto = Auto.query.filter_by(id=auto_id, uzivatel_id=uzivatel_id).first_or_404()
+    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
+
+    if not uzivatel.profil:
+        return jsonify({"error": "Profil nenalezen"}), 404
+
+    auto = Auto.query.filter_by(id=auto_id, profil_id=uzivatel.profil.id).first_or_404()
 
     # Kontrola, zda auto není použito v aktivních jízdách
     if auto.jizdy:

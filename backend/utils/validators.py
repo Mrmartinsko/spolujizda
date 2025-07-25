@@ -24,5 +24,5 @@ def validate_spz(spz):
         return True  # SPZ není povinná
 
     # Český formát SPZ (např. 1A2 3456 nebo 1AB 2345)
-    pattern = r"^[1-9][A-Z]{1,2}[0-9] [0-9]{3,4}$"
+    pattern = r"^[A-Z0-9]{1,4}\s?[A-Z0-9]{0,4}$"
     return re.match(pattern, spz.upper()) is not None
