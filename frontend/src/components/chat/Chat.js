@@ -9,6 +9,7 @@ const Chat = ({ jizdaId, onClose }) => {
     const [novaZprava, setNovaZprava] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [chatId, setChatId] = useState(null);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -33,9 +34,17 @@ const Chat = ({ jizdaId, onClose }) => {
             const response = await axios.get(`http://localhost:5000/api/chat/jizda/${jizdaId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setZpravy(response.data);
+
+            // Backend vrací { chat: {...}, zpravy: [...] }
+            if (response.data.chat) {
+                setChatId(response.data.chat.id);
+            }
+            if (response.data.zpravy) {
+                setZpravy(response.data.zpravy);
+            }
         } catch (err) {
             setError('Chyba při načítání zpráv');
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -43,11 +52,11 @@ const Chat = ({ jizdaId, onClose }) => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!novaZprava.trim()) return;
+        if (!novaZprava.trim() || !chatId) return;
 
         try {
             await axios.post(
-                `http://localhost:5000/api/chat/jizda/${jizdaId}/zprava`,
+                `http://localhost:5000/api/chat/${chatId}/zpravy`,
                 { text: novaZprava },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
