@@ -20,7 +20,7 @@ def get_moje_auta():
     if not uzivatel.profil:
         return jsonify([])
 
-    auta = Auto.query.filter_by(profil_id=uzivatel.profil.id).all()
+    auta = Auto.query.filter_by(profil_id=uzivatel.profil.id).order_by(Auto.primarni.desc()).all()
     return jsonify([auto.to_dict() for auto in auta])
 
 
