@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './RideSearch.css';
+import RideList from './RideList';
 
 const RideSearch = ({ onSearchResults }) => {
+    const [searchResults, setSearchResults] = useState([]);
+    const [hasSearched, setHasSearched] = useState(false);
+
     const [searchData, setSearchData] = useState({
         odkud: '',
         kam: '',
@@ -18,14 +22,20 @@ const RideSearch = ({ onSearchResults }) => {
         });
     };
 
+
+    const handleRideUpdate = () => {
+        setSearchResults([]); // volitelné, můžeš upravit podle potřeby
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!searchData.odkud || !searchData.kam || !searchData.datum) {
-        setError('Vyplňte prosím všechna pole: odkud, kam a datum.');
-        return;
-    }
+            setError('Vyplňte prosím všechna pole: odkud, kam a datum.');
+            return;
+        }
         setLoading(true);
+        setHasSearched(true);
         setError('');
 
         try {
@@ -84,6 +94,22 @@ const RideSearch = ({ onSearchResults }) => {
                             onChange={handleChange}
                         />
                     </div>
+
+                    {searchResults.length > 0 && (
+                        <div className="results-section">
+                            <h2>Výsledky vyhledávání ({searchResults.length})</h2>
+                            <RideList
+                                rides={searchResults}
+                                onRideUpdate={handleRideUpdate}
+                            />
+                        </div>
+                    )}
+
+                    {hasSearched && searchResults.length === 0 && (
+                        <div className="no-results">
+                            <p>Žádné jízdy nebyly nalezeny. Zkuste změnit parametry vyhledávání.</p>
+                        </div>
+                    )}
 
                     <button type="submit" disabled={loading}>
                         {loading ? 'Hledám...' : 'Vyhledat'}
