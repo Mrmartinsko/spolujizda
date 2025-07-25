@@ -15,7 +15,7 @@ const RideList = ({ rides, onRideUpdate }) => {
             const poznamka = prompt('Přidejte poznámku k rezervaci (volitelné):');
 
             const response = await axios.post(
-                'http://localhost:5000/api/rezervace',
+                'http://localhost:5000/api/rezervace/',
                 {
                     jizda_id: jizdaId,
                     poznamka: poznamka || ''
