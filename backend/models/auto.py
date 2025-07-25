@@ -37,6 +37,7 @@ class Auto(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
+            "profil_id": self.profil_id,
             "znacka": self.znacka,
             "model": self.model,
             "barva": self.barva,
