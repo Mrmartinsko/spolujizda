@@ -20,6 +20,11 @@ const RideSearch = ({ onSearchResults }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!searchData.odkud || !searchData.kam || !searchData.datum) {
+        setError('Vyplňte prosím všechna pole: odkud, kam a datum.');
+        return;
+    }
         setLoading(true);
         setError('');
 
