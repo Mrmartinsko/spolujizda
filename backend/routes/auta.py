@@ -59,7 +59,10 @@ def create_auto():
             Auto.query.filter_by(profil_id=uzivatel.profil.id, primarni=True).update(
                 {"primarni": False}
             )
-
+        # Pokud nebylo označeno jako primární a uživatel nemá žádné primární auto
+        ma_primarni = Auto.query.filter_by(profil_id=uzivatel.profil.id, primarni=True).first()
+        if not auto.primarni and not ma_primarni:
+            auto.primarni = True
         db.session.add(auto)
         db.session.commit()
 
@@ -82,9 +85,9 @@ def update_auto(auto_id):
         return jsonify({"error": "Profil nenalezen"}), 404
 
     auto = Auto.query.filter_by(id=auto_id, profil_id=uzivatel.profil.id).first_or_404()
-
+    puvodne_primarni = auto.primarni
     data = request.get_json()
-
+    auto.primarni = data.get('primarni', auto.primarni)
     # Validace SPZ
     if data.get("spz") and not validate_spz(data["spz"]):
         return jsonify({"error": "Neplatný formát SPZ"}), 400
@@ -110,7 +113,13 @@ def update_auto(auto_id):
                     ).update({"primarni": False})
         if "docasne" in data:
             auto.docasne = data["docasne"]
-
+        if puvodne_primarni:
+            jine_primarni = Auto.query.filter_by(profil_id = auto.profil_id, primarni = True).first()
+            if not jine_primarni:
+                nahradni_auto = Auto.query.filter_by(profil_id=auto.profil_id).first()
+                if nahradni_auto:
+                    nahradni_auto.primarni = True
+            
         db.session.commit()
 
         return jsonify(
@@ -132,23 +141,29 @@ def delete_auto(auto_id):
         return jsonify({"error": "Profil nenalezen"}), 404
 
     auto = Auto.query.filter_by(id=auto_id, profil_id=uzivatel.profil.id).first_or_404()
+    bylo_primarni = auto.primarni
 
     # Kontrola, zda auto není použito v aktivních jízdách
-    if auto.jizdy:
-        aktivni_jizdy = [j for j in auto.jizdy if j.status == "aktivni"]
-        if aktivni_jizdy:
-            return jsonify({"error": "Auto nemůže být smazáno, má aktivní jízdy"}), 400
+    aktivni_jizdy = [j for j in auto.jizdy if j.status == "aktivni"]
+    if aktivni_jizdy:
+        return jsonify({"error": "Auto nemůže být smazáno, má aktivní jízdy"}), 400
 
     try:
         db.session.delete(auto)
         db.session.commit()
+
+        # Pokud bylo smazané auto primární, nastav nové
+        if bylo_primarni:
+            nove_primarni = Auto.query.filter_by(profil_id=uzivatel.profil.id).first()
+            if nove_primarni:
+                nove_primarni.primarni = True
+                db.session.commit()
 
         return jsonify({"message": "Auto úspěšně smazáno"})
 
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Chyba při mazání auta"}), 500
-
 
 @auta_bp.route("/<int:auto_id>/nastavit-primarni", methods=["POST"])
 @jwt_required()
