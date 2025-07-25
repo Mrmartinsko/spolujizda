@@ -37,6 +37,7 @@ const RideList = ({ rides, onRideUpdate }) => {
     const handleDeleteRide = async (jizdaId) => {
         if (window.confirm('Opravdu chcete zrušit tuto jízdu?')) {
             try {
+                console.log("Zrušení jízdy s ID:", jizdaId);
                 await axios.delete(`http://localhost:5000/api/jizdy/${jizdaId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -70,16 +71,16 @@ const RideList = ({ rides, onRideUpdate }) => {
 
                     <div className="ride-details">
                         <div className="ride-time">
-                            <strong>Odjezd:</strong> {formatDate(ride.casOdjezdu)}
+                            <strong>Odjezd:</strong> {formatDate(ride.cas_odjezdu)}
                         </div>
                         <div className="ride-time">
-                            <strong>Příjezd:</strong> {formatDate(ride.casPrijezdu)}
+                            <strong>Příjezd:</strong> {formatDate(ride.cas_prijezdu)}
                         </div>
                         <div className="ride-info">
-                            <strong>Volná místa:</strong> {ride.pocetMist - (ride.pasazeri ? ride.pasazeri.length : 0)} / {ride.pocetMist}
+                            <strong>Volná místa:</strong> {ride.volna_mista || (ride.pocet_mist - (ride.pasazeri ? ride.pasazeri.length : 0))} / {ride.pocet_mist}
                         </div>
                         <div className="ride-info">
-                            <strong>Řidič:</strong> {ride.ridic?.profil?.jmeno || 'Neznámý'}
+                            <strong>Řidič:</strong> {ride.ridic?.jmeno || 'Neznámý'}
                         </div>
                         {ride.auto && (
                             <div className="ride-info">

@@ -12,7 +12,7 @@ hodnoceni_bp = Blueprint("hodnoceni", __name__)
 @jwt_required()
 def create_hodnoceni():
     """Vytvoření nového hodnocení"""
-    autor_id = get_jwt_identity()
+    autor_id = int(get_jwt_identity())
     data = request.get_json()
 
     required_fields = ["cilovy_uzivatel_id", "role", "znamka"]
@@ -117,7 +117,7 @@ def get_hodnoceni_uzivatele(uzivatel_id):
 @jwt_required()
 def get_moje_hodnoceni():
     """Získání hodnocení aktuálního uživatele"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     # Hodnocení, která jsem dostal
     dostana = (
@@ -145,7 +145,7 @@ def get_moje_hodnoceni():
 @jwt_required()
 def update_hodnoceni(hodnoceni_id):
     """Aktualizace hodnocení (pouze autorem)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     hodnoceni = Hodnoceni.query.get_or_404(hodnoceni_id)
 
     # Pouze autor může upravovat své hodnocení
@@ -183,7 +183,7 @@ def update_hodnoceni(hodnoceni_id):
 @jwt_required()
 def delete_hodnoceni(hodnoceni_id):
     """Smazání hodnocení (pouze autorem)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     hodnoceni = Hodnoceni.query.get_or_404(hodnoceni_id)
 
     # Pouze autor může smazat své hodnocení

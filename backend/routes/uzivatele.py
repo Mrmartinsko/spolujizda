@@ -12,7 +12,7 @@ uzivatele_bp = Blueprint("uzivatele", __name__)
 @jwt_required()
 def get_muj_profil():
     """Získání vlastního profilu"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
 
     return jsonify({"uzivatel": uzivatel.to_dict()})
@@ -22,7 +22,7 @@ def get_muj_profil():
 @jwt_required()
 def update_profil():
     """Aktualizace vlastního profilu"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
 
     if not uzivatel.profil:
@@ -54,7 +54,7 @@ def update_profil():
 @jwt_required()
 def get_uzivatel_profil(uzivatel_id):
     """Získání profilu jiného uživatele"""
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     # Kontrola, zda uživatel není blokován
     blokace = Blokace.query.filter_by(
@@ -91,7 +91,7 @@ def hledat_uzivatele():
     if len(query) < 2:
         return jsonify({"error": "Vyhledávací dotaz musí mít alespoň 2 znaky"}), 400
 
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     # Vyhledání uživatelů podle jména
     uzivatele = (
@@ -134,7 +134,7 @@ def hledat_uzivatele():
 @jwt_required()
 def blokovat_uzivatele(uzivatel_id):
     """Blokování uživatele"""
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     if current_user_id == uzivatel_id:
         return jsonify({"error": "Nemůžete blokovat sebe sama"}), 400
@@ -167,7 +167,7 @@ def blokovat_uzivatele(uzivatel_id):
 @jwt_required()
 def odblokovat_uzivatele(uzivatel_id):
     """Odblokování uživatele"""
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     blokace = Blokace.query.filter_by(
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
@@ -188,7 +188,7 @@ def odblokovat_uzivatele(uzivatel_id):
 @jwt_required()
 def get_blokovani_uzivatele():
     """Získání seznamu blokovaných uživatelů"""
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     blokace = (
         db.session.query(Blokace)
