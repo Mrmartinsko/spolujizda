@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './PersonalChat.css';
 
-const PersonalChat = ({ otherUserId, otherUserName, onClose }) => {
+const PersonalChat = ({ otherUserId, otherUserName, onClose, isInline = false }) => {
     const { token, user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -75,7 +75,7 @@ const PersonalChat = ({ otherUserId, otherUserName, onClose }) => {
 
     if (loading) {
         return (
-            <div className="personal-chat-overlay">
+            <div className={isInline ? "personal-chat-inline" : "personal-chat-overlay"}>
                 <div className="personal-chat-container">
                     <div className="chat-loading">
                         <div className="loading-spinner"></div>
@@ -87,7 +87,7 @@ const PersonalChat = ({ otherUserId, otherUserName, onClose }) => {
     }
 
     return (
-        <div className="personal-chat-overlay">
+        <div className={isInline ? "personal-chat-inline" : "personal-chat-overlay"}>
             <div className="personal-chat-container">
                 <div className="chat-header">
                     <div className="chat-title">

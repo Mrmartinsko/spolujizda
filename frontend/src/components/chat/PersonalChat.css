@@ -12,6 +12,13 @@
     padding: 1rem;
 }
 
+.personal-chat-inline {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+}
+
 .personal-chat-container {
     background: white;
     border-radius: 12px;
@@ -23,6 +30,15 @@
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     overflow: hidden;
+}
+
+.personal-chat-inline .personal-chat-container {
+    background: var(--card-bg);
+    border-radius: 0;
+    height: 100%;
+    max-height: none;
+    box-shadow: none;
+    border: none;
 }
 
 .chat-header {
