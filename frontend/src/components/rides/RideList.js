@@ -172,33 +172,27 @@ const RideList = ({ rides, onRideUpdate }) => {
                             </button>
                         )}
 
-<<<<<<< HEAD
-                        {user && ride.ridic_id === user.id && (
-                            <>
-                                <button
-                                    className="btn-reservations"
-                                    onClick={() => toggleReservations(ride.id)}
-                                >
-                                    {showReservations[ride.id] ? 'Skrýt rezervace' : 'Zobrazit rezervace'}
-                                    {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
-                                </button>
+                    {user && ride.ridic_id === user.id && (
+                        <>
+                            <button
+                                className="btn-reservations"
+                                onClick={() => toggleReservations(ride.id)}
+                            >
+                                {showReservations[ride.id] ? 'Skrýt rezervace' : 'Zobrazit rezervace'}
+                                {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
+                            </button>
+
+                            {ride.status === 'aktivni' && (
                                 <button
                                     className="btn-delete"
                                     onClick={() => handleDeleteRide(ride.id)}
                                 >
                                     Zrušit jízdu
                                 </button>
-                            </>
-=======
-                        {user && ride.ridic_id === user.id && ride.status === 'aktivni' &&(
-                            <button
-                                className="btn-delete"
-                                onClick={() => handleDeleteRide(ride.id)}
-                            >
-                                Zrušit jízdu
-                            </button>
->>>>>>> myRidesDriver
-                        )}
+                            )}
+                        </>
+                    )}
+
                     </div>
 
                     {/* Rezervace pro řidiče */}
