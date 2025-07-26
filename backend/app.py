@@ -70,16 +70,18 @@ def create_app(config_name="development"):
     with app.app_context():
         try:
             db.create_all()
-            print("Databázové tabulky úspěšně vytvořeny")
+            print("Database tables created successfully")
         except Exception as e:
-            print(f"Chyba při vytváření tabulek: {e}")
+            print(f"Error creating tables: {e}")
 
     return app
 
 
+# Vytvoření aplikace pro import
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
-    print("🚗 Spolujízda API startuje...")
-    print("📍 Backend běží na: http://localhost:5000")
-    print("📍 API dokumentace: http://localhost:5000/api/")
+    print("🚗 Spolujizda API starting...")
+    print("📍 Backend running on: http://localhost:5000")
+    print("📍 API documentation: http://localhost:5000/api/")
     app.run(debug=True, port=5000)
