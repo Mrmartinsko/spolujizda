@@ -147,3 +147,143 @@
         flex: 1;
     }
 }
+
+/* Styly pro rezervace */
+.btn-reservations {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-reservations:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.reservations-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.reservations-section h4 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 1.1rem;
+}
+
+.reservations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reservation-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reservation-info {
+    flex: 1;
+}
+
+.passenger-name {
+    font-size: 1rem;
+    margin-bottom: 5px;
+}
+
+.reservation-status {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.reservation-note {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.reservation-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-accept {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-accept:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.btn-reject {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-reject:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.no-reservations {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+/* Responsive pro rezervace */
+@media (max-width: 768px) {
+    .reservation-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .reservation-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .btn-accept,
+    .btn-reject {
+        flex: 1;
+    }
+}

@@ -1,4 +1,10 @@
+from typing import TYPE_CHECKING
+
 from models import db
+
+if TYPE_CHECKING:
+    from models.jizda import Jizda
+    from models.uzivatel import Uzivatel
 
 
 class Rezervace(db.Model):
@@ -11,6 +17,8 @@ class Rezervace(db.Model):
     status = db.Column(
         db.String(20), default="cekajici"
     )  # cekajici, prijata, odmitnuta
+
+    # Relationships jsou definované v uzivatel.py a jizda.py jako backref
 
     def __init__(self, uzivatel_id, jizda_id, poznamka=None):
         self.uzivatel_id = uzivatel_id
