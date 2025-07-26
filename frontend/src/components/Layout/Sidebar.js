@@ -11,7 +11,8 @@ const Sidebar = () => {
         { path: '/vyhledat-uzivatele', label: 'Vyhledat uživatele', icon: '👥' },
         { path: '/moje-jizdy', label: 'Moje jízdy', icon: '📋' },
         { path: '/moje-rezervace', label: 'Moje rezervace', icon: '🎫' },
-        { path: '/chat', label: 'Chat', icon: '💬' }
+        { path: '/chat', label: 'Zprávy', icon: '💬' },
+        { path: '/jizda-chat', label: 'Chat jízd', icon: '🚗💬' }
     ];
 
     return (

@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import ChatComponent from '../components/chat/Chat';
+import PersonalChat from '../components/chat/PersonalChat';
 import axios from 'axios';
+import './Chat.css';
 
 const Chat = () => {
     const { token, user } = useAuth();
     const [chaty, setChaty] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedJizdaId, setSelectedJizdaId] = useState(null);
+    const [selectedChat, setSelectedChat] = useState(null);
     const [showChat, setShowChat] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     useEffect(() => {
         fetchMojeChaty();
@@ -20,7 +24,8 @@ const Chat = () => {
             const response = await axios.get('http://localhost:5000/api/chat/moje', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setChaty(response.data.chaty_jizd || []);
+            // Bereme jen osobní chaty (bez jizda_id)
+            setChaty(response.data.osobni_chaty || []);
         } catch (err) {
             setError('Chyba při načítání chatů');
             console.error(err);
@@ -29,145 +34,234 @@ const Chat = () => {
         }
     };
 
-    const openChat = (jizdaId) => {
-        setSelectedJizdaId(jizdaId);
+    const handleSearch = async (query) => {
+        setSearchQuery(query);
+        if (query.trim().length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        try {
+            setSearchLoading(true);
+            const response = await axios.get(`http://localhost:5000/api/uzivatele/hledat?q=${encodeURIComponent(query)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSearchResults(response.data.uzivatele || []);
+        } catch (err) {
+            console.error('Chyba při vyhledávání:', err);
+            setSearchResults([]);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
+    const openChatWithUser = (otherUser) => {
+        setSelectedChat({
+            otherUserId: otherUser.id,
+            otherUserName: otherUser.jmeno || otherUser.profil?.jmeno || 'Neznámý uživatel'
+        });
         setShowChat(true);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    const openExistingChat = (chat) => {
+        // Najdeme druhého uživatele v chatu
+        const otherUser = chat.ucastnici?.find(u => u.id !== user?.id);
+        if (otherUser) {
+            setSelectedChat({
+                otherUserId: otherUser.id,
+                otherUserName: otherUser.profil?.jmeno || 'Neznámý uživatel'
+            });
+            setShowChat(true);
+        }
     };
 
     const closeChat = () => {
         setShowChat(false);
-        setSelectedJizdaId(null);
+        setSelectedChat(null);
+        // Znovu načteme chaty pro aktualizaci
+        fetchMojeChaty();
     };
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('cs-CZ', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const formatLastMessageTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+
+        if (diffInHours < 1) {
+            return 'před chvílí';
+        } else if (diffInHours < 24) {
+            return `před ${Math.floor(diffInHours)}h`;
+        } else {
+            return date.toLocaleDateString('cs-CZ');
+        }
     };
 
     if (loading) {
         return (
-            <div>
-                <h1>Chat</h1>
-                <div className="card">
-                    <p>Načítání chatů...</p>
+            <div className="chat-page">
+                <div className="chat-sidebar">
+                    <h1>Zprávy</h1>
+                    <div className="loading">Načítání chatů...</div>
+                </div>
+                <div className="chat-main">
+                    <div className="no-chat-selected">
+                        <p>Načítání...</p>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div>
-            <h1>Chat</h1>
-
-            {error && (
-                <div className="card" style={{ backgroundColor: '#f8d7da', color: '#721c24', marginBottom: '20px' }}>
-                    {error}
+        <div className="chat-page">
+            <div className="chat-sidebar">
+                <div className="chat-header">
+                    <h1>Zprávy</h1>
                 </div>
-            )}
 
-            <div className="card">
-                <h3>Aktivní chaty jízd</h3>
-
-                {chaty.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                        <p>📭 Zatím nemáte žádné aktivní chaty</p>
-                        <p>Chaty se vytvoří automaticky když se přidáte do jízdy nebo někdo rezervuje místo ve vaší jízdě.</p>
-                    </div>
-                ) : (
-                    <div className="chat-list">
-                        {chaty.map(chat => (
-                            <div
-                                key={chat.id}
-                                className="chat-item"
-                                style={{
-                                    border: '1px solid var(--card-border)',
-                                    borderRadius: '8px',
-                                    padding: '15px',
-                                    marginBottom: '15px',
-                                    cursor: 'pointer',
-                                    transition: 'background-color 0.2s',
-                                    backgroundColor: 'var(--card-bg)'
-                                }}
-                                onClick={() => openChat(chat.jizda_id)}
-                                onMouseOver={(e) => e.target.style.backgroundColor = 'var(--bg-secondary)'}
-                                onMouseOut={(e) => e.target.style.backgroundColor = 'var(--card-bg)'}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-color)' }}>
-                                            🚗 {chat.jizda?.odkud} → {chat.jizda?.kam}
-                                        </h4>
-                                        <p style={{ margin: '0 0 8px 0', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                            📅 {chat.jizda?.cas_odjezdu ? formatDate(chat.jizda.cas_odjezdu) : 'Datum neurčen'}
-                                        </p>
-                                        <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                                            👥 {chat.pocet_ucastniku || 0} účastníků
-                                        </p>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{
-                                            background: 'var(--btn-primary-bg)',
-                                            color: 'white',
-                                            padding: '4px 12px',
-                                            borderRadius: '15px',
-                                            fontSize: '12px'
-                                        }}>
-                                            💬 Otevřít chat
-                                        </span>
-                                        {chat.posledni_zprava_cas && (
-                                            <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                                Poslední: {formatDate(chat.posledni_zprava_cas)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                {error && (
+                    <div className="error-message">
+                        {error}
                     </div>
                 )}
 
-                <div style={{ marginTop: '20px', padding: '15px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-color)' }}>💡 Jak chat funguje:</h4>
-                    <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)' }}>
-                        <li>Chat se automaticky vytvoří pro každou jízdu s více účastníky</li>
-                        <li>Přístup mají řidič a všichni potvrzení pasažéři</li>
-                        <li>Použijte chat pro domluvu detailů jízdy, místa setkání apod.</li>
-                        <li>Chaty zůstávají aktivní i po ukončení jízdy pro případné dotazy</li>
-                    </ul>
+                {/* Vyhledávání uživatelů */}
+                <div className="search-section">
+                    <div className="search-box">
+                        <input
+                            type="text"
+                            placeholder="Vyhledat uživatele..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchLoading && <div className="search-spinner">⏳</div>}
+                    </div>
+
+                    {searchResults.length > 0 && (
+                        <div className="search-results">
+                            <h4>Najít uživatele:</h4>
+                            {searchResults.slice(0, 5).map(user => (
+                                <div
+                                    key={user.id}
+                                    className="search-result-item"
+                                    onClick={() => openChatWithUser(user)}
+                                >
+                                    <div className="user-avatar">
+                                        {user.fotka ? (
+                                            <img src={user.fotka} alt={user.jmeno} />
+                                        ) : (
+                                            <div className="avatar-placeholder">
+                                                {user.jmeno?.charAt(0)?.toUpperCase() || 'U'}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="user-info">
+                                        <span className="user-name">{user.jmeno}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Seznam existujících chatů */}
+                <div className="chat-list">
+                    <h3>Konverzace</h3>
+                    {chaty.length === 0 ? (
+                        <div className="no-chats">
+                            <p>📭 Zatím nemáte žádné konverzace</p>
+                            <p>Začněte psát někomu pomocí vyhledávání výše</p>
+                        </div>
+                    ) : (
+                        chaty.map(chat => {
+                            const otherUser = chat.ucastnici?.find(u => u.id !== user?.id);
+                            const lastMessage = chat.posledni_zprava;
+
+                            return (
+                                <div
+                                    key={chat.id}
+                                    className="chat-list-item"
+                                    onClick={() => openExistingChat(chat)}
+                                >
+                                    <div className="user-avatar">
+                                        {otherUser?.profil?.fotka ? (
+                                            <img src={otherUser.profil.fotka} alt={otherUser.profil.jmeno} />
+                                        ) : (
+                                            <div className="avatar-placeholder">
+                                                {otherUser?.profil?.jmeno?.charAt(0)?.toUpperCase() || 'U'}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="chat-info">
+                                        <div className="chat-top">
+                                            <span className="chat-name">
+                                                {otherUser?.profil?.jmeno || 'Neznámý uživatel'}
+                                            </span>
+                                            {lastMessage?.cas && (
+                                                <span className="chat-time">
+                                                    {formatLastMessageTime(lastMessage.cas)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {lastMessage && (
+                                            <div className="last-message">
+                                                {lastMessage.odesilatel_id === user?.id ? 'Vy: ' : ''}
+                                                {lastMessage.text.length > 50
+                                                    ? lastMessage.text.substring(0, 50) + '...'
+                                                    : lastMessage.text
+                                                }
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
-            {showChat && selectedJizdaId && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    zIndex: 1000,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    <div style={{
-                        backgroundColor: 'var(--card-bg)',
-                        borderRadius: '8px',
-                        width: '90%',
-                        maxWidth: '600px',
-                        height: '80%',
-                        position: 'relative'
-                    }}>
-                        <ChatComponent
-                            jizdaId={selectedJizdaId}
-                            onClose={closeChat}
-                        />
+            <div className="chat-main">
+                {!showChat ? (
+                    <div className="no-chat-selected">
+                        <div className="welcome-message">
+                            <h2>� Vítejte v chatích</h2>
+                            <p>Vyberte konverzaci ze seznamu vlevo nebo vyhledejte nového uživatele</p>
+                            <div className="chat-tips">
+                                <h4>💡 Tipy:</h4>
+                                <ul>
+                                    <li>Používejte vyhledávání pro nalezení nových lidí</li>
+                                    <li>Všechny vaše konverzace zůstávají uložené</li>
+                                    <li>Můžete psát i uživatelům, které jste potkali v jízdách</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    <div className="chat-container">
+                        {selectedChat && (
+                            <PersonalChat
+                                otherUserId={selectedChat.otherUserId}
+                                otherUserName={selectedChat.otherUserName}
+                                onClose={closeChat}
+                                isInline={true}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Mobilní overlay chat */}
+            {showChat && selectedChat && (
+                <div className="mobile-chat-overlay">
+                    <PersonalChat
+                        otherUserId={selectedChat.otherUserId}
+                        otherUserName={selectedChat.otherUserName}
+                        onClose={closeChat}
+                    />
                 </div>
             )}
         </div>

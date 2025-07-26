@@ -15,6 +15,7 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import MujProfil from './pages/MujProfil';
 import Nastaveni from './pages/Nastaveni';
 import Chat from './pages/Chat';
+import JizdaChat from './pages/JizdaChat';
 import VyhledatJizdu from './pages/VyhledatJizdu';
 import VyhledatUzivatele from './pages/VyhledatUzivatele';
 import ProfilUzivatele from './pages/ProfilUzivatele';
@@ -84,6 +85,11 @@ function App() {
                             <Route path="chat" element={
                                 <PrivateRoute>
                                     <Chat />
+                                </PrivateRoute>
+                            } />
+                            <Route path="jizda-chat" element={
+                                <PrivateRoute>
+                                    <JizdaChat />
                                 </PrivateRoute>
                             } />
                         </Route>
