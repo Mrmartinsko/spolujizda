@@ -8,6 +8,7 @@ import Register from './components/auth/Register';
 import HomePage from './pages/HomePage';
 import CreateRidePage from './pages/CreateRidePage';
 import MyRidesPage from './pages/MyRidesPage';
+import MyReservationsPage from './pages/MyReservationsPage';
 import CarManager from './components/cars/CarManager';
 import ReservationManager from './components/reservations/ReservationManager';
 import PrivateRoute from './components/auth/PrivateRoute';
@@ -37,6 +38,11 @@ function App() {
                             <Route path="moje-jizdy" element={
                                 <PrivateRoute>
                                     <MyRidesPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="moje-rezervace" element={
+                                <PrivateRoute>
+                                    <MyReservationsPage />
                                 </PrivateRoute>
                             } />
                             <Route path="auta" element={

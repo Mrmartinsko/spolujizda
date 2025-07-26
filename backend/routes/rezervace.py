@@ -74,7 +74,8 @@ def prijmout_rezervaci(rezervace_id):
         return jsonify({"error": "Rezervace již byla zpracována"}), 400
 
     try:
-        rezervace.status = "prijata"
+        # Použijeme metodu prijmout() z modelu, která přidá uživatele mezi pasažéry
+        rezervace.prijmout()
         db.session.commit()
 
         return jsonify(
@@ -102,7 +103,8 @@ def odmitnout_rezervaci(rezervace_id):
         return jsonify({"error": "Rezervace již byla zpracována"}), 400
 
     try:
-        rezervace.status = "odmitnuta"
+        # Použijeme metodu odmitnout() z modelu
+        rezervace.odmitnout()
         db.session.commit()
 
         return jsonify(
@@ -127,12 +129,11 @@ def zrusit_rezervaci(rezervace_id):
         return jsonify({"error": "Nemáte oprávnění zrušit tuto rezervaci"}), 403
 
     try:
-        rezervace.status = "zrusena"
+        # Použijeme metodu zrusit() z modelu, která odebere uživatele z pasažérů
+        rezervace.zrusit()
         db.session.commit()
 
-        return jsonify(
-            {"message": "Rezervace zrušena", "rezervace": rezervace.to_dict()}
-        )
+        return jsonify({"message": "Rezervace zrušena"})
 
     except Exception as e:
         db.session.rollback()
