@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './RideList.css';
 
 const RideList = ({ rides, onRideUpdate }) => {
     const { token, user } = useAuth();
+    const [showReservations, setShowReservations] = useState({});
+    const [rezervace, setRezervace] = useState({});
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString('cs-CZ');
@@ -31,6 +33,73 @@ const RideList = ({ rides, onRideUpdate }) => {
             }
         } catch (err) {
             alert(err.response?.data?.error || 'Chyba při rezervaci');
+        }
+    };
+
+    const fetchReservations = async (jizdaId) => {
+        try {
+            const response = await axios.get(`http://localhost:5000/api/rezervace/jizda/${jizdaId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setRezervace(prev => ({
+                ...prev,
+                [jizdaId]: response.data.rezervace
+            }));
+        } catch (err) {
+            console.error('Chyba při načítání rezervací:', err);
+            alert(err.response?.data?.error || 'Chyba při načítání rezervací');
+        }
+    };
+
+    const toggleReservations = async (jizdaId) => {
+        const isShowing = showReservations[jizdaId];
+
+        setShowReservations(prev => ({
+            ...prev,
+            [jizdaId]: !isShowing
+        }));
+
+        if (!isShowing && !rezervace[jizdaId]) {
+            await fetchReservations(jizdaId);
+        }
+    };
+
+    const handleReservationAction = async (rezervaceId, action, jizdaId) => {
+        try {
+            await axios.post(
+                `http://localhost:5000/api/rezervace/${rezervaceId}/${action}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            alert(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
+            // Refresh reservations
+            await fetchReservations(jizdaId);
+            if (onRideUpdate) {
+                onRideUpdate();
+            }
+        } catch (err) {
+            alert(err.response?.data?.error || `Chyba při ${action} rezervace`);
+        }
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'cekajici': return '#ffa500';
+            case 'prijata': return '#28a745';
+            case 'odmitnuta': return '#dc3545';
+            case 'zrusena': return '#6c757d';
+            default: return '#007bff';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'cekajici': return 'Čekající';
+            case 'prijata': return 'Přijatá';
+            case 'odmitnuta': return 'Odmítnutá';
+            case 'zrusena': return 'Zrušená';
+            default: return status;
         }
     };
 
@@ -104,14 +173,74 @@ const RideList = ({ rides, onRideUpdate }) => {
                         )}
 
                         {user && ride.ridic_id === user.id && (
-                            <button
-                                className="btn-delete"
-                                onClick={() => handleDeleteRide(ride.id)}
-                            >
-                                Zrušit jízdu
-                            </button>
+                            <>
+                                <button
+                                    className="btn-reservations"
+                                    onClick={() => toggleReservations(ride.id)}
+                                >
+                                    {showReservations[ride.id] ? 'Skrýt rezervace' : 'Zobrazit rezervace'}
+                                    {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
+                                </button>
+                                <button
+                                    className="btn-delete"
+                                    onClick={() => handleDeleteRide(ride.id)}
+                                >
+                                    Zrušit jízdu
+                                </button>
+                            </>
                         )}
                     </div>
+
+                    {/* Rezervace pro řidiče */}
+                    {user && ride.ridic_id === user.id && showReservations[ride.id] && (
+                        <div className="reservations-section">
+                            <h4>Rezervace na tuto jízdu:</h4>
+                            {rezervace[ride.id] && rezervace[ride.id].length > 0 ? (
+                                <div className="reservations-list">
+                                    {rezervace[ride.id].map(rezervace => (
+                                        <div key={rezervace.id} className="reservation-item">
+                                            <div className="reservation-info">
+                                                <div className="passenger-name">
+                                                    <strong>{rezervace.uzivatel?.jmeno || 'Neznámý uživatel'}</strong>
+                                                </div>
+                                                <div
+                                                    className="reservation-status"
+                                                    style={{ color: getStatusColor(rezervace.status) }}
+                                                >
+                                                    {getStatusText(rezervace.status)}
+                                                </div>
+                                                {rezervace.poznamka && (
+                                                    <div className="reservation-note">
+                                                        <em>"{rezervace.poznamka}"</em>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {rezervace.status === 'cekajici' && (
+                                                <div className="reservation-actions">
+                                                    <button
+                                                        className="btn-accept"
+                                                        onClick={() => handleReservationAction(rezervace.id, 'prijmout', ride.id)}
+                                                    >
+                                                        Přijmout
+                                                    </button>
+                                                    <button
+                                                        className="btn-reject"
+                                                        onClick={() => handleReservationAction(rezervace.id, 'odmitnout', ride.id)}
+                                                    >
+                                                        Odmítnout
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="no-reservations">
+                                    Žádné rezervace na tuto jízdu
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             ))}
         </div>
