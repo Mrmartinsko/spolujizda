@@ -130,7 +130,8 @@ def zrusit_rezervaci(rezervace_id):
 
     try:
         # Použijeme metodu zrusit() z modelu, která odebere uživatele z pasažérů
-        rezervace.zrusit()
+        #  rezervace.zrusit()
+        rezervace.status = "zrusena"  # Nastavíme status na zrušena
         db.session.commit()
 
         return jsonify({"message": "Rezervace zrušena"})
