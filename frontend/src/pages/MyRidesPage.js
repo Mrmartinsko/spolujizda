@@ -69,7 +69,7 @@ const MyRidesPage = () => {
     return (
         <div className="my-rides-page">
             <div className="page-header">
-                <h1>Moje jízdy</h1>
+                <h1>Moje jízdy -Řidič</h1>
                 <p>Přehled všech vašich nabídnutých jízd</p>
             </div>
 
@@ -111,7 +111,7 @@ const MyRidesPage = () => {
                             : `Žádné ${getStatusText(filter).toLowerCase()} jízdy.`
                         }
                     </p>
-                    <a href="/create-ride" className="create-ride-btn">
+                    <a href="/nabidnout-jizdu" className="create-ride-btn">
                         Nabídnout první jízdu
                     </a>
                 </div>
