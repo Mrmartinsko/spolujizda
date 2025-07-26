@@ -13,7 +13,7 @@ chat_bp = Blueprint("chat", __name__)
 @jwt_required()
 def get_jizda_chat(jizda_id):
     """Získání chatu jízdy"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     # Ověření existence jízdy
     jizda = Jizda.query.get_or_404(jizda_id)
@@ -54,7 +54,7 @@ def get_jizda_chat(jizda_id):
 @jwt_required()
 def get_osobni_chat(druhy_uzivatel_id):
     """Získání osobního chatu s jiným uživatelem"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     if uzivatel_id == druhy_uzivatel_id:
         return jsonify({"error": "Nemůžete chatovat sami se sebou"}), 400
@@ -95,7 +95,7 @@ def get_osobni_chat(druhy_uzivatel_id):
 @jwt_required()
 def odeslat_zpravu(chat_id):
     """Odeslání zprávy do chatu"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     data = request.get_json()
 
     if not data or not data.get("text"):
@@ -125,7 +125,7 @@ def odeslat_zpravu(chat_id):
 @jwt_required()
 def get_zpravy(chat_id):
     """Získání zpráv z chatu"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     # Parametry pro stránkování
     page = request.args.get("page", 1, type=int)
@@ -164,7 +164,7 @@ def get_zpravy(chat_id):
 @jwt_required()
 def get_moje_chaty():
     """Získání všech chatů aktuálního uživatele"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
 
     uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
     chaty = uzivatel.chaty
@@ -185,7 +185,7 @@ def get_moje_chaty():
 @jwt_required()
 def smazat_zpravu(zprava_id):
     """Smazání zprávy (pouze autorem)"""
-    uzivatel_id = get_jwt_identity()
+    uzivatel_id = int(get_jwt_identity())
     zprava = Zprava.query.get_or_404(zprava_id)
 
     # Pouze autor může smazat svou zprávu
