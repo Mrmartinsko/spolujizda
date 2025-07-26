@@ -172,6 +172,7 @@ const RideList = ({ rides, onRideUpdate }) => {
                             </button>
                         )}
 
+<<<<<<< HEAD
                         {user && ride.ridic_id === user.id && (
                             <>
                                 <button
@@ -188,6 +189,15 @@ const RideList = ({ rides, onRideUpdate }) => {
                                     Zrušit jízdu
                                 </button>
                             </>
+=======
+                        {user && ride.ridic_id === user.id && ride.status === 'aktivni' &&(
+                            <button
+                                className="btn-delete"
+                                onClick={() => handleDeleteRide(ride.id)}
+                            >
+                                Zrušit jízdu
+                            </button>
+>>>>>>> myRidesDriver
                         )}
                     </div>
 
