@@ -87,7 +87,7 @@ def get_uzivatel_profil(uzivatel_id):
 def hledat_uzivatele():
     """Vyhledávání uživatelů podle jména"""
     query = request.args.get("q", "")
-    print('cau')
+
     if len(query) < 2:
         return jsonify({"error": "Vyhledávací dotaz musí mít alespoň 2 znaky"}), 400
 
@@ -97,19 +97,22 @@ def hledat_uzivatele():
     uzivatele = (
         db.session.query(Uzivatel)
         .join(Profil)
-        .filter(Profil.jmeno.ilike(f"%{query}%"), Uzivatel.id != current_user_id)
+        .filter(Profil.jmeno.ilike(f"%{query}%"))
         .limit(20)
         .all()
     )
 
     # Vyfiltrování blokovaných uživatelů
-    blokace = (
+    blokovane_ids = (
         db.session.query(Blokace.blokovany_id)
         .filter_by(blokujici_id=current_user_id)
-        .subquery()
+        .all()
     )
 
-    uzivatele = [u for u in uzivatele if u.id not in [b.blokovany_id for b in blokace]]
+    # Extrahujeme ID z výsledků
+    blokovane_ids_list = [b.blokovany_id for b in blokovane_ids]
+
+    uzivatele = [u for u in uzivatele if u.id not in blokovane_ids_list]
 
     # Omezené informace pro vyhledávání
     vysledky = []
