@@ -216,8 +216,14 @@ def get_moje_jizdy():
     jizdy_pasazer = uzivatel.jizdy_pasazer if uzivatel else []
 
     # Kombinace obou seznamů
-    print(jizdy_ridic[0].to_dict())
+    if jizdy_ridic:
+        print(jizdy_ridic[0].to_dict())
+
     vsechny_jizdy = jizdy_ridic + list(jizdy_pasazer)
+    for jizda in vsechny_jizdy:
+        if jizda.status == 'aktivni' and jizda.cas_prijezdu < datetime.now():
+            jizda.status = 'dokoncena'
+            db.session.commit()
 
     return jsonify([jizda.to_dict() for jizda in vsechny_jizdy])
 

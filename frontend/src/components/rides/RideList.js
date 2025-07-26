@@ -103,7 +103,7 @@ const RideList = ({ rides, onRideUpdate }) => {
                             </button>
                         )}
 
-                        {user && ride.ridic_id === user.id && (
+                        {user && ride.ridic_id === user.id && ride.status === 'aktivni' &&(
                             <button
                                 className="btn-delete"
                                 onClick={() => handleDeleteRide(ride.id)}
