@@ -75,7 +75,7 @@ if ($LASTEXITCODE -eq 0) {
 # Vytvor databazi pokud neexistuje
 if (!(Test-Path "spolujizda.db")) {
     Write-Host "Vytvarim databazi..." -ForegroundColor Yellow
-    $dbOutput = python -c "from app import db; db.create_all()" 2>&1
+    $dbOutput = python -c "from app import app; app.app_context().push(); from models import db; db.create_all()" 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "OK Databaze vytvorena" -ForegroundColor Green
     } else {
@@ -152,7 +152,8 @@ Start-Sleep 3
 # Spust frontend v novem okne s logovanim
 Write-Host "Spoustim frontend server..." -ForegroundColor Yellow
 $frontendPath = (Get-Location).Path + "\frontend"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendPath'; Write-Host 'Frontend startuje...' -ForegroundColor Green; npm start"
+# Nastavit BROWSER=none zabranuje automatickemu otevreni prohlizece
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendPath'; `$env:BROWSER='none'; Write-Host 'Frontend startuje...' -ForegroundColor Green; npm start"
 
 Write-Host
 Write-Host "========================================" -ForegroundColor Cyan
@@ -172,7 +173,7 @@ Write-Host "   - Otevrete Developer Tools v prohlizeci (F12)" -ForegroundColor G
 Write-Host "   - Zkontrolujte Console a Network taby" -ForegroundColor Gray
 Write-Host
 
-# Cekej 10 sekund a otevri prohlizec
+# Cekej 10 sekund na start serveru...
 Write-Host "Cekam 10 sekund na start serveru..." -ForegroundColor Cyan
 for ($i = 10; $i -gt 0; $i--) {
     Write-Host "   $i..." -ForegroundColor Gray
