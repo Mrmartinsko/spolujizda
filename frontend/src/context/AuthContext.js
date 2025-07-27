@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+
     const register = async (userData) => {
         try {
             const response = await authService.register(userData);

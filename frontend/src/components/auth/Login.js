@@ -25,15 +25,18 @@ const Login = () => {
         setError('');
         setLoading(true);
 
-        try {
-            await login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password);
+
+        if (result.success) {
             navigate('/');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Chyba při přihlašování');
-        } finally {
-            setLoading(false);
+        } else {
+            setError(result.error);
         }
+
+        setLoading(false);
     };
+
+
 
     return (
         <div className="auth-container">
