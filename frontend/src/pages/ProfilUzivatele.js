@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import PersonalChat from '../components/chat/PersonalChat';
-import UserRatings from '../components/hodnoceni/UserRating';
-import AddRatingForm from '../components/hodnoceni/AddRatingForm';
 
 const ProfilUzivatele = () => {
     const { id } = useParams();
@@ -12,8 +10,6 @@ const ProfilUzivatele = () => {
     const [error, setError] = useState(null);
     const [blocking, setBlocking] = useState(false);
     const [showChat, setShowChat] = useState(false);
-    const [activeRole, setActiveRole] = useState('ridic'); 
-    const [reloadRatings, setReloadRatings] = useState(false); 
 
     useEffect(() => {
         const fetchUzivatel = async () => {
@@ -51,25 +47,40 @@ const ProfilUzivatele = () => {
         }
     };
 
-    const handleOpenChat = () => setShowChat(true);
-    const handleCloseChat = () => setShowChat(false);
+    const handleOpenChat = () => {
+        setShowChat(true);
+    };
 
-    const reload = () => setReloadRatings(prev => !prev); // ⬅️ přepínač pro načtení hodnocení znovu
+    const handleCloseChat = () => {
+        setShowChat(false);
+    };
 
     if (loading) {
-        return <div style={{ padding: '20px', textAlign: 'center' }}><p>Načítá se profil...</p></div>;
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <p>Načítá se profil...</p>
+            </div>
+        );
     }
 
     if (error) {
-        return <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}><p>{error}</p></div>;
+        return (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
+                <p>{error}</p>
+            </div>
+        );
     }
 
     if (!uzivatel || !uzivatel.profil) {
-        return <div style={{ padding: '20px', textAlign: 'center' }}><p>Profil nenalezen</p></div>;
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <p>Profil nenalezen</p>
+            </div>
+        );
     }
 
     return (
-        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
             <div style={{
                 backgroundColor: 'var(--card-bg)',
                 border: '1px solid var(--card-border)',
@@ -113,7 +124,10 @@ const ProfilUzivatele = () => {
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
                             }}
                         >
                             💬 Napsat zprávu
@@ -139,54 +153,48 @@ const ProfilUzivatele = () => {
                 {uzivatel.profil.bio && (
                     <div style={{ marginBottom: '20px' }}>
                         <h3 style={{ color: 'var(--text-color)', marginBottom: '10px' }}>O mně</h3>
-                        <p style={{ color: 'var(--text-color)', lineHeight: '1.6' }}>{uzivatel.profil.bio}</p>
+                        <p style={{ color: 'var(--text-color)', lineHeight: '1.6' }}>
+                            {uzivatel.profil.bio}
+                        </p>
                     </div>
                 )}
-            </div>
 
-            {/* Přepínání mezi rolemi */}
-            <div style={{ marginBottom: '20px' }}>
-                <button
-                    onClick={() => setActiveRole('ridic')}
-                    style={{
-                        marginRight: '10px',
-                        padding: '8px 16px',
-                        backgroundColor: activeRole === 'ridic' ? '#28a745' : '#e0e0e0',
-                        color: activeRole === 'ridic' ? 'white' : 'black',
-                        border: 'none',
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div style={{
+                        padding: '15px',
+                        backgroundColor: 'var(--bg-color)',
                         borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Hodnocení jako řidič
-                </button>
-                <button
-                    onClick={() => setActiveRole('pasazer')}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: activeRole === 'pasazer' ? '#28a745' : '#e0e0e0',
-                        color: activeRole === 'pasazer' ? 'white' : 'black',
-                        border: 'none',
+                        textAlign: 'center'
+                    }}>
+                        <h4 style={{ margin: '0 0 5px 0', color: 'var(--text-color)' }}>
+                            Hodnocení jako řidič
+                        </h4>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+                            {uzivatel.profil.get_prumerne_hodnoceni?.('ridic') ?
+                                `⭐ ${uzivatel.profil.get_prumerne_hodnoceni('ridic').toFixed(1)}` :
+                                'Bez hodnocení'
+                            }
+                        </div>
+                    </div>
+                    <div style={{
+                        padding: '15px',
+                        backgroundColor: 'var(--bg-color)',
                         borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Hodnocení jako pasažér
-                </button>
+                        textAlign: 'center'
+                    }}>
+                        <h4 style={{ margin: '0 0 5px 0', color: 'var(--text-color)' }}>
+                            Hodnocení jako pasažér
+                        </h4>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+                            {uzivatel.profil.get_prumerne_hodnoceni?.('pasazer') ?
+                                `⭐ ${uzivatel.profil.get_prumerne_hodnoceni('pasazer').toFixed(1)}` :
+                                'Bez hodnocení'
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Hodnocení a formulář */}
-            <div style={{ backgroundColor: 'var(--card-bg)', padding: '20px', borderRadius: '8px' }}>
-                <UserRatings uzivatelId={parseInt(id)} role={activeRole} key={reloadRatings + activeRole} />
-                <hr style={{ margin: '20px 0' }} />
-                <AddRatingForm
-                    cilovyUzivatelId={parseInt(id)}
-                    role={activeRole}
-                    onSuccess={reload}
-                />
-            </div>
-
-            {/* Chat */}
             {showChat && (
                 <PersonalChat
                     otherUserId={parseInt(id)}
