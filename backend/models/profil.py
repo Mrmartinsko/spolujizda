@@ -42,4 +42,4 @@ class Profil(db.Model):
         }
 
     def __repr__(self):
-        return f"<Profil {self.jmeno}>"
+        return f"<Profil {self}>".jmeno

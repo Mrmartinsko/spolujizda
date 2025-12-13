@@ -12,7 +12,7 @@ socketio = SocketIO(cors_allowed_origins="*")
 
 
 def init_app(app):
-    """Initialize all extensions with the Flask app"""
+    """Inicializuje všechna rozšíření pomocí flasku"""
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)

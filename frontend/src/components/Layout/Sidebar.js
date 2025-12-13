@@ -10,7 +10,8 @@ const Sidebar = () => {
         { path: '/vyhledat-jizdu', label: 'Vyhledat jízdu', icon: '🔍' },
         { path: '/moje-jizdy', label: 'Moje jízdy', icon: '📋' },
         { path: '/moje-rezervace', label: 'Moje rezervace', icon: '🎫' },
-        { path: '/chat', label: 'Chat', icon: '💬' }
+        { path: '/chat', label: 'Chat', icon: '💬' },
+        { path: '/moje-chaty', label: 'Osobní chaty', icon: '💌' }
     ];
 
     return (
