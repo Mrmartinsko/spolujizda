@@ -37,6 +37,7 @@ class Chat(db.Model):
 
     def muze_pristupovat(self, uzivatel_id):
         """Zkontroluje, zda může uživatel přistupovat k chatu"""
+        uzivatel_id = int(uzivatel_id)
         return any(u.id == uzivatel_id for u in self.ucastnici)
 
     def to_dict(self):

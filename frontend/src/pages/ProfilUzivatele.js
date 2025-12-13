@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import PersonalChat from '../components/chat/PersonalChat.js';
 
 const ProfilUzivatele = () => {
     const { id } = useParams();
@@ -8,6 +9,7 @@ const ProfilUzivatele = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [blocking, setBlocking] = useState(false);
+    const [showChat, setShowChat] = useState(false);
 
     useEffect(() => {
         const fetchUzivatel = async () => {
@@ -43,6 +45,14 @@ const ProfilUzivatele = () => {
         } finally {
             setBlocking(false);
         }
+    };
+
+    const handleOpenChat = () => {
+        setShowChat(true);
+    };
+
+    const handleCloseChat = () => {
+        setShowChat(false);
     };
 
     if (loading) {
@@ -105,7 +115,23 @@ const ProfilUzivatele = () => {
                             Člen od: {new Date(uzivatel.profil.datum_vytvoreni).toLocaleDateString('cs-CZ')}
                         </p>
                     </div>
-                    <div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                            onClick={handleOpenChat}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            💬 Napsat zprávu
+                        </button>
                         <button
                             onClick={handleBlock}
                             disabled={blocking}
@@ -168,6 +194,14 @@ const ProfilUzivatele = () => {
                     </div>
                 </div>
             </div>
+
+            {showChat && (
+                <PersonalChat
+                    otherUserId={parseInt(id)}
+                    otherUserName={uzivatel.profil.jmeno}
+                    onClose={handleCloseChat}
+                />
+            )}
         </div>
     );
 };

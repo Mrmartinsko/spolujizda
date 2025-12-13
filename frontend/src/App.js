@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout/Layout';
@@ -18,7 +18,14 @@ import Chat from './pages/Chat';
 import VyhledatJizdu from './pages/VyhledatJizdu';
 import ProfilUzivatele from './pages/ProfilUzivatele';
 import './styles/theme.css';
+import MojeOsobniChaty from './pages/MojeOsobniChaty';
+import PersonalChat from './components/chat/PersonalChat';
 
+// Wrapper pro PersonalChat, aby dostal id druhého uživatele z URL
+const PersonalChatWrapper = () => {
+    const { id } = useParams();
+    return <PersonalChat otherUserId={id} />;
+};
 
 function App() {
     return (
@@ -78,6 +85,16 @@ function App() {
                             <Route path="chat" element={
                                 <PrivateRoute>
                                     <Chat />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/moje-chaty" element={
+                                <PrivateRoute>
+                                    <MojeOsobniChaty />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/chat/:id" element={
+                                <PrivateRoute>
+                                    <PersonalChatWrapper />
                                 </PrivateRoute>
                             } />
                         </Route>

@@ -1,0 +1,296 @@
+/* --- Overlay a inline chat --- */
+.personal-chat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+}
+
+.personal-chat-inline {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+}
+
+/* --- Hlavní kontejner --- */
+.personal-chat-container {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    height: 80vh;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+.personal-chat-inline .personal-chat-container {
+    border-radius: 0;
+    height: 100%;
+    max-height: none;
+    box-shadow: none;
+    border: none;
+}
+
+/* --- Hlavička chatu --- */
+.chat-header {
+    background: #6c757d; /* tmavě šedá */
+    color: #180a0a;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 12px 12px 0 0;
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.1);
+}
+
+
+.chat-title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #007bff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* zvýraznění textu */
+}
+
+/* --- Zavírací tlačítko --- */
+.close-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #170606; 
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.1);
+}
+
+/* --- Zprávy --- */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #f4f6fa;
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* --- Jednotlivá zpráva --- */
+.message {
+    display: flex;
+    max-width: 70%;
+}
+
+.my-message {
+    align-self: flex-end;
+    justify-content: flex-end;
+}
+
+.other-message {
+    align-self: flex-start;
+    justify-content: flex-start;
+}
+
+.message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+}
+
+.my-message .message-content {
+    background: #007bff;
+    color: #fff;
+    border-bottom-right-radius: 6px;
+}
+
+.other-message .message-content {
+    background: #fff;
+    border-bottom-left-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.message-sender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #555;
+}
+
+.my-message .message-sender {
+    color: rgba(255,255,255,0.9);
+}
+
+.message-time {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.my-message .message-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.other-message .message-time {
+    color: #888;
+}
+
+/* --- Input na psaní zpráv --- */
+.chat-input {
+    display: flex;
+    padding: 1rem;
+    background: #fff;
+    border-top: 1px solid #e9ecef;
+    gap: 0.75rem;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    outline: none;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.chat-input input:focus {
+    border-color: #007bff;
+}
+
+.chat-input input:disabled {
+    background: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.send-button {
+    background: #007bff;
+    border: none;
+    color: #fff;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) {
+    background: #0056b3;
+    transform: scale(1.05);
+}
+
+.send-button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* --- No messages --- */
+.no-messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    text-align: center;
+    font-style: italic;
+}
+
+/* --- Mobile responsiveness --- */
+@media (max-width: 768px) {
+    .personal-chat-overlay {
+        padding: 0.5rem;
+    }
+
+    .personal-chat-container {
+        height: 90vh;
+        max-height: none;
+    }
+
+    .chat-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .chat-title h3 {
+        font-size: 1.1rem;
+    }
+
+    .chat-messages {
+        padding: 0.75rem;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .message-content {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .chat-input {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .chat-input input {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.95rem;
+    }
+
+    .send-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+}
