@@ -1,6 +1,5 @@
 from models import db
 
-
 class Auto(db.Model):
     __tablename__ = "auto"
 
@@ -12,9 +11,10 @@ class Auto(db.Model):
     spz = db.Column(db.String(20))
     primarni = db.Column(db.Boolean, default=False)
     docasne = db.Column(db.Boolean, default=False)
+    smazane = db.Column(db.Boolean, default=False)
 
     # Vztahy
-    jizdy = db.relationship("Jizda", backref="auto")
+    jizdy = db.relationship("Jizda", backref=db.backref("auto", passive_deletes=True))
 
     def __init__(
         self,
@@ -25,6 +25,7 @@ class Auto(db.Model):
         spz=None,
         primarni=False,
         docasne=False,
+        smazane=False
     ):
         self.profil_id = profil_id
         self.znacka = znacka
@@ -33,6 +34,7 @@ class Auto(db.Model):
         self.spz = spz
         self.primarni = primarni
         self.docasne = docasne
+        self.smazane = smazane
 
     def to_dict(self):
         return {
@@ -44,7 +46,17 @@ class Auto(db.Model):
             "spz": self.spz,
             "primarni": self.primarni,
             "docasne": self.docasne,
+            "smazane": self.smazane
         }
 
     def __repr__(self):
         return f"<Auto {self.znacka} {self.model}>"
+
+    def ma_aktivni_jizdy(self):
+        """Vrátí True, pokud má auto nějaké aktivní jízdy"""
+        from models.jizda import Jizda
+        return Jizda.query.filter(
+            Jizda.auto_id == self.id,
+            Jizda.status == "aktivni"
+        ).count() > 0
+

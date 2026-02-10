@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './RideList.css';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const RideList = ({ rides, onRideUpdate }) => {
     const { token, user } = useAuth();
     const [showReservations, setShowReservations] = useState({});
     const [rezervace, setRezervace] = useState({});
+    const navigate = useNavigate();
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString('cs-CZ');
@@ -149,11 +153,27 @@ const RideList = ({ rides, onRideUpdate }) => {
                             <strong>Volná místa:</strong> {ride.volna_mista || (ride.pocet_mist - (ride.pasazeri ? ride.pasazeri.length : 0))} / {ride.pocet_mist}
                         </div>
                         <div className="ride-info">
-                            <strong>Řidič:</strong> {ride.ridic?.jmeno || 'Neznámý'}
+                            <strong>Řidič:</strong> 
+                            <span 
+                                onClick={() => navigate(`/profil/${ride.ridic.id}`)}
+                                style={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+                            >
+                                {ride.ridic?.jmeno || 'Neznámý'}
+                            </span>
                         </div>
                         {ride.auto && (
                             <div className="ride-info">
-                                <strong>Auto:</strong> {ride.auto.znacka} {ride.auto.model} ({ride.auto.spz})
+                                <strong>Auto:</strong>{" "}
+                                {ride.auto.smazane
+                                    ? "Smazané auto"
+                                    : (
+                                        <>
+                                            {ride.auto.znacka}
+                                            {ride.auto.model && ` ${ride.auto.model}`}
+                                            {ride.auto.spz && ` (${ride.auto.spz})`}
+                                        </>
+                                    )
+                                }
                             </div>
                         )}
                         <div className="ride-status">

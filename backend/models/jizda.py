@@ -8,7 +8,7 @@ class Jizda(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     ridic_id = db.Column(db.Integer, db.ForeignKey("uzivatel.id"), nullable=False)
-    auto_id = db.Column(db.Integer, db.ForeignKey("auto.id"), nullable=False)
+    auto_id = db.Column(db.Integer, db.ForeignKey("auto.id", ondelete="SET NULL"), nullable=True)
     odkud = db.Column(db.String(255), nullable=False)
     kam = db.Column(db.String(255), nullable=False)
     cas_odjezdu = db.Column(db.DateTime, nullable=False)
@@ -16,6 +16,7 @@ class Jizda(db.Model):
     cena = db.Column(db.Float, nullable=False)
     pocet_mist = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="aktivni")
+   
 
     # Vztahy
     rezervace = db.relationship(
@@ -41,7 +42,7 @@ class Jizda(db.Model):
         self.cas_prijezdu = cas_prijezdu
         self.cena = cena
         self.pocet_mist = pocet_mist
-
+        
     def get_volna_mista(self):
         """Vrátí počet volných míst"""
         obsazena_mista = len(self.pasazeri)
@@ -67,7 +68,16 @@ class Jizda(db.Model):
             "id": self.id,
             "ridic_id": self.ridic_id,
             "ridic": self.ridic.profil.to_dict() if self.ridic.profil else None,
-            "auto": self.auto.to_dict() if self.auto else None,
+            "auto":(
+                    self.auto.to_dict()
+                    if self.auto is not None and self.auto.smazane is False
+                    else {
+                        "smazane": True,
+                        "znacka": "Smazané auto",
+                        "model": None,
+                        "spz": None
+                    }
+            ),
             "odkud": self.odkud,
             "kam": self.kam,
             "cas_odjezdu": self.cas_odjezdu.isoformat() if self.cas_odjezdu else None,

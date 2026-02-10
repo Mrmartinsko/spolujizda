@@ -19,6 +19,7 @@ from models.profil import Profil  # noqa
 from models.rezervace import Rezervace  # noqa
 from models.ucastnici_chatu import ucastnici_chatu  # noqa
 
+
 # Import všech modelů pro Migrate (potřebné pro správné fungování DB)
 from models.uzivatel import Uzivatel  # noqa
 from models.zprava import Zprava  # noqa
@@ -33,6 +34,7 @@ try:
     from routes.jizdy import jizdy_bp
     from routes.rezervace import rezervace_bp
     from routes.uzivatele import uzivatele_bp
+    from routes.oznameni import oznameni_bp
 except ImportError as e:
     print(f"Chyba při importu routes: {e}")
     print("Spouštím aplikaci bez některých routes...")
@@ -58,6 +60,8 @@ def create_app(config_name="development"):
         app.register_blueprint(chat_bp, url_prefix="/api/chat")
         app.register_blueprint(auta_bp, url_prefix="/api/auta")
         app.register_blueprint(blokace_bp, url_prefix="/api/blokace")
+        app.register_blueprint(oznameni_bp, url_prefix="/api/oznameni")
+        
     except NameError as e:
         print(f"Některé blueprinty nejsou dostupné: {e}")
 
