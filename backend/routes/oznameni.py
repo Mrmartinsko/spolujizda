@@ -11,15 +11,14 @@ oznameni_bp = Blueprint("oznameni", __name__)
 def ziskat_oznameni():
     uzivatel_id = get_jwt_identity()
     oznameni = Oznameni.query.filter_by(prijemce_id=uzivatel_id).order_by(Oznameni.datum.desc()).all()
-    print('oznamuji', oznameni)
-    print(uzivatel_id)
     return jsonify([
         {
             "id": o.id,
             "zprava": o.zprava,
             "datum": o.datum.isoformat(),
             "precteno": o.precteno,
-            "typ": o.typ
+            "typ": o.typ,
+            "odesilatel_id": o.odesilatel_id
         } for o in oznameni
     ])
 
@@ -28,13 +27,6 @@ def ziskat_oznameni():
 def oznacit_prectene(oznameni_id):
     oznameni = Oznameni.query.get_or_404(oznameni_id)
     current_user_id = get_jwt_identity()
-
-    print(f'Debug info:')
-    print(f'  - Oznámení ID: {oznameni_id}')
-    print(f'  - Příjemce ID v DB: {oznameni.prijemce_id} (typ: {type(oznameni.prijemce_id)})')
-    print(f'  - Aktuální uživatel ID: {current_user_id} (typ: {type(current_user_id)})')
-    print(f'  - Jsou stejní? {oznameni.prijemce_id == current_user_id}')
-    print(f'  - Jsou stejní po konverzi? {oznameni.prijemce_id == int(current_user_id)}')
 
     if oznameni.prijemce_id != int(current_user_id):
         return jsonify({"msg": "Přístup odepřen"}), 403
@@ -48,6 +40,7 @@ def oznacit_prectene(oznameni_id):
 def poslat_oznameni():
     """Endpoint pro poslání oznámení uživateli"""
     data = request.get_json()
+    current_user_id = get_jwt_identity()
 
     if not data.get('prijemce_id') or not data.get('zprava'):
         return jsonify({"msg": "Chybí povinné údaje"}), 400
@@ -55,7 +48,9 @@ def poslat_oznameni():
     try:
         nove_oznameni = Oznameni(
             prijemce_id=data['prijemce_id'],
+            odesilatel_id=current_user_id,
             zprava=data['zprava'],
+            typ=data.get('typ'),
             datum=datetime.utcnow(),
             precteno=False
         )
@@ -70,13 +65,25 @@ def poslat_oznameni():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"msg": "Chyba při odesílání oznámení"}), 500
+        return jsonify({"msg": f"Chyba při odesílání oznámení: {e}"}), 500
 
-def vytvorit_oznameni(prijemce_id, zprava, typ=None):
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+
+def vytvorit_oznameni(prijemce_id, zprava, typ=None, odesilatel_id=None):
     """Pomocná funkce pro vytvoření oznámení z jiných částí aplikace"""
     try:
+        # Pokud odesilatel_id nebylo předáno, zkus získat z aktuálního JWT
+        if odesilatel_id is None:
+            try:
+                verify_jwt_in_request()  # ověří, jestli je JWT dostupné
+                odesilatel_id = get_jwt_identity()
+            except:
+                print("Chybí odesilatel_id a nelze získat z JWT")
+                return None
+
         nove_oznameni = Oznameni(
             prijemce_id=prijemce_id,
+            odesilatel_id=odesilatel_id,
             zprava=zprava,
             typ=typ,
             datum=datetime.utcnow(),
@@ -92,3 +99,19 @@ def vytvorit_oznameni(prijemce_id, zprava, typ=None):
         db.session.rollback()
         print(f"Chyba při vytváření oznámení: {e}")
         return None
+
+
+@oznameni_bp.route("/neprectena", methods=["GET"])
+@jwt_required()
+def ziskat_neprectena():
+    uzivatel_id = get_jwt_identity()
+    oznameni = Oznameni.query.filter_by(prijemce_id=uzivatel_id, precteno=False).order_by(Oznameni.datum.desc()).all()
+    return jsonify([
+        {
+            "id": o.id,
+            "zprava": o.zprava,
+            "datum": o.datum.isoformat(),
+            "typ": o.typ,
+            "odesilatel_id": o.odesilatel_id
+        } for o in oznameni
+    ])

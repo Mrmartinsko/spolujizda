@@ -38,7 +38,7 @@ class Profil(db.Model):
             "fotka": self.fotka,
             "hodnoceni_ridic": self.get_prumerne_hodnoceni("ridic"),
             "hodnoceni_pasazer": self.get_prumerne_hodnoceni("pasazer"),
-            "pocet_aut": len(self.auta),
+            "pocet_aut": len([a for a in self.auta if not a.smazane]),
         }
 
     def __repr__(self):

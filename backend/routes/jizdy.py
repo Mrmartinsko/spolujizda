@@ -83,7 +83,7 @@ def create_jizda():
             return jsonify({"error": f"Pole {field} je povinné"}), 400
 
     # Ověření, že auto patří uživateli
-    auto = Auto.query.filter_by(id=data["auto_id"], profil_id=uzivatel_id).first()
+    auto = Auto.query.filter_by(id=data["auto_id"], profil_id=uzivatel_id, smazane=False).first()
     if not auto:
         return jsonify({"error": "Auto nenalezeno nebo nepatří uživateli"}), 404
 
@@ -234,18 +234,8 @@ def vyhledat_jizdy():
     odkud = request.args.get("odkud", "").strip()
     kam = request.args.get("kam", "").strip()
     datum = request.args.get("datum", "").strip()
-    print(f"DEBUG: Parsed - odkud: '{odkud}', kam: '{kam}', datum: '{datum}'")
 
-    # Základní query - pouze aktivní jízdy
     query = Jizda.query.filter_by(status="aktivni")
-
-    # Filtrování podle místa odjezdu
-    if odkud:
-        query = query.filter(Jizda.odkud.ilike(f"%{odkud}%"))
-
-    # Filtrování podle cíle
-    if kam:
-        query = query.filter(Jizda.kam.ilike(f"%{kam}%"))
 
     # Filtrování podle data
     if datum:
@@ -255,10 +245,37 @@ def vyhledat_jizdy():
         except ValueError:
             return jsonify({"error": "Neplatný formát data (YYYY-MM-DD)"}), 400
 
-    # Seřazení podle času odjezdu
-    jizdy = query.order_by(Jizda.cas_odjezdu).all()
+    # Všechny aktivní jízdy
+    all_rides = query.all()
+
+    # Rozdělení na plnou a částečnou shodu
+    full_match = []
+    partial_match = []
+
+    for ride in all_rides:
+        matches_odkud = odkud.lower() in ride.odkud.lower() if odkud else True
+        matches_kam = kam.lower() in ride.kam.lower() if kam else True
+
+        if matches_odkud and matches_kam:
+            full_match.append(ride)
+        elif matches_odkud or matches_kam:
+            partial_match.append(ride)
+
+    # Sloučíme, plná shoda nahoře
+    result_rides = full_match + partial_match
 
     # Filtrování pouze jízd s volnými místy
-    jizdy_s_misty = [j for j in jizdy if j.get_volna_mista() > 0]
+    result_rides = [r for r in result_rides if r.get_volna_mista() > 0]
 
-    return jsonify([jizda.to_dict() for jizda in jizdy_s_misty])
+    return jsonify([r.to_dict() for r in result_rides])
+
+@jizdy_bp.route("/nejnovejsi", methods=["GET"])
+def nejnovejsi_jizdy():
+    """Vrátí 10 nejnovějších jízd, bez ohledu na místo"""
+    jizdy = Jizda.query.filter_by(status="aktivni") \
+                       .order_by(Jizda.id.desc()) \
+                       .limit(10) \
+                       .all()
+    return jsonify([jizda.to_dict() for jizda in jizdy])
+
+

@@ -22,7 +22,6 @@ const RideSearch = ({ onSearchResults }) => {
         });
     };
 
-
     const handleRideUpdate = () => {
         setSearchResults([]); // volitelné, můžeš upravit podle potřeby
     };
@@ -34,6 +33,7 @@ const RideSearch = ({ onSearchResults }) => {
             setError('Vyplňte prosím všechna pole: odkud, kam a datum.');
             return;
         }
+
         setLoading(true);
         setHasSearched(true);
         setError('');
@@ -44,18 +44,32 @@ const RideSearch = ({ onSearchResults }) => {
             if (searchData.kam) params.append('kam', searchData.kam);
             if (searchData.datum) params.append('datum', searchData.datum);
 
-            console.log(params.toString());
-
             const response = await axios.get(`http://localhost:5000/api/jizdy/vyhledat?${params}`);
+            const fetchedRides = response.data;
 
-            console.log(response.data);
+            // 1. jen aktuální jízdy
+            const now = new Date();
+            const aktualniJizdy = fetchedRides.filter(ride => new Date(ride.cas_odjezdu) > now);
 
-            // Uložíme výsledky do lokálního state
-            setSearchResults(response.data);
+            // 2. rozdělíme na full match a partial match
+            const fullMatch = [];
+            const partialMatch = [];
 
-            if (onSearchResults) {
-                onSearchResults(response.data);
-            }
+            aktualniJizdy.forEach(ride => {
+                const odkudMatch = ride.odkud.toLowerCase() === searchData.odkud.toLowerCase();
+                const kamMatch = ride.kam.toLowerCase() === searchData.kam.toLowerCase();
+
+                if (odkudMatch && kamMatch) fullMatch.push(ride);
+                else partialMatch.push(ride);
+            });
+
+            // 3. spojíme full match a partial match
+            const sortedRides = [...fullMatch, ...partialMatch];
+
+            // 4. uložíme do state
+            setSearchResults(sortedRides);
+            if (onSearchResults) onSearchResults(sortedRides);
+
         } catch (err) {
             setError(err.response?.data?.error || 'Chyba při vyhledávání jízd');
         } finally {
@@ -128,3 +142,4 @@ const RideSearch = ({ onSearchResults }) => {
 };
 
 export default RideSearch;
+

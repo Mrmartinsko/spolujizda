@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './CarManager.css';
+import ReplaceCar from '../cars/ReplaceCar'; // modal pro nahrazení auta
 
 const CarManager = () => {
     const { token } = useAuth();
@@ -16,6 +17,7 @@ const CarManager = () => {
     const [editing, setEditing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null });
 
     useEffect(() => {
         fetchAuta();
@@ -91,7 +93,15 @@ const CarManager = () => {
                 });
                 fetchAuta();
             } catch (err) {
-                setError(err.response?.data?.error || 'Chyba při mazání auta');
+                const errorCode = err.response?.status;
+                const errorData = err.response?.data;
+
+                if (errorCode === 409 && errorData?.error === "AUTO_MA_AKTIVNI_JIZDY") {
+                    // Otevřít modal ReplaceCar
+                    setShowReplaceCar({ active: true, autoId });
+                } else {
+                    setError(errorData?.error || 'Chyba při mazání auta');
+                }
             }
         }
     };
@@ -108,8 +118,6 @@ const CarManager = () => {
     };
 
     return (
-
-
         <div className="car-manager">
             <h1>Moje auta</h1>
             <div className="car-list">
@@ -136,6 +144,7 @@ const CarManager = () => {
                     </div>
                 )}
             </div>
+
             <h2>Správa aut</h2>
 
             {error && <div className="error-message">{error}</div>}
@@ -214,6 +223,17 @@ const CarManager = () => {
                 </form>
             </div>
 
+            {/* ReplaceCar modal */}
+            {showReplaceCar.active && (
+                <ReplaceCar
+                    autoId={showReplaceCar.autoId}
+                    onClose={() => setShowReplaceCar({ active: false, autoId: null })}
+                    onCarReplaced={() => {
+                        setShowReplaceCar({ active: false, autoId: null });
+                        fetchAuta();
+                    }}
+                />
+            )}
         </div>
     );
 };

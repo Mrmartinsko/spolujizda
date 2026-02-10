@@ -74,11 +74,10 @@ def serialize_ucastnici(chat):
 
 def get_posledni_zprava(chat):
     """Vrátí poslední zprávu s odesílatelem"""
-    zpravy = Zprava.query.filter_by(chat_id=chat.id).order_by(Zprava.cas.desc()).all()
-    if not zpravy:
+    posledni = Zprava.query.filter_by(chat_id=chat.id).order_by(Zprava.cas.desc()).first()
+    if not posledni:
         return None
 
-    posledni = zpravy[-1]  # nejnovější
     odesilatel = Uzivatel.query.get(posledni.odesilatel_id)
     return {
         "id": posledni.id,
