@@ -16,7 +16,6 @@ class Jizda(db.Model):
     cena = db.Column(db.Float, nullable=False)
     pocet_mist = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="aktivni")
-   
 
     # Vztahy
     rezervace = db.relationship(
@@ -31,6 +30,15 @@ class Jizda(db.Model):
         "Uzivatel", secondary="pasazeri", back_populates="jizdy_pasazer"
     )
 
+    # 1:N mezistanice
+    mezistanice = db.relationship(
+        "Mezistanice",
+        back_populates="jizda",
+        cascade="all, delete-orphan",
+        order_by="Mezistanice.poradi",
+        passive_deletes=True,
+    )
+
     def __init__(
         self, ridic_id, auto_id, odkud, kam, cas_odjezdu, cas_prijezdu, cena, pocet_mist
     ):
@@ -42,7 +50,7 @@ class Jizda(db.Model):
         self.cas_prijezdu = cas_prijezdu
         self.cena = cena
         self.pocet_mist = pocet_mist
-        
+
     def get_volna_mista(self):
         """Vrátí počet volných míst"""
         obsazena_mista = len(self.pasazeri)
@@ -68,27 +76,31 @@ class Jizda(db.Model):
             "id": self.id,
             "ridic_id": self.ridic_id,
             "ridic": self.ridic.profil.to_dict() if self.ridic.profil else None,
-            "auto":(
-                    self.auto.to_dict()
-                    if self.auto is not None and self.auto.smazane is False
-                    else {
-                        "smazane": True,
-                        "znacka": "Smazané auto",
-                        "model": None,
-                        "spz": None
-                    }
+            "auto": (
+                self.auto.to_dict()
+                if self.auto is not None and self.auto.smazane is False
+                else {
+                    "smazane": True,
+                    "znacka": "Smazané auto",
+                    "model": None,
+                    "spz": None
+                }
             ),
             "odkud": self.odkud,
             "kam": self.kam,
             "cas_odjezdu": self.cas_odjezdu.isoformat() if self.cas_odjezdu else None,
-            "cas_prijezdu": self.cas_prijezdu.isoformat()
-            if self.cas_prijezdu
-            else None,
+            "cas_prijezdu": self.cas_prijezdu.isoformat() if self.cas_prijezdu else None,
             "cena": self.cena,
             "pocet_mist": self.pocet_mist,
             "volna_mista": self.get_volna_mista(),
             "status": self.status,
             "pasazeri": [p.profil.to_dict() for p in self.pasazeri if p.profil],
+
+            # mezistanice (vždy pole, i když prázdné)
+            "mezistanice": [
+                {"id": m.id, "misto": m.misto, "poradi": m.poradi}
+                for m in self.mezistanice
+            ],
         }
 
     def __repr__(self):

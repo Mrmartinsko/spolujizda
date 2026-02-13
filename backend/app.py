@@ -18,6 +18,8 @@ from models.pasazeri import pasazeri  # noqa
 from models.profil import Profil  # noqa
 from models.rezervace import Rezervace  # noqa
 from models.ucastnici_chatu import ucastnici_chatu  # noqa
+from models.mezistanice import Mezistanice  # noqa
+
 
 
 # Import všech modelů pro Migrate (potřebné pro správné fungování DB)

@@ -29,7 +29,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
                 carData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            onCarCreated(response.data.auto); // předáme nové auto zpět do RideForm
+            onCarCreated(response.data.auto);
         } catch (err) {
             setError(err.response?.data?.error || 'Chyba při vytváření auta');
         } finally {
@@ -65,7 +65,6 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
     );
 };
 
-
 const RideForm = ({ onRideCreated }) => {
     const { token } = useAuth();
     const [formData, setFormData] = useState({
@@ -84,8 +83,13 @@ const RideForm = ({ onRideCreated }) => {
     const [creatingCar, setCreatingCar] = useState(false);
     const [noCars, setNoCars] = useState(false);
 
+    // mezistanice
+    const [mezistanice, setMezistanice] = useState([]);
+    const [novaMezistanice, setNovaMezistanice] = useState("");
+
     useEffect(() => {
         fetchUserCars();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchUserCars = async () => {
@@ -114,6 +118,42 @@ const RideForm = ({ onRideCreated }) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const pridatMezistanici = () => {
+        const value = novaMezistanice.trim();
+        if (!value) return;
+
+        // zákaz duplicit (můžeš smazat, pokud nechceš)
+        if (mezistanice.some(m => m.toLowerCase() === value.toLowerCase())) {
+            setNovaMezistanice("");
+            return;
+        }
+
+        setMezistanice(prev => [...prev, value]);
+        setNovaMezistanice("");
+    };
+
+    const smazatMezistanici = (index) => {
+        setMezistanice(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const posunNahoru = (index) => {
+        if (index === 0) return;
+        setMezistanice(prev => {
+            const copy = [...prev];
+            [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+            return copy;
+        });
+    };
+
+    const posunDolu = (index) => {
+        setMezistanice(prev => {
+            if (index >= prev.length - 1) return prev;
+            const copy = [...prev];
+            [copy[index], copy[index + 1]] = [copy[index + 1], copy[index]];
+            return copy;
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -123,11 +163,17 @@ const RideForm = ({ onRideCreated }) => {
             auto_id: formData.auto_id,
             odkud: formData.odkud,
             kam: formData.kam,
+            mezistanice: mezistanice, // <-- tady
             cas_odjezdu: formData.casOdjezdu,
             cas_prijezdu: formData.casPrijezdu,
             cena: formData.cena,
             pocet_mist: formData.pocetMist
         };
+
+        // volitelné: neposílat prázdné pole
+        if (!payload.mezistanice || payload.mezistanice.length === 0) {
+            delete payload.mezistanice;
+        }
 
         try {
             const response = await axios.post('http://localhost:5000/api/jizdy/', payload, {
@@ -145,6 +191,9 @@ const RideForm = ({ onRideCreated }) => {
                 pocetMist: 1,
                 auto_id: ''
             });
+
+            setMezistanice([]);
+            setNovaMezistanice("");
 
             alert('Jízda byla úspěšně nabídnuta!');
         } catch (err) {
@@ -183,7 +232,6 @@ const RideForm = ({ onRideCreated }) => {
 
             {!creatingCar && (
                 <form onSubmit={handleSubmit}>
-                    {/* Všechny ostatní inputy z původního formuláře */}
                     <div className="form-group">
                         <label>Odkud:</label>
                         <input
@@ -206,6 +254,65 @@ const RideForm = ({ onRideCreated }) => {
                             required
                             placeholder="Cílové místo"
                         />
+                    </div>
+
+                    {/* Mezistanice */}
+                    <div className="form-group">
+                        <label>Mezistanice (nepovinné):</label>
+
+                        <div className="mezistanice-row">
+                            <input
+                                type="text"
+                                value={novaMezistanice}
+                                onChange={(e) => setNovaMezistanice(e.target.value)}
+                                placeholder="Např. Jihlava"
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        pridatMezistanici();
+                                    }
+                                }}
+                            />
+                            <button type="button" className="mezistanice-add" onClick={pridatMezistanici}>
+                                Přidat
+                            </button>
+                        </div>
+
+                        {mezistanice.length > 0 && (
+                            <ul className="mezistanice-list">
+                                {mezistanice.map((m, i) => (
+                                    <li key={`${m}-${i}`} className="mezistanice-item">
+                                        <span className="mezistanice-index">{i + 1}.</span>
+                                        <span className="mezistanice-text">{m}</span>
+                                        <div className="mezistanice-actions">
+                                            <button
+                                                type="button"
+                                                onClick={() => posunNahoru(i)}
+                                                disabled={i === 0}
+                                                title="Posunout nahoru"
+                                            >
+                                                ↑
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => posunDolu(i)}
+                                                disabled={i === mezistanice.length - 1}
+                                                title="Posunout dolů"
+                                            >
+                                                ↓
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => smazatMezistanici(i)}
+                                                title="Smazat"
+                                            >
+                                                Smazat
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
 
                     <div className="form-group">
