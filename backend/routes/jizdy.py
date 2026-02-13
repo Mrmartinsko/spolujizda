@@ -173,33 +173,76 @@ def create_jizda():
 @jizdy_bp.route("/<int:jizda_id>", methods=["PUT"])
 @jwt_required()
 def update_jizda(jizda_id):
-    """Aktualizace jízdy (mezistanice: když pošleš -> přepíše se celý seznam)"""
+    """Aktualizace jízdy:
+    - povoleno jen pro aktivní jízdu, která ještě neodjela
+    - auto_id lze změnit (jen na nesmazané auto uživatele)
+    - mezistanice: když pošleš -> přepíše se celý seznam
+    - pocet_mist nesmí být < počet přijatých pasažérů
+    """
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.ridic_id != uzivatel_id:
         return jsonify({"error": "Nemáte oprávnění upravovat tuto jízdu"}), 403
 
+    # ✅ editace jen pro aktivní jízdy
+    if jizda.status != "aktivni":
+        return jsonify({"error": "Lze upravovat pouze aktivní jízdy"}), 400
+
+    # ✅ editace jen dokud jízda ještě neodjela
+    if jizda.cas_odjezdu and jizda.cas_odjezdu <= datetime.now():
+        return jsonify({"error": "Jízdu už nelze upravit, protože už odjela"}), 400
+
     data = request.get_json() or {}
 
     try:
+        # --- AUTO (volitelné) ---
+        if "auto_id" in data:
+            auto = Auto.query.filter_by(
+                id=data["auto_id"],
+                profil_id=uzivatel_id,
+                smazane=False
+            ).first()
+            if not auto:
+                return jsonify({"error": "Auto nenalezeno nebo nepatří uživateli"}), 404
+            jizda.auto_id = auto.id
+
+        # --- BASIC FIELDS ---
         if "odkud" in data:
             jizda.odkud = data["odkud"]
         if "kam" in data:
             jizda.kam = data["kam"]
-        if "cas_odjezdu" in data:
-            jizda.cas_odjezdu = datetime.fromisoformat(data["cas_odjezdu"].replace("Z", "+00:00"))
-        if "cas_prijezdu" in data:
-            jizda.cas_prijezdu = datetime.fromisoformat(data["cas_prijezdu"].replace("Z", "+00:00"))
         if "cena" in data:
             jizda.cena = float(data["cena"])
+
+        # --- POCET MIST ---
         if "pocet_mist" in data:
             new_pocet_mist = int(data["pocet_mist"])
             if new_pocet_mist < len(jizda.pasazeri):
                 return jsonify({"error": "Počet míst nemůže být menší než počet již přijatých pasažérů"}), 400
             jizda.pocet_mist = new_pocet_mist
 
-        # mezistanice: když přijde v payloadu, celé přepíšeme
+        # --- TIMES ---
+        # vezmeme současné a případně přepíšeme těmi z payloadu
+        new_cas_odjezdu = jizda.cas_odjezdu
+        new_cas_prijezdu = jizda.cas_prijezdu
+
+        if "cas_odjezdu" in data:
+            new_cas_odjezdu = datetime.fromisoformat(data["cas_odjezdu"].replace("Z", "+00:00"))
+        if "cas_prijezdu" in data:
+            new_cas_prijezdu = datetime.fromisoformat(data["cas_prijezdu"].replace("Z", "+00:00"))
+
+        # validace času (když existují)
+        if new_cas_odjezdu and new_cas_prijezdu:
+            if new_cas_odjezdu >= new_cas_prijezdu:
+                return jsonify({"error": "Čas odjezdu musí být před časem příjezdu"}), 400
+            if new_cas_odjezdu <= datetime.now():
+                return jsonify({"error": "Čas odjezdu musí být v budoucnosti"}), 400
+
+        jizda.cas_odjezdu = new_cas_odjezdu
+        jizda.cas_prijezdu = new_cas_prijezdu
+
+        # --- MEZISTANICE (přepíše celý seznam) ---
         if "mezistanice" in data:
             ok, mezistanice = _validate_mezistanice_list(data)
             if not ok:
@@ -222,7 +265,6 @@ def update_jizda(jizda_id):
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Chyba při aktualizaci jízdy"}), 500
-
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["DELETE"])
 @jwt_required()
