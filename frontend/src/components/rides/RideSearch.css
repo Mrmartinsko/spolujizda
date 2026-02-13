@@ -1,63 +1,77 @@
+/* Celá stránka vyhledávání */
 .ride-search {
-    max-width: 800px;
+    max-width: 900px;
     margin: 20px auto;
-    padding: 20px;
+}
+
+/* Horní karta s filtrem */
+.ride-search > h2 {
+    margin-bottom: 15px;
+    text-align: left;
+    font-size: 22px;
+    color: #222;
+}
+
+/* Form karta */
+.ride-search form {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.ride-search h2 {
-    color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
-    text-align: center;
 }
 
+/* Grid polí */
 .search-fields {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
     gap: 15px;
     align-items: end;
 }
 
+/* Form group */
 .form-group {
     display: flex;
     flex-direction: column;
 }
 
 .form-group label {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     color: #555;
     font-weight: 500;
+    font-size: 14px;
 }
 
 .form-group input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
     font-size: 14px;
+    transition: border 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus {
     outline: none;
     border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
 
+/* Tlačítko */
 button[type="submit"] {
     padding: 10px 20px;
     background: #28a745;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
+    transition: all 0.2s;
     height: fit-content;
-    transition: background-color 0.3s;
 }
 
 button[type="submit"]:hover {
     background: #218838;
+    transform: translateY(-1px);
 }
 
 button[type="submit"]:disabled {
@@ -65,18 +79,46 @@ button[type="submit"]:disabled {
     cursor: not-allowed;
 }
 
+/* Error */
 .error-message {
-    background: #ffe6e6;
+    background: #fff3f3;
     color: #d63031;
     padding: 10px;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-bottom: 15px;
     border: 1px solid #fab1a0;
 }
 
+/* ===== Výsledky ===== */
+
+.results-section {
+    margin-top: 10px;
+}
+
+.results-section h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Když nejsou výsledky */
+.no-results {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .search-fields {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 12px;
+    }
+
+    button[type="submit"] {
+        width: 100%;
     }
 }

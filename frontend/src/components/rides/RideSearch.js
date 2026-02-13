@@ -10,27 +10,28 @@ const RideSearch = ({ onSearchResults }) => {
     const [searchData, setSearchData] = useState({
         odkud: '',
         kam: '',
-        datum: ''
+        datum: '',
+        pocet_pasazeru: 1,
     });
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
-        setSearchData({
-            ...searchData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        setSearchData(prev => ({
+            ...prev,
+            [name]: name === 'pocet_pasazeru' ? Number(value) : value
+        }));
     };
 
-    const handleRideUpdate = () => {
-        setSearchResults([]); // volitelné, můžeš upravit podle potřeby
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
+    const runSearch = async () => {
+        // Validace – nechávám jako u tebe (všechna povinná),
+        // když chceš volnější vyhledávání, stačí tohle povolit.
         if (!searchData.odkud || !searchData.kam || !searchData.datum) {
             setError('Vyplňte prosím všechna pole: odkud, kam a datum.');
+            setHasSearched(true);
+            setSearchResults([]);
             return;
         }
 
@@ -39,42 +40,66 @@ const RideSearch = ({ onSearchResults }) => {
         setError('');
 
         try {
-            const params = new URLSearchParams();
-            if (searchData.odkud) params.append('odkud', searchData.odkud);
-            if (searchData.kam) params.append('kam', searchData.kam);
-            if (searchData.datum) params.append('datum', searchData.datum);
+            // ✅ Použijeme /api/jizdy/ protože už umí filtry + mezistanice
+            const response = await axios.get('http://localhost:5000/api/jizdy/', {
+                params: {
+                    odkud: searchData.odkud,
+                    kam: searchData.kam,
+                    datum: searchData.datum,
+                    pocet_pasazeru: searchData.pocet_pasazeru,
+                }
+            });
 
-            const response = await axios.get(`http://localhost:5000/api/jizdy/vyhledat?${params}`);
-            const fetchedRides = response.data;
+            const fetchedRides = response.data?.jizdy || [];
 
-            // 1. jen aktuální jízdy
+            // jen aktuální jízdy (odjezd v budoucnosti)
             const now = new Date();
             const aktualniJizdy = fetchedRides.filter(ride => new Date(ride.cas_odjezdu) > now);
 
-            // 2. rozdělíme na full match a partial match
+            // Full match vs partial match (bereme i mezistanice)
             const fullMatch = [];
             const partialMatch = [];
 
+            const qOdkud = searchData.odkud.toLowerCase();
+            const qKam = searchData.kam.toLowerCase();
+
             aktualniJizdy.forEach(ride => {
-                const odkudMatch = ride.odkud.toLowerCase() === searchData.odkud.toLowerCase();
-                const kamMatch = ride.kam.toLowerCase() === searchData.kam.toLowerCase();
+                const routeStops = [
+                    ride.odkud,
+                    ...(ride.mezistanice || []).map(m => m.misto),
+                    ride.kam
+                ]
+                    .filter(Boolean)
+                    .map(x => x.toLowerCase());
+
+                const odkudMatch = routeStops.includes(qOdkud);
+                const kamMatch = routeStops.includes(qKam);
 
                 if (odkudMatch && kamMatch) fullMatch.push(ride);
                 else partialMatch.push(ride);
             });
 
-            // 3. spojíme full match a partial match
             const sortedRides = [...fullMatch, ...partialMatch];
 
-            // 4. uložíme do state
             setSearchResults(sortedRides);
             if (onSearchResults) onSearchResults(sortedRides);
 
         } catch (err) {
             setError(err.response?.data?.error || 'Chyba při vyhledávání jízd');
+            setSearchResults([]);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        await runSearch();
+    };
+
+    // ✅ Když někdo udělá rezervaci / zruší jízdu, refreshni výsledky stejným hledáním
+    const handleRideUpdate = async () => {
+        await runSearch();
     };
 
     return (
@@ -116,30 +141,47 @@ const RideSearch = ({ onSearchResults }) => {
                         />
                     </div>
 
-                    {searchResults.length > 0 && (
-                        <div className="results-section">
-                            <h2>Výsledky vyhledávání ({searchResults.length})</h2>
-                            <RideList
-                                rides={searchResults}
-                                onRideUpdate={handleRideUpdate}
-                            />
-                        </div>
-                    )}
-
-                    {hasSearched && searchResults.length === 0 && (
-                        <div className="no-results">
-                            <p>Žádné jízdy nebyly nalezeny. Zkuste změnit parametry vyhledávání.</p>
-                        </div>
-                    )}
+                    <div className="form-group">
+                        <label>Počet míst:</label>
+                        <input
+                            type="number"
+                            name="pocet_pasazeru"
+                            value={searchData.pocet_pasazeru}
+                            onChange={handleChange}
+                            min="1"
+                            max="8"
+                        />
+                    </div>
 
                     <button type="submit" disabled={loading}>
                         {loading ? 'Hledám...' : 'Vyhledat'}
                     </button>
                 </div>
             </form>
+
+            {/* ✅ Výsledky jsou POD formem */}
+            {hasSearched && (
+                <div className="results-section">
+                    <h2>Výsledky vyhledávání ({searchResults.length})</h2>
+
+                    {loading ? (
+                        <div className="no-results">
+                            <p>Načítám…</p>
+                        </div>
+                    ) : searchResults.length > 0 ? (
+                        <RideList
+                            rides={searchResults}
+                            onRideUpdate={handleRideUpdate}
+                        />
+                    ) : (
+                        <div className="no-results">
+                            <p>Žádné jízdy nebyly nalezeny. Zkuste změnit parametry vyhledávání.</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
 
 export default RideSearch;
-
