@@ -292,6 +292,61 @@
     border: 1px solid #dee2e6;
     border-radius: 6px;
 }
+.btn-edit {
+    background-color: #007bff; /* modrá */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-edit:hover {
+    background-color: #0056b3;
+}
+
+.btn-edit:active {
+    transform: scale(0.97);
+}
+
+.btn-edit:disabled {
+    background-color: #b0c4de;
+    cursor: not-allowed;
+}
+.status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+/* Aktivní */
+.status.aktivni {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Zrušená */
+.status.zrusena {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Dokončená */
+.status.dokoncena {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Fallback */
+.status {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
 
 /* Responsive */
 @media (max-width: 768px) {
