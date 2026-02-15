@@ -29,14 +29,22 @@ const RideList = ({ rides, onRideUpdate }) => {
     const stops = (ride.mezistanice || [])
       .slice()
       .sort((a, b) => (a.poradi ?? 0) - (b.poradi ?? 0))
-      .map(s => s.misto)
+      .map((s) => s.misto)
       .filter(Boolean);
 
     return [ride.odkud, ...stops, ride.kam].filter(Boolean).join(' → ');
   };
 
   const toggleExpanded = (rideId) => {
-    setExpanded(prev => ({ ...prev, [rideId]: !prev[rideId] }));
+    setExpanded((prev) => ({ ...prev, [rideId]: !prev[rideId] }));
+  };
+
+  const getPassengerId = (p) => p?.uzivatel_id ?? p?.id ?? null;
+
+  const getPassengerDisplayName = (p) => {
+    if (!p) return 'Neznámý uživatel';
+    const fullName = [p.jmeno, p.prijmeni].filter(Boolean).join(' ').trim();
+    return fullName || p.prezdivka || p.username || 'Neznámý uživatel';
   };
 
   const handleReservation = async (jizdaId) => {
@@ -62,9 +70,9 @@ const RideList = ({ rides, onRideUpdate }) => {
         `http://localhost:5000/api/rezervace/jizda/${jizdaId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setRezervace(prev => ({
+      setRezervace((prev) => ({
         ...prev,
-        [jizdaId]: response.data.rezervace
+        [jizdaId]: response.data.rezervace,
       }));
     } catch (err) {
       console.error('Chyba při načítání rezervací:', err);
@@ -73,21 +81,20 @@ const RideList = ({ rides, onRideUpdate }) => {
   };
 
   const toggleReservations = async (ride) => {
-    // ✅ ochrana: rezervace dovolíme jen pro aktivní jízdy (a klidně i před odjezdem)
+    // ✅ rezervace řeší jen řidič, jen aktivní, jen před odjezdem
     const isActive = ride.status === 'aktivni';
     const notDeparted = hasNotDepartedYet(ride);
     const isDriver = user && ride.ridic_id === user.id;
 
     const canManageReservations = isDriver && isActive && notDeparted;
-
     if (!canManageReservations) return;
 
     const jizdaId = ride.id;
     const isShowing = showReservations[jizdaId];
 
-    setShowReservations(prev => ({
+    setShowReservations((prev) => ({
       ...prev,
-      [jizdaId]: !isShowing
+      [jizdaId]: !isShowing,
     }));
 
     if (!isShowing && !rezervace[jizdaId]) {
@@ -114,10 +121,9 @@ const RideList = ({ rides, onRideUpdate }) => {
   const handleDeleteRide = async (jizdaId) => {
     if (window.confirm('Opravdu chcete zrušit tuto jízdu?')) {
       try {
-        await axios.delete(
-          `http://localhost:5000/api/jizdy/${jizdaId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.delete(`http://localhost:5000/api/jizdy/${jizdaId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         alert('Jízda byla zrušena');
         if (onRideUpdate) onRideUpdate();
@@ -125,6 +131,14 @@ const RideList = ({ rides, onRideUpdate }) => {
         alert(err.response?.data?.error || 'Chyba při rušení jízdy');
       }
     }
+  };
+
+  // TODO (později): vyhození pasažéra z jízdy — zatím jen placeholder
+  const handleKickPassenger = async (rideId, passengerId) => {
+    // až budeš mít endpoint, typicky:
+    // await axios.delete(`http://localhost:5000/api/jizdy/${rideId}/pasazeri/${passengerId}`, { headers: { Authorization: `Bearer ${token}` }});
+    // if (onRideUpdate) onRideUpdate();
+    alert(`TODO: vyhodit uživatele ${passengerId} z jízdy ${rideId}`);
   };
 
   if (!rides || rides.length === 0) {
@@ -137,12 +151,19 @@ const RideList = ({ rides, onRideUpdate }) => {
 
   return (
     <div className="ride-list">
-      {rides.map(ride => {
+      {rides.map((ride) => {
         const isExpanded = !!expanded[ride.id];
 
         const isActive = ride.status === 'aktivni';
         const notDeparted = hasNotDepartedYet(ride);
         const isDriver = user && ride.ridic_id === user.id;
+
+        const isPassenger =
+          user &&
+          Array.isArray(ride.pasazeri) &&
+          ride.pasazeri.some((p) => getPassengerId(p) === user.id);
+
+        const canSeePassengers = isDriver || isPassenger;
 
         const canReserve =
           user &&
@@ -151,20 +172,12 @@ const RideList = ({ rides, onRideUpdate }) => {
           notDeparted &&
           ride.volna_mista > 0;
 
-        const canEdit =
-          isDriver &&
-          isActive &&
-          notDeparted;
+        const canEdit = isDriver && isActive && notDeparted;
 
-        const canCancel =
-          isDriver &&
-          isActive;
+        const canCancel = isDriver && isActive;
 
-        // ✅ rezervace vidí/řeší jen řidič, jen aktivní, jen před odjezdem
-        const canManageReservations =
-          isDriver &&
-          isActive &&
-          notDeparted;
+        // rezervace vidí/řeší jen řidič, jen aktivní, jen před odjezdem
+        const canManageReservations = isDriver && isActive && notDeparted;
 
         return (
           <div key={ride.id} className={`ride-card ${isExpanded ? 'expanded' : ''}`}>
@@ -196,30 +209,31 @@ const RideList = ({ rides, onRideUpdate }) => {
 
                   <div className="ride-info">
                     <strong>Řidič:</strong>{' '}
-                    <span
+                    <button
+                      type="button"
+                      className="driver-link"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/profil/${ride.ridic_id}`);
                       }}
-                      style={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+                      title="Otevřít profil řidiče"
                     >
                       {ride.ridic?.jmeno || 'Neznámý'}
-                    </span>
+                    </button>
                   </div>
 
                   {ride.auto && (
                     <div className="ride-info">
                       <strong>Auto:</strong>{' '}
-                      {ride.auto.smazane
-                        ? 'Smazané auto'
-                        : (
-                          <>
-                            {ride.auto.znacka}
-                            {ride.auto.model && ` ${ride.auto.model}`}
-                            {ride.auto.spz && ` (${ride.auto.spz})`}
-                          </>
-                        )
-                      }
+                      {ride.auto.smazane ? (
+                        'Smazané auto'
+                      ) : (
+                        <>
+                          {ride.auto.znacka}
+                          {ride.auto.model && ` ${ride.auto.model}`}
+                          {ride.auto.spz && ` (${ride.auto.spz})`}
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -229,9 +243,58 @@ const RideList = ({ rides, onRideUpdate }) => {
                       {ride.mezistanice
                         .slice()
                         .sort((a, b) => a.poradi - b.poradi)
-                        .map(m => m.misto)
-                        .join(' → ')
-                      }
+                        .map((m) => m.misto)
+                        .join(' → ')}
+                    </div>
+                  )}
+
+                  {/* ✅ Pasažéři viditelní jen řidiči nebo pasažérovi */}
+                  {canSeePassengers && (
+                    <div className="ride-info">
+                      <strong>Pasažéři:</strong>{' '}
+                      {Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0 ? (
+                        <div className="passengers-list" onClick={(e) => e.stopPropagation()}>
+                          {ride.pasazeri.map((p, idx) => {
+                            const passengerId = getPassengerId(p);
+                            const key = passengerId ?? `${ride.id}-${idx}`;
+                            const name = getPassengerDisplayName(p);
+                            const isMe = user && passengerId === user.id;
+
+                            return (
+                              <div key={key} className="passenger-item">
+                                <button
+                                  type="button"
+                                  className={`passenger-pill ${isMe ? 'me' : ''}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (passengerId) navigate(`/profil/${passengerId}`);
+                                  }}
+                                  title="Otevřít profil"
+                                >
+                                  {name}
+                                  {isMe ? ' (ty)' : ''}
+                                </button>
+
+                                {isDriver && passengerId && user && passengerId !== user.id && (
+                                  <button
+                                    type="button"
+                                    className="btn-kick"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleKickPassenger(ride.id, passengerId);
+                                    }}
+                                    title="Vyhodit z jízdy"
+                                  >
+                                    Vyhodit
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="muted">Žádní</span>
+                      )}
                     </div>
                   )}
 
@@ -251,20 +314,14 @@ const RideList = ({ rides, onRideUpdate }) => {
                   {isDriver && (
                     <>
                       {canManageReservations && (
-                        <button
-                          className="btn-reservations"
-                          onClick={() => toggleReservations(ride)}
-                        >
+                        <button className="btn-reservations" onClick={() => toggleReservations(ride)}>
                           {showReservations[ride.id] ? 'Skrýt rezervace' : 'Zobrazit rezervace'}
                           {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
                         </button>
                       )}
 
                       {canEdit && (
-                        <button
-                          className="btn-edit"
-                          onClick={() => navigate(`/jizdy/${ride.id}/upravit`)}
-                        >
+                        <button className="btn-edit" onClick={() => navigate(`/jizdy/${ride.id}/upravit`)}>
                           Upravit
                         </button>
                       )}
@@ -284,15 +341,13 @@ const RideList = ({ rides, onRideUpdate }) => {
 
                     {rezervace[ride.id] && rezervace[ride.id].length > 0 ? (
                       <div className="reservations-list">
-                        {rezervace[ride.id].map(r => (
+                        {rezervace[ride.id].map((r) => (
                           <div key={r.id} className="reservation-item">
                             <div className="reservation-info">
                               <div className="passenger-name">
                                 <strong>{r.uzivatel?.jmeno || 'Neznámý uživatel'}</strong>
                               </div>
-                              <div className="reservation-status">
-                                {r.status}
-                              </div>
+                              <div className="reservation-status">{r.status}</div>
                               {r.poznamka && (
                                 <div className="reservation-note">
                                   <em>"{r.poznamka}"</em>

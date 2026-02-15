@@ -94,8 +94,13 @@ class Jizda(db.Model):
             "pocet_mist": self.pocet_mist,
             "volna_mista": self.get_volna_mista(),
             "status": self.status,
-            "pasazeri": [p.profil.to_dict() for p in self.pasazeri if p.profil],
-
+            "pasazeri": [
+                {
+                    "uzivatel_id": p.id,
+                    **(p.profil.to_dict() if p.profil else {})
+                }
+                for p in self.pasazeri
+            ],
             # mezistanice (vždy pole, i když prázdné)
             "mezistanice": [
                 {"id": m.id, "misto": m.misto, "poradi": m.poradi}

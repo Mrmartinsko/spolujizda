@@ -1,0 +1,313 @@
+/* ===== HEADER LAYOUT ===== */
+
+.header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+  padding: 12px 20px;
+  color: var(--text-color);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* ===== ICON BUTTONS ===== */
+
+.iconBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-color);
+  transition: background 0.15s ease;
+}
+
+.iconBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ===== NOTIFICATION DOT ===== */
+
+.notifDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53935;
+}
+
+/* ===== DROPDOWN COMMON ===== */
+
+.dropdownCard {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1200;
+}
+
+/* ===== NOTIFICATIONS ===== */
+
+.notifWrap {
+  position: relative;
+}
+
+.notifCard {
+  max-height: 420px;
+  overflow-y: auto;
+  min-width: 280px;
+}
+
+.notifItem {
+  padding: 10px 14px;
+  border-top: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.notifItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.notifUnread {
+  background: rgba(0, 123, 255, 0.08);
+}
+
+.notifTime {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.dropdownEmpty {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ===== PROFILE DROPDOWN ===== */
+
+.profileWrap {
+  position: relative;
+}
+
+.profileBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: var(--text-color);
+  transition: background 0.15s ease;
+}
+
+.profileBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.profileAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1976d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+.profileName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profileCaret {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ===== PROFILE DROPDOWN LINKS ===== */
+
+.profileCard {
+  min-width: 190px;
+}
+
+.dropdownLink {
+  display: block;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--text-color);
+  border-top: 1px solid var(--card-border);
+  transition: background 0.15s ease;
+}
+
+.dropdownLink:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dropdownDanger {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-top: 1px solid var(--card-border);
+  color: #dc3545;
+  transition: background 0.15s ease;
+}
+
+.dropdownDanger:hover {
+  background: rgba(220, 53, 69, 0.08);
+}
+.notifCount {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e53935;
+  color: white;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.notifMarkBtn {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.notifMarkBtn:hover {
+  text-decoration: underline;
+}
+/* ===== NOTIFICATIONS (badge s číslem) ===== */
+
+.notifWrap {
+  position: relative;
+}
+
+.notifCount {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+
+  border-radius: 999px;
+  background: #e53935;
+  color: #fff;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+/* dropdown už máš přes .dropdownCard + .notifCard */
+/* jen doladíme položky */
+
+.notifCard {
+  max-height: 420px;
+  overflow-y: auto;
+  min-width: 320px;
+}
+
+/* jednotlivá notifikace */
+.notifItem {
+  padding: 10px 14px;
+  border-top: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.notifItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* zvýraznění nepřečtené */
+.notifUnread {
+  background: rgba(25, 118, 210, 0.08);
+}
+
+.notifUnread:hover {
+  background: rgba(25, 118, 210, 0.12);
+}
+
+.notifTime {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* tlačítko "Označit jako přečtené" */
+.notifMarkBtn {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+
+  color: #1976d2;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.notifMarkBtn:hover {
+  text-decoration: underline;
+}
+
+/* prázdný stav */
+.dropdownEmpty {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+

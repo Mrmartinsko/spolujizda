@@ -1,0 +1,120 @@
+.rate-page {
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 0 16px;
+}
+
+.rate-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.rate-muted {
+  color: #666;
+  margin-top: 6px;
+}
+
+.rate-ride {
+  margin: 14px 0 10px;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.rate-ride-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.rate-ride-meta {
+  font-size: 14px;
+  color: #666;
+}
+
+.rate-form {
+  margin-top: 12px;
+}
+
+.rate-stars {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.star {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  color: #bbb;
+}
+
+.star.on {
+  color: #f5b301;
+}
+
+.rate-value {
+  margin-left: 8px;
+  color: #444;
+  font-weight: 600;
+}
+
+.rate-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.rate-textarea {
+  resize: vertical;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.rate-error {
+  margin-top: 10px;
+  padding: 10px;
+  background: #ffe7e7;
+  border: 1px solid #ffb3b3;
+  border-radius: 10px;
+  color: #8a0000;
+}
+
+.rate-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-secondary {
+  background: #f1f1f1;
+  color: #333;
+}
+
+.btn-primary:disabled, .btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

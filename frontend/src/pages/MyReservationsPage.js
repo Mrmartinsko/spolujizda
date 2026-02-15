@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './MyReservationsPage.css';
+import { useNavigate } from 'react-router-dom';
+
 
 const MyReservationsPage = () => {
   const { token } = useAuth();
@@ -9,6 +11,8 @@ const MyReservationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all'); // all, cekajici, prijata, odmitnuta, zrusena
+  const navigate = useNavigate();
+
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
@@ -191,7 +195,19 @@ const MyReservationsPage = () => {
                 </div>
 
                 <div className="driver-info">
-                  <strong>Řidič:</strong> {r.jizda?.ridic?.jmeno || 'Neznámý'}
+                  <strong>Řidič:</strong>{' '}
+                  {r.jizda?.ridic?.id ? (
+                    <button
+                      type="button"
+                      className="driver-link"
+                      onClick={() => navigate(`/profil/${r.jizda.ridic.id}`)}
+                      title="Otevřít profil řidiče"
+                    >
+                      {r.jizda.ridic.jmeno || 'Řidič'}
+                    </button>
+                  ) : (
+                    <span>Neznámý</span>
+                  )}
                 </div>
 
                 <div className="ride-status-info">

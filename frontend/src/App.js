@@ -22,8 +22,9 @@ import ProfilUzivatele from './pages/ProfilUzivatele';
 import './styles/theme.css';
 import MojeOsobniChaty from './pages/MojeOsobniChaty';
 import PersonalChat from './components/chat/PersonalChat';
-
 import EditRide from './components/rides/EditRide';
+import OhodnotitPage from './pages/OhodnotitPage';
+
 
 // Wrapper pro PersonalChat, aby dostal id druhého uživatele z URL
 const PersonalChatWrapper = () => {
@@ -89,7 +90,7 @@ function App() {
                   }
                 />
 
-                {/* ✅ EDITACE JÍZDY */}
+                {/*  EDITACE JÍZDY */}
                 <Route
                   path="jizdy/:id/upravit"
                   element={
@@ -116,7 +117,14 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-
+                <Route
+                  path="ohodnotit/:jizdaId/:cilovyId"
+                  element={
+                    <PrivateRoute>
+                      <OhodnotitPage />
+                    </PrivateRoute>
+                  }
+                />
                 <Route
                   path="nastaveni"
                   element={
