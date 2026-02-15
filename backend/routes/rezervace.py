@@ -4,6 +4,9 @@ from models import db
 from models.jizda import Jizda
 from models.rezervace import Rezervace
 from models.uzivatel import Uzivatel
+from datetime import datetime
+from models.hodnoceni import Hodnoceni
+
 
 rezervace_bp = Blueprint("rezervace", __name__)
 
@@ -20,6 +23,56 @@ def create_rezervace():
 
     jizda_id = data["jizda_id"]
     poznamka = data.get("poznamka", "")
+
+     # měkká povinnost: před novou rezervací musí pasažér ohodnotit řidiče z dokončených jízd 
+    now = datetime.now()
+
+    # jízdy, kde je uživatel pasažér
+    jizdy_pasazer = (
+        Jizda.query
+        .join(Jizda.pasazeri)
+        .filter(Uzivatel.id == uzivatel_id)
+        .all()
+    )
+
+    pending = []
+    changed = False
+
+    for j in jizdy_pasazer:
+        # líně označ dokončení podle času (aby to fungovalo "hned po dojetí")
+        if j.status == "aktivni" and j.cas_prijezdu and j.cas_prijezdu <= now:
+            j.status = "dokoncena"
+            changed = True
+
+        if j.status != "dokoncena":
+            continue
+
+        exist = Hodnoceni.query.filter_by(
+            autor_id=uzivatel_id,
+            cilovy_uzivatel_id=j.ridic_id,
+            jizda_id=j.id,
+            role="ridic"
+        ).first()
+
+        if not exist:
+            pending.append({
+                "jizda_id": j.id,   
+                "jizda": j.to_dict(),
+                "cilovy_uzivatel_id": j.ridic_id,
+                "role": "ridic",
+            })
+
+    if changed:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    if pending:
+        return jsonify({
+            "error": "Nejdřív ohodnoť řidiče z předchozí jízdy.",
+            "pending": pending
+        }), 403
 
     # Ověření existence jízdy
     jizda = Jizda.query.get(jizda_id)

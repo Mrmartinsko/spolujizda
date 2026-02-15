@@ -4,11 +4,15 @@ import axios from 'axios';
 import RideList from '../components/rides/RideList';
 import './MyRidesPage.css';
 
+
+
 const MyRidesPage = () => {
   const { token, user } = useAuth();
   const [mojeJizdy, setMojeJizdy] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+
 
   // ✅ default: active (ať hned vidíš aktuální jízdy)
   const [filter, setFilter] = useState('active'); // all, active, completed, cancelled
@@ -127,7 +131,7 @@ const MyRidesPage = () => {
             }
           </p>
           <a href="/nabidnout-jizdu" className="create-ride-btn">
-            Nabídnout první jízdu
+            Nabídnout jízdu
           </a>
         </div>
       ) : (

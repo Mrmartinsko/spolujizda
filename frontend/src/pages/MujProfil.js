@@ -7,38 +7,52 @@ const MujProfil = () => {
     const { user, setUser } = useAuth();
     const [editMode, setEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [auta, setAuta] = useState([]);
-    const [showAuta, setShowAuta] = useState(false);
+
+    // hodnocení ze serveru
+    const [hodRidic, setHodRidic] = useState({ statistiky: { celkem: 0, prumer: 0 } });
+    const [hodPasazer, setHodPasazer] = useState({ statistiky: { celkem: 0, prumer: 0 } });
+
     const [formData, setFormData] = useState({
         jmeno: user?.profil?.jmeno || '',
         bio: user?.profil?.bio || ''
     });
 
     useEffect(() => {
-        if (showAuta) {
-            fetchAuta();
-        }
-    }, []);
+        setFormData({
+            jmeno: user?.profil?.jmeno || '',
+            bio: user?.profil?.bio || ''
+        });
+    }, [user]);
 
-    const fetchAuta = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/api/auta/moje', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setAuta(response.data);
-        } catch (err) {
-            console.error('Chyba při načítání aut:', err);
-            setAuta([]);
-        }
-    };
+    // načti hodnocení po načtení profilu
+    useEffect(() => {
+        const fetchRatings = async () => {
+            try {
+                if (!user?.id) return;
+                const token = localStorage.getItem('token');
+
+                const [rRidic, rPasazer] = await Promise.all([
+                    axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=ridic`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=pasazer`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                ]);
+
+                setHodRidic(rRidic.data);
+                setHodPasazer(rPasazer.data);
+            } catch (e) {
+                console.error("Chyba při načítání hodnocení:", e);
+            }
+        };
+
+        fetchRatings();
+    }, [user?.id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleEditClick = () => {
@@ -85,7 +99,10 @@ const MujProfil = () => {
         }
     };
 
-
+    const prumerRidic = hodRidic?.statistiky?.prumer || 0;
+    const prumerPasazer = hodPasazer?.statistiky?.prumer || 0;
+    const celkemRidic = hodRidic?.statistiky?.celkem || 0;
+    const celkemPasazer = hodPasazer?.statistiky?.celkem || 0;
 
     return (
         <div>
@@ -96,7 +113,7 @@ const MujProfil = () => {
                     <div>
                         {editMode ? (
                             <div>
-                                <div style={{marginBottom: '15px'}}>
+                                <div style={{ marginBottom: '15px' }}>
                                     <label><strong>Jméno:</strong></label>
                                     <input
                                         type="text"
@@ -104,21 +121,23 @@ const MujProfil = () => {
                                         value={formData.jmeno}
                                         onChange={handleInputChange}
                                         className="form-control"
-                                        style={{marginTop: '5px'}}
+                                        style={{ marginTop: '5px' }}
                                     />
                                 </div>
-                                <div style={{marginBottom: '15px'}}>
+
+                                <div style={{ marginBottom: '15px' }}>
                                     <label><strong>Email:</strong></label>
                                     <input
                                         type="email"
                                         value={user.email}
                                         disabled
                                         className="form-control"
-                                        style={{marginTop: '5px', backgroundColor: '#f5f5f5'}}
+                                        style={{ marginTop: '5px', backgroundColor: '#f5f5f5' }}
                                     />
-                                    <small style={{color: '#666'}}>Email nelze změnit</small>
+                                    <small style={{ color: '#666' }}>Email nelze změnit</small>
                                 </div>
-                                <div style={{marginBottom: '15px'}}>
+
+                                <div style={{ marginBottom: '15px' }}>
                                     <label><strong>Bio:</strong></label>
                                     <textarea
                                         name="bio"
@@ -126,7 +145,7 @@ const MujProfil = () => {
                                         onChange={handleInputChange}
                                         className="form-control"
                                         rows="3"
-                                        style={{marginTop: '5px'}}
+                                        style={{ marginTop: '5px' }}
                                         placeholder="Napište něco o sobě..."
                                     />
                                 </div>
@@ -136,8 +155,16 @@ const MujProfil = () => {
                                 <p><strong>Jméno:</strong> {user.profil.jmeno}</p>
                                 <p><strong>Email:</strong> {user.email}</p>
                                 <p><strong>Bio:</strong> {user.profil.bio || 'Není vyplněno'}</p>
-                                <p><strong>Hodnocení jako řidič:</strong> {user.profil.hodnoceni_ridic || 0}/5</p>
-                                <p><strong>Hodnocení jako pasažér:</strong> {user.profil.hodnoceni_pasazer || 0}/5</p>
+
+                                <p>
+                                    <strong>Hodnocení jako řidič:</strong>{' '}
+                                    {celkemRidic > 0 ? `⭐ ${prumerRidic.toFixed(1)} (${celkemRidic}×)` : 'Bez hodnocení'}
+                                </p>
+                                <p>
+                                    <strong>Hodnocení jako pasažér:</strong>{' '}
+                                    {celkemPasazer > 0 ? `⭐ ${prumerPasazer.toFixed(1)} (${celkemPasazer}×)` : 'Bez hodnocení'}
+                                </p>
+
                                 <p><strong>Počet aut:</strong> {user.profil.pocet_aut || 0}</p>
                             </div>
                         )}
@@ -146,12 +173,12 @@ const MujProfil = () => {
                     <p>Profil nenalezen</p>
                 )}
 
-                <div style={{marginTop: '20px'}}>
+                <div style={{ marginTop: '20px' }}>
                     {editMode ? (
                         <>
                             <button
                                 className="btn btn-success"
-                                style={{marginRight: '10px'}}
+                                style={{ marginRight: '10px' }}
                                 onClick={handleSaveChanges}
                                 disabled={loading}
                             >
@@ -166,23 +193,19 @@ const MujProfil = () => {
                             </button>
                         </>
                     ) : (
-                        <>
-                            <button
-                                className="btn btn-primary"
-                                style={{marginRight: '10px'}}
-                                onClick={handleEditClick}
-                            >
-                                Upravit profil
-                            </button>
-
-                        </>
+                        <button
+                            className="btn btn-primary"
+                            style={{ marginRight: '10px' }}
+                            onClick={handleEditClick}
+                        >
+                            Upravit profil
+                        </button>
                     )}
                 </div>
             </div>
-            <CarManager
-            />
-        </div>
 
+            <CarManager />
+        </div>
     );
 };
 
