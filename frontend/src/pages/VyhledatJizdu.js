@@ -12,5 +12,4 @@ const VyhledatJizdu = () => {
         </div>
     );
 };
-
 export default VyhledatJizdu;

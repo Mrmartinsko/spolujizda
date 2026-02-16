@@ -24,6 +24,9 @@ import MojeOsobniChaty from './pages/MojeOsobniChaty';
 import PersonalChat from './components/chat/PersonalChat';
 import EditRide from './components/rides/EditRide';
 import OhodnotitPage from './pages/OhodnotitPage';
+import VerifyEmail from './components/auth/VerifyEmail';
+import VerifyEmailToken from './components/auth/VerifyEmailToken';
+
 
 
 // Wrapper pro PersonalChat, aby dostal id druhého uživatele z URL
@@ -41,7 +44,9 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-
+              <Route path="/verify-email/:token" element={<VerifyEmailToken />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
 

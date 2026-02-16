@@ -16,7 +16,7 @@ const Login = () => {
     const handleChange = (e) => {
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.value 
         });
     };
 
@@ -29,10 +29,22 @@ const Login = () => {
             await login(formData.email, formData.password);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Chyba při přihlašování');
+            const data = err.response?.data;
+
+            // pokud backend vrátí 403 + requires_email_verification
+            if (err.response?.status === 403 && data?.requires_email_verification) {
+                navigate('/verify-email', {
+                    state: { email: data.email || formData.email }
+                });
+                return;
+            }
+
+            // běžná chyba (špatné heslo apod.)
+            setError(data?.error || 'Chyba při přihlašování');
         } finally {
             setLoading(false);
         }
+
     };
 
     return (
@@ -77,8 +89,8 @@ const Login = () => {
                             />
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="auth-button"
                             disabled={loading}
                         >
@@ -88,7 +100,7 @@ const Login = () => {
 
                     <div className="auth-footer">
                         <p>
-                            Nemáte účet? 
+                            Nemáte účet?
                             <Link to="/register" className="auth-link">
                                 Zaregistrujte se
                             </Link>

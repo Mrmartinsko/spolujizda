@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './RideList.css';
@@ -8,8 +8,8 @@ const RideList = ({ rides, onRideUpdate }) => {
   const { token, user } = useAuth();
   const [showReservations, setShowReservations] = useState({});
   const [rezervace, setRezervace] = useState({});
-  const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
+  
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -17,12 +17,38 @@ const RideList = ({ rides, onRideUpdate }) => {
     if (Number.isNaN(d.getTime())) return '—';
     return d.toLocaleString('cs-CZ');
   };
+  
+  const [expanded, setExpanded] = useState({});
+  useEffect(() => {
+    if (!rides || rides.length === 0) return;
+
+    const initialExpanded = {};
+
+    rides.forEach((ride) => {
+      if (ride.status === 'aktivni') {
+        initialExpanded[ride.id] = true;
+      }
+    });
+
+    setExpanded(initialExpanded);
+  }, [rides]);
 
   const hasNotDepartedYet = (ride) => {
     if (!ride?.cas_odjezdu) return false;
     const d = new Date(ride.cas_odjezdu);
     if (Number.isNaN(d.getTime())) return false;
     return d > new Date();
+  };
+
+  // vyhození je možné jen do 1 hodiny před odjezdem
+  const canKickByTime = (ride) => {
+    if (!ride?.cas_odjezdu) return false;
+
+    const departure = new Date(ride.cas_odjezdu);
+    if (Number.isNaN(departure.getTime())) return false;
+
+    const limit = new Date(departure.getTime() - 60 * 60 * 1000); // -1 hodina
+    return new Date() <= limit;
   };
 
   const getRideRouteText = (ride) => {
@@ -133,12 +159,20 @@ const RideList = ({ rides, onRideUpdate }) => {
     }
   };
 
-  // TODO (později): vyhození pasažéra z jízdy — zatím jen placeholder
   const handleKickPassenger = async (rideId, passengerId) => {
-    // až budeš mít endpoint, typicky:
-    // await axios.delete(`http://localhost:5000/api/jizdy/${rideId}/pasazeri/${passengerId}`, { headers: { Authorization: `Bearer ${token}` }});
-    // if (onRideUpdate) onRideUpdate();
-    alert(`TODO: vyhodit uživatele ${passengerId} z jízdy ${rideId}`);
+    if (!window.confirm('Opravdu vyhodit pasažéra z jízdy?')) return;
+
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/jizdy/${rideId}/pasazeri/${passengerId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('Pasažér byl vyhozen.');
+      if (onRideUpdate) onRideUpdate();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Chyba při vyhazování pasažéra');
+    }
   };
 
   if (!rides || rides.length === 0) {
@@ -178,6 +212,10 @@ const RideList = ({ rides, onRideUpdate }) => {
 
         // rezervace vidí/řeší jen řidič, jen aktivní, jen před odjezdem
         const canManageReservations = isDriver && isActive && notDeparted;
+
+        // podmínka pro vyhazování (UI)
+        const timeOkForKick = canKickByTime(ride);
+        const canKickPassengersUi = isDriver && isActive && timeOkForKick;
 
         return (
           <div key={ride.id} className={`ride-card ${isExpanded ? 'expanded' : ''}`}>
@@ -248,50 +286,72 @@ const RideList = ({ rides, onRideUpdate }) => {
                     </div>
                   )}
 
-                  {/* ✅ Pasažéři viditelní jen řidiči nebo pasažérovi */}
+                  {/*  Pasažéři viditelní jen řidiči nebo pasažérovi */}
                   {canSeePassengers && (
                     <div className="ride-info">
                       <strong>Pasažéři:</strong>{' '}
                       {Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0 ? (
-                        <div className="passengers-list" onClick={(e) => e.stopPropagation()}>
-                          {ride.pasazeri.map((p, idx) => {
-                            const passengerId = getPassengerId(p);
-                            const key = passengerId ?? `${ride.id}-${idx}`;
-                            const name = getPassengerDisplayName(p);
-                            const isMe = user && passengerId === user.id;
+                        <>
+                          <div className="passengers-list" onClick={(e) => e.stopPropagation()}>
+                            {ride.pasazeri.map((p, idx) => {
+                              const passengerId = getPassengerId(p);
+                              const key = passengerId ?? `${ride.id}-${idx}`;
+                              const name = getPassengerDisplayName(p);
+                              const isMe = user && passengerId === user.id;
 
-                            return (
-                              <div key={key} className="passenger-item">
-                                <button
-                                  type="button"
-                                  className={`passenger-pill ${isMe ? 'me' : ''}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (passengerId) navigate(`/profil/${passengerId}`);
-                                  }}
-                                  title="Otevřít profil"
-                                >
-                                  {name}
-                                  {isMe ? ' (ty)' : ''}
-                                </button>
+                              const showKick = isDriver && passengerId && passengerId !== user?.id;
+                              const kickDisabled = !canKickPassengersUi;
 
-                                {isDriver && passengerId && user && passengerId !== user.id && (
+                              const kickTitle = !isActive
+                                ? 'Pasažéra lze vyhodit jen u aktivní jízdy.'
+                                : !timeOkForKick
+                                ? 'Pasažéra lze vyhodit nejpozději 1 hodinu před odjezdem.'
+                                : 'Vyhodit z jízdy';
+
+                              return (
+                                <div key={key} className="passenger-item">
                                   <button
                                     type="button"
-                                    className="btn-kick"
+                                    className={`passenger-pill ${isMe ? 'me' : ''}`}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleKickPassenger(ride.id, passengerId);
+                                      if (passengerId) navigate(`/profil/${passengerId}`);
                                     }}
-                                    title="Vyhodit z jízdy"
+                                    title="Otevřít profil"
                                   >
-                                    Vyhodit
+                                    {name}
+                                    {isMe ? ' (ty)' : ''}
                                   </button>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+
+                                  {showKick && (
+                                    <button
+                                      type="button"
+                                      className={`btn-kick ${kickDisabled ? 'disabled' : ''}`}
+                                      disabled={kickDisabled}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (kickDisabled) return;
+                                        handleKickPassenger(ride.id, passengerId);
+                                      }}
+                                      title={kickTitle}
+                                    >
+                                      Vyhodit
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* hláška pro řidiče, když je vyhazování omezené */}
+                          {isDriver && (!isActive || !timeOkForKick) && (
+                            <div className="kick-hint">
+                              {!isActive
+                                ? 'Vyhazování pasažérů je možné jen u aktivní jízdy.'
+                                : 'Vyhazování pasažérů je možné nejpozději 1 hodinu před odjezdem.'}
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <span className="muted">Žádní</span>
                       )}

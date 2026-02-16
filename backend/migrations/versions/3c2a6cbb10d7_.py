@@ -1,50 +1,101 @@
-"""add jizda_id to hodnoceni
+"""add jizda_id to hodnoceni (sqlite-safe recreate)
 
 Revision ID: 3c2a6cbb10d7
 Revises: da90b3163164
-Create Date: 2026-02-15
+Create Date: (nech jak máš)
 """
-
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3c2a6cbb10d7'
-down_revision = 'da90b3163164'
+revision = "3c2a6cbb10d7"
+down_revision = "da90b3163164"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table('hodnoceni', schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column('jizda_id', sa.Integer(), nullable=True)
-        )
+    # SQLite neumí bezpečně přidávat/změnit constraints přes ALTER TABLE,
+    # takže tabulku hodnoceni přestavíme ručně: new -> copy -> drop -> rename.
 
-        batch_op.create_foreign_key(
-            'fk_hodnoceni_jizda_id',
-            'jizda',
-            ['jizda_id'],
-            ['id']
-        )
+    # 1) vytvoř novou tabulku s novým sloupcem + novým UNIQUE constraintem
+    op.create_table(
+        "_hodnoceni_new",
+        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
+        sa.Column("autor_id", sa.Integer(), sa.ForeignKey("uzivatel.id"), nullable=False),
+        sa.Column(
+            "cilovy_uzivatel_id",
+            sa.Integer(),
+            sa.ForeignKey("uzivatel.id"),
+            nullable=False,
+        ),
+        sa.Column("role", sa.String(length=10), nullable=False),
+        sa.Column("znamka", sa.Integer(), nullable=False),
+        sa.Column("komentar", sa.Text(), nullable=True),
+        sa.Column("datum", sa.DateTime(), nullable=True),
 
-        batch_op.create_unique_constraint(
-            'uq_hodnoceni_autor_cil_jizda_role',
-            ['autor_id', 'cilovy_uzivatel_id', 'jizda_id', 'role']
-        )
+        # nový sloupec (v téhle migraci ho necháme nullable=True)
+        sa.Column("jizda_id", sa.Integer(), sa.ForeignKey("jizda.id"), nullable=True),
+
+        # nový unikátní constraint (podle toho co ti Alembic už generoval)
+        sa.UniqueConstraint(
+            "autor_id",
+            "cilovy_uzivatel_id",
+            "jizda_id",
+            "role",
+            name="uq_hodnoceni_autor_cil_jizda_role",
+        ),
+    )
+
+    # 2) překopíruj data ze staré tabulky (jizda_id zatím NULL)
+    op.execute(
+        """
+        INSERT INTO _hodnoceni_new (id, autor_id, cilovy_uzivatel_id, role, znamka, komentar, datum, jizda_id)
+        SELECT id, autor_id, cilovy_uzivatel_id, role, znamka, komentar, datum, NULL
+        FROM hodnoceni
+        """
+    )
+
+    # 3) smaž starou tabulku a přejmenuj novou
+    op.drop_table("hodnoceni")
+    op.rename_table("_hodnoceni_new", "hodnoceni")
 
 
 def downgrade():
-    with op.batch_alter_table('hodnoceni', schema=None) as batch_op:
-        batch_op.drop_constraint(
-            'uq_hodnoceni_autor_cil_jizda_role',
-            type_='unique'
-        )
+    # V downgrade vrátíme tabulku do stavu bez jizda_id
+    op.create_table(
+        "_hodnoceni_old",
+        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
+        sa.Column("autor_id", sa.Integer(), sa.ForeignKey("uzivatel.id"), nullable=False),
+        sa.Column(
+            "cilovy_uzivatel_id",
+            sa.Integer(),
+            sa.ForeignKey("uzivatel.id"),
+            nullable=False,
+        ),
+        sa.Column("role", sa.String(length=10), nullable=False),
+        sa.Column("znamka", sa.Integer(), nullable=False),
+        sa.Column("komentar", sa.Text(), nullable=True),
+        sa.Column("datum", sa.DateTime(), nullable=True),
 
-        batch_op.drop_constraint(
-            'fk_hodnoceni_jizda_id',
-            type_='foreignkey'
-        )
+        # původní UNIQUE constraint (pokud jsi ho měl dřív)
+        # Pokud se u tebe jmenoval jinak, můžeš název změnit – SQLite to typicky neřeší tak přísně.
+        sa.UniqueConstraint(
+            "autor_id",
+            "cilovy_uzivatel_id",
+            "role",
+            name="uq_hodnoceni_autor_cil_role",
+        ),
+    )
 
-        batch_op.drop_column('jizda_id')
+    op.execute(
+        """
+        INSERT INTO _hodnoceni_old (id, autor_id, cilovy_uzivatel_id, role, znamka, komentar, datum)
+        SELECT id, autor_id, cilovy_uzivatel_id, role, znamka, komentar, datum
+        FROM hodnoceni
+        """
+    )
+
+    op.drop_table("hodnoceni")
+    op.rename_table("_hodnoceni_old", "hodnoceni")

@@ -4,7 +4,7 @@ from models import db
 from models.jizda import Jizda
 from models.rezervace import Rezervace
 from models.uzivatel import Uzivatel
-from datetime import datetime
+from datetime import datetime, timedelta
 from models.hodnoceni import Hodnoceni
 
 
@@ -172,25 +172,33 @@ def odmitnout_rezervaci(rezervace_id):
 @rezervace_bp.route("/<int:rezervace_id>/zrusit", methods=["DELETE"])
 @jwt_required()
 def zrusit_rezervaci(rezervace_id):
-    """Zrušení rezervace (uživatel nebo řidič)"""
-    uzivatel_id = int(get_jwt_identity())
+    user_id = int(get_jwt_identity())
 
-    rezervace = Rezervace.query.get_or_404(rezervace_id)
+    rez = Rezervace.query.get_or_404(rezervace_id)
 
-    # Pouze uživatel, který rezervaci vytvořil, nebo řidič může zrušit
-    if rezervace.uzivatel_id != uzivatel_id and rezervace.jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemáte oprávnění zrušit tuto rezervaci"}), 403
+    # jen vlastník rezervace
+    if rez.uzivatel_id != user_id:
+        return jsonify({"error": "Nemáš oprávnění rušit tuto rezervaci."}), 403
 
-    try:
-        # Použijeme metodu zrusit() z modelu, která odebere uživatele z pasažérů
-        rezervace.zrusit()
-        db.session.commit()
+    jizda = rez.jizda
 
-        return jsonify({"message": "Rezervace zrušena"})
+    # jen aktivní jízda
+    if jizda.status != "aktivni":
+        return jsonify({"error": "Jízda není aktivní, nelze opustit."}), 400
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": "Chyba při rušení rezervace"}), 500
+    # max 1 hodinu před odjezdem
+    now = datetime.now()
+    if now > (jizda.cas_odjezdu - timedelta(hours=1)):
+        return jsonify({"error": "Jízdu lze opustit nejpozději 1 hodinu před odjezdem."}), 400
+
+    rez.status = "zrusena"
+
+    pasazer = next((u for u in jizda.pasazeri if u.id == user_id), None)
+    if pasazer:
+        jizda.pasazeri.remove(pasazer)
+
+    db.session.commit()
+    return jsonify({"message": "Rezervace byla zrušena a jízdu jste opustil."}), 200
 
 
 @rezervace_bp.route("/moje", methods=["GET"])

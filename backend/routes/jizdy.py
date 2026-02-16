@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -8,6 +8,8 @@ from models.jizda import Jizda
 from models.mezistanice import Mezistanice
 from models.uzivatel import Uzivatel
 from sqlalchemy import or_
+from models.rezervace import Rezervace
+
 
 jizdy_bp = Blueprint("jizdy", __name__)
 
@@ -308,10 +310,17 @@ def get_moje_jizdy():
 
 @jizdy_bp.route("/vyhledat", methods=["GET"])
 def vyhledat_jizdy():
-    """Vyhledání jízd podle kritérií (včetně mezistanic)"""
+    """Vyhledání jízd podle kritérií (včetně mezistanic) + pořadí zastávek
+    - full: odkud i kam jsou na trase a odkud je před kam (v pořadí zastávek)
+    - partial: sedí jen odkud nebo jen kam (kdekoli na trase)
+    - full výsledky jsou vždy nahoře, partial pod nimi
+    - vrací [{"match_type": "full"|"partial", "ride": {...}}, ...]
+    - filtruje podle volných míst >= pocet_pasazeru
+    """
     odkud = request.args.get("odkud", "").strip()
     kam = request.args.get("kam", "").strip()
     datum = request.args.get("datum", "").strip()
+    pocet_pasazeru = request.args.get("pocet_pasazeru", type=int) or 1
 
     query = Jizda.query.filter_by(status="aktivni")
 
@@ -327,28 +336,75 @@ def vyhledat_jizdy():
     full_match = []
     partial_match = []
 
+    o = odkud.lower() if odkud else ""
+    k = kam.lower() if kam else ""
+
     for ride in all_rides:
-        stops_texts = [m.misto.lower() for m in ride.mezistanice]
+        # trasa v pořadí: odkud -> mezistanice (podle poradi) -> kam
+        stops_sorted = sorted(list(ride.mezistanice), key=lambda m: (m.poradi or 0))
+        route = [ride.odkud] + [m.misto for m in stops_sorted] + [ride.kam]
+        route_lower = [s.lower() for s in route if s]
 
-        matches_odkud = True
-        if odkud:
-            o = odkud.lower()
-            matches_odkud = (o in ride.odkud.lower()) or any(o in s for s in stops_texts)
+        # najdi pozice (substring match)
+        odkud_positions = []
+        kam_positions = []
 
-        matches_kam = True
-        if kam:
-            k = kam.lower()
-            matches_kam = (k in ride.kam.lower()) or any(k in s for s in stops_texts)
+        if o:
+            odkud_positions = [i for i, s in enumerate(route_lower) if o in s]
+        if k:
+            kam_positions = [i for i, s in enumerate(route_lower) if k in s]
 
-        if matches_odkud and matches_kam:
+        # když není vyplněné odkud/kam, ber jako "match"
+        matches_odkud_anywhere = True if not o else (len(odkud_positions) > 0)
+        matches_kam_anywhere = True if not k else (len(kam_positions) > 0)
+
+        # full match jen když oboje existuje + správné pořadí (nějaké i < j)
+        matches_both_in_order = False
+        if o and k and odkud_positions and kam_positions:
+            matches_both_in_order = any(i < j for i in odkud_positions for j in kam_positions)
+        elif (o and not k) or (k and not o):
+            # full match nedává smysl, když je vyplněné jen jedno pole
+            matches_both_in_order = False
+        elif (not o) and (not k):
+            # když není nic vyplněno, nechceme full match, ať se to nechová divně
+            matches_both_in_order = False
+
+        # rozřazení
+        if matches_both_in_order:
             full_match.append(ride)
-        elif matches_odkud or matches_kam:
+        elif matches_odkud_anywhere or matches_kam_anywhere:
+            # partial = aspoň jedno sedí kdekoliv na trase
+            # (když je vyplněné oboje, ale pořadí nesedí, spadne to sem)
             partial_match.append(ride)
 
-    result_rides = full_match + partial_match
-    result_rides = [r for r in result_rides if r.get_volna_mista() > 0]
+    # full nahoře, partial pod tím, bez duplicit + filtr volných míst
+    result = []
+    seen_ids = set()
 
-    return jsonify([r.to_dict() for r in result_rides])
+    for r in full_match:
+        if r.id in seen_ids:
+            continue
+        if r.get_volna_mista() < pocet_pasazeru:
+            continue
+        seen_ids.add(r.id)
+        result.append({
+            "match_type": "full",
+            "ride": r.to_dict(),
+        })
+
+    for r in partial_match:
+        if r.id in seen_ids:
+            continue
+        if r.get_volna_mista() < pocet_pasazeru:
+            continue
+        seen_ids.add(r.id)
+        result.append({
+            "match_type": "partial",
+            "ride": r.to_dict(),
+        })
+
+    return jsonify(result)
+
 
 
 @jizdy_bp.route("/nejnovejsi", methods=["GET"])
@@ -361,3 +417,48 @@ def nejnovejsi_jizdy():
         .all()
     )
     return jsonify([j.to_dict() for j in jizdy])
+
+@jizdy_bp.route("/<int:jizda_id>/pasazeri/<int:pasazer_id>", methods=["DELETE"])
+@jwt_required()
+def vyhodit_pasazera(jizda_id, pasazer_id):
+    current_user_id = get_jwt_identity()
+
+    jizda = Jizda.query.get_or_404(jizda_id)
+
+    if jizda.status != "aktivni":
+        return jsonify({"error": "Pasažéry lze vyhazovat jen u aktivní jízdy."}), 400
+
+    current_user_id = get_jwt_identity()
+    try:
+        current_user_id = int(current_user_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Neplatná identita uživatele v tokenu."}), 401
+
+    if jizda.ridic_id != current_user_id:
+        return jsonify({"error": "Nemáš oprávnění vyhazovat pasažéry z této jízdy."}), 403
+
+    now = datetime.now()
+    limit_time = jizda.cas_odjezdu - timedelta(hours=1)
+    if now > limit_time:
+        return jsonify({"error": "Pasažéra lze vyhodit nejpozději 1 hodinu před odjezdem."}), 400
+
+    if pasazer_id == jizda.ridic_id:
+        return jsonify({"error": "Řidiče nelze vyhodit z vlastní jízdy."}), 400
+
+    pasazer = next((u for u in jizda.pasazeri if u.id == pasazer_id), None)
+    if not pasazer:
+        return jsonify({"error": "Uživatel není pasažérem této jízdy."}), 404
+
+    jizda.pasazeri.remove(pasazer)
+ 
+    # pasazer uvidi u stavu rezervace vyhozen
+    rez = Rezervace.query.filter_by(jizda_id=jizda_id,uzivatel_id=pasazer_id).first()
+
+    if rez:
+        rez.status = "vyhozen" 
+        rez.updated_at = datetime.now()  
+
+
+    db.session.commit()
+
+    return jsonify({"message": "Pasažér byl vyhozen."}), 200

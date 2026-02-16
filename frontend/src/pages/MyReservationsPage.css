@@ -292,6 +292,34 @@
   color: #6c757d;
   font-weight: 700;
 }
+.passengers-section {
+  margin-top: 10px;
+}
+
+.passengers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.passenger-pill {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.passenger-pill:hover {
+  background: #f3f4f6;
+}
+
+.passenger-pill.me {
+  font-weight: 700;
+}
+
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
