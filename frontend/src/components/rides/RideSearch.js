@@ -40,56 +40,38 @@ const RideSearch = ({ onSearchResults }) => {
         setError('');
 
         try {
-            // ✅ Použijeme /api/jizdy/ protože už umí filtry + mezistanice
-            const response = await axios.get('http://localhost:5000/api/jizdy/', {
+            const response = await axios.get('http://localhost:5000/api/jizdy/vyhledat', {
                 params: {
-                    odkud: searchData.odkud,
-                    kam: searchData.kam,
-                    datum: searchData.datum,
-                    pocet_pasazeru: searchData.pocet_pasazeru,
+                odkud: searchData.odkud,
+                kam: searchData.kam,
+                datum: searchData.datum,
+                // pocet_pasazeru zatím backend ve /vyhledat nepoužívá (pokud chceš, doplníme)
+                pocet_pasazeru: searchData.pocet_pasazeru,
                 }
             });
 
-            const fetchedRides = response.data?.jizdy || [];
+            const data = Array.isArray(response.data) ? response.data : [];
+
+            // ✅ převedeme [{match_type, ride}] -> [ride...] + přidáme match_type do ride
+            const fetchedRides = data.map(item => ({
+                ...item.ride,
+                match_type: item.match_type,
+            }));
 
             // jen aktuální jízdy (odjezd v budoucnosti)
             const now = new Date();
             const aktualniJizdy = fetchedRides.filter(ride => new Date(ride.cas_odjezdu) > now);
 
-            // Full match vs partial match (bereme i mezistanice)
-            const fullMatch = [];
-            const partialMatch = [];
+            setSearchResults(aktualniJizdy);
+            if (onSearchResults) onSearchResults(aktualniJizdy);
 
-            const qOdkud = searchData.odkud.toLowerCase();
-            const qKam = searchData.kam.toLowerCase();
-
-            aktualniJizdy.forEach(ride => {
-                const routeStops = [
-                    ride.odkud,
-                    ...(ride.mezistanice || []).map(m => m.misto),
-                    ride.kam
-                ]
-                    .filter(Boolean)
-                    .map(x => x.toLowerCase());
-
-                const odkudMatch = routeStops.includes(qOdkud);
-                const kamMatch = routeStops.includes(qKam);
-
-                if (odkudMatch && kamMatch) fullMatch.push(ride);
-                else partialMatch.push(ride);
-            });
-
-            const sortedRides = [...fullMatch, ...partialMatch];
-
-            setSearchResults(sortedRides);
-            if (onSearchResults) onSearchResults(sortedRides);
-
-        } catch (err) {
+            } catch (err) {
             setError(err.response?.data?.error || 'Chyba při vyhledávání jízd');
             setSearchResults([]);
-        } finally {
+            } finally {
             setLoading(false);
-        }
+            }
+
     };
 
     const handleSubmit = async (e) => {

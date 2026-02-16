@@ -1,91 +1,89 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import authService from '../services/authService';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const t = localStorage.getItem('token');
+    if (t) {
+      authService.getCurrentUser()
+        .then(userData => setUser(userData))
+        .catch((err) => {
+            const data = err.response?.data;
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            authService.getCurrentUser()
-                .then(userData => {
-                    setUser(userData);
-                })
-                .catch(() => {
-                    localStorage.removeItem('token');
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
-        } else {
-            setLoading(false);
-        }
-    }, []);
+            localStorage.removeItem('token');
+            setUser(null);
 
-    const login = async (email, heslo) => {
-        try {
-            const response = await authService.login(email, heslo);
-            const { access_token, uzivatel } = response;
+            // pokud backend řekne, že je potřeba ověření emailu
+            if (err.response?.status === 403 && data?.requires_email_verification) {
+                // nechceme tady dělat navigate (context není router),
+                // ale můžeme si uložit email a VerifyEmail si ho může načíst
+                sessionStorage.setItem('pending_verify_email_only', data.email || '');
+            }
+            })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-            localStorage.setItem('token', access_token);
-            setUser(uzivatel);
+  // LOGIN: musí throw error, aby Login.js catch fungoval
+  const login = async (email, password) => {
+    const data = await authService.login(email, password);
+    // pokud backend pustí, bude tam access_token
+    const { access_token, uzivatel } = data;
 
-            return { success: true };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.response?.data?.error || 'Chyba při přihlašování'
-            };
-        }
-    };
+    localStorage.setItem('token', access_token);
+    setUser(uzivatel);
 
-    const register = async (userData) => {
-        try {
-            const response = await authService.register(userData);
-            const { access_token, uzivatel } = response;
+    return data;
+  };
 
-            localStorage.setItem('token', access_token);
-            setUser(uzivatel);
+  // REGISTER: backend už nevrací token, jen requires_email_verification
+  // taky bude throw error při failu
+  const register = async (userData) => {
+    const data = await authService.register(userData);
+    // nic neukládáme do localStorage, jen vrátíme odpověď
+    // (frontend tě přesměruje na /verify-email)
+    return data;
+  };
 
-            return { success: true };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.response?.data?.error || 'Chyba při registraci'
-            };
-        }
-    };
+  const resendVerification = async (email) => {
+    return await authService.resendVerification(email);
+  };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-    };
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
-    const value = {
-        user,
-        setUser,
-        loading,
-        login,
-        register,
-        logout,
-        isAuthenticated: !!user,
-        token: localStorage.getItem('token')
-    };
+  const isAuthenticated = !!localStorage.getItem('token'); // klíčové pro PrivateRoute
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const value = {
+    user,
+    setUser,
+    loading,
+    login,
+    register,
+    resendVerification,
+    logout,
+    isAuthenticated,
+    token: localStorage.getItem('token'),
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

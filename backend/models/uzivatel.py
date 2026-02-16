@@ -1,7 +1,5 @@
 from datetime import datetime
-
 import bcrypt
-
 from models import db
 
 
@@ -11,7 +9,10 @@ class Uzivatel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     heslo = db.Column(db.String(128), nullable=False)
-
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verified_at = db.Column(db.DateTime, nullable=True)  
+    email_verification_token = db.Column(db.String(128), unique=True, index=True, nullable=True)
+    email_verification_expires_at = db.Column(db.DateTime, nullable=True)  
     # Vztahy
     profil = db.relationship(
         "Profil", backref="uzivatel", uselist=False, cascade="all, delete-orphan"
@@ -77,6 +78,7 @@ class Uzivatel(db.Model):
             "id": self.id,
             "email": self.email,
             "profil": self.profil.to_dict() if self.profil else None,
+            "email_verified": self.email_verified,
         }
 
     def __repr__(self):

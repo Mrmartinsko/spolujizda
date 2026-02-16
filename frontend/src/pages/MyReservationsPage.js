@@ -4,15 +4,13 @@ import axios from 'axios';
 import './MyReservationsPage.css';
 import { useNavigate } from 'react-router-dom';
 
-
 const MyReservationsPage = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [rezervace, setRezervace] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all'); // all, cekajici, prijata, odmitnuta, zrusena
   const navigate = useNavigate();
-
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
@@ -101,6 +99,59 @@ const MyReservationsPage = () => {
     }
   };
 
+  // helpers pro pasažéry
+  const getPassengerId = (p) => p?.uzivatel_id ?? p?.id ?? null;
+
+  const getPassengerDisplayName = (p) => {
+    if (!p) return 'Neznámý uživatel';
+    const fullName = [p.jmeno, p.prijmeni].filter(Boolean).join(' ').trim();
+    return fullName || p.prezdivka || p.username || 'Neznámý uživatel';
+  };
+
+  const canSeePassengers = (ride) => {
+    if (!ride || !user) return false;
+    const isDriver = ride.ridic_id === user.id || ride.ridic?.id === user.id;
+
+    const isPassenger =
+      Array.isArray(ride.pasazeri) &&
+      ride.pasazeri.some(p => getPassengerId(p) === user.id);
+
+    return isDriver || isPassenger;
+  };
+
+  const renderPassengers = (ride) => {
+    if (!ride) return null;
+    if (!canSeePassengers(ride)) return null;
+
+    const passengers = Array.isArray(ride.pasazeri) ? ride.pasazeri : [];
+    if (passengers.length === 0) {
+      return <span className="muted-text">Žádní</span>;
+    }
+
+    return (
+      <div className="passengers-list">
+        {passengers.map((p, idx) => {
+          const pid = getPassengerId(p);
+          const key = pid ?? `${ride.id}-${idx}`;
+          const name = getPassengerDisplayName(p);
+          const isMe = user && pid === user.id;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`passenger-pill ${isMe ? 'me' : ''}`}
+              onClick={() => pid && navigate(`/profil/${pid}`)}
+              title="Otevřít profil pasažéra"
+            >
+              {name}{isMe ? ' (ty)' : ''}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const filteredRezervace = rezervace.filter(r => {
     if (filter === 'all') return true;
     return r.status === filter;
@@ -166,7 +217,6 @@ const MyReservationsPage = () => {
         ) : (
           filteredRezervace.map((r) => (
             <div key={r.id} className="reservation-card">
-
               <div className="reservation-header">
                 <div className="route-info">
                   <h3>
@@ -184,7 +234,6 @@ const MyReservationsPage = () => {
               </div>
 
               <div className="reservation-details">
-
                 <div className="time-info">
                   <div className="time-item">
                     <strong>Odjezd:</strong> {formatDate(r.jizda?.cas_odjezdu)}
@@ -230,6 +279,14 @@ const MyReservationsPage = () => {
                   </div>
                 )}
 
+                {/* ✅ Pasažéři (jen pokud uživatel je součástí jízdy / řidič) */}
+                {r.jizda && (
+                  <div className="passengers-section">
+                    <strong>Pasažéři:</strong>
+                    {renderPassengers(r.jizda)}
+                  </div>
+                )}
+
                 {r.poznamka && (
                   <div className="note-info">
                     <strong>Poznámka:</strong> {r.poznamka}
@@ -238,7 +295,6 @@ const MyReservationsPage = () => {
               </div>
 
               <div className="reservation-actions">
-
                 {r.status === 'cekajici' && (
                   <button
                     className="btn-cancel"
@@ -271,7 +327,6 @@ const MyReservationsPage = () => {
                     <span className="muted-text">Rezervace zrušena</span>
                   </div>
                 )}
-
               </div>
             </div>
           ))
