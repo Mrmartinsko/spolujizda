@@ -14,6 +14,8 @@ const ProfilUzivatele = () => {
     const [error, setError] = useState(null);
     const [blocking, setBlocking] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [actionError, setActionError] = useState('');
+    const [actionSuccess, setActionSuccess] = useState('');
 
     // 🔥 hodnocení
     const [hodRidic, setHodRidic] = useState({ hodnoceni: [], statistiky: { celkem: 0, prumer: 0, rozdeleni: {} } });
@@ -75,11 +77,13 @@ const ProfilUzivatele = () => {
     const handleBlock = async () => {
         try {
             setBlocking(true);
+            setActionError('');
+            setActionSuccess('');
             await api.post(`/uzivatele/${id}/blokovat`);
-            alert('Uživatel byl úspěšně blokován');
+            setActionSuccess('Uživatel byl úspěšně blokován');
         } catch (error) {
             console.error('Chyba při blokování:', error);
-            alert('Nepodařilo se blokovat uživatele');
+            setActionError('Nepodařilo se blokovat uživatele');
         } finally {
             setBlocking(false);
         }
@@ -268,6 +272,8 @@ const ProfilUzivatele = () => {
                         </button>
                     </div>
                 </div>
+                {actionError && <p style={{ color: 'red', marginTop: 0 }}>{actionError}</p>}
+                {actionSuccess && <p style={{ color: 'green', marginTop: 0 }}>{actionSuccess}</p>}
 
                 {uzivatel.profil.bio && (
                     <div style={{ marginBottom: '20px' }}>

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './CarManager.css';
 import ReplaceCar from '../cars/ReplaceCar'; // modal pro nahrazení auta
+import ConfirmModal from '../common/ConfirmModal';
 
 const CarManager = () => {
     const { token } = useAuth();
@@ -18,6 +19,7 @@ const CarManager = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null });
+    const [deleteModal, setDeleteModal] = useState({ open: false, autoId: null });
 
     useEffect(() => {
         fetchAuta();
@@ -85,25 +87,27 @@ const CarManager = () => {
         setEditing(auto.id);
     };
 
-    const handleDelete = async (autoId) => {
-        if (window.confirm('Opravdu chcete smazat toto auto?')) {
-            try {
-                await axios.delete(`http://localhost:5000/api/auta/${autoId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                fetchAuta();
-            } catch (err) {
-                const errorCode = err.response?.status;
-                const errorData = err.response?.data;
+    const executeDelete = async (autoId) => {
+        try {
+            await axios.delete(`http://localhost:5000/api/auta/${autoId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAuta();
+        } catch (err) {
+            const errorCode = err.response?.status;
+            const errorData = err.response?.data;
 
-                if (errorCode === 409 && errorData?.error === "AUTO_MA_AKTIVNI_JIZDY") {
-                    // Otevřít modal ReplaceCar
-                    setShowReplaceCar({ active: true, autoId });
-                } else {
-                    setError(errorData?.error || 'Chyba při mazání auta');
-                }
+            if (errorCode === 409 && errorData?.error === "AUTO_MA_AKTIVNI_JIZDY") {
+                // Otevřít modal ReplaceCar
+                setShowReplaceCar({ active: true, autoId });
+            } else {
+                setError(errorData?.error || 'Chyba při mazání auta');
             }
         }
+    };
+
+    const handleDelete = (autoId) => {
+        setDeleteModal({ open: true, autoId });
     };
 
     const cancelEdit = () => {
@@ -234,6 +238,19 @@ const CarManager = () => {
                     }}
                 />
             )}
+            <ConfirmModal
+                isOpen={deleteModal.open}
+                title="Smazat auto"
+                message="Opravdu chcete smazat toto auto?"
+                confirmText="Smazat auto"
+                danger
+                onCancel={() => setDeleteModal({ open: false, autoId: null })}
+                onConfirm={() => {
+                    const autoId = deleteModal.autoId;
+                    setDeleteModal({ open: false, autoId: null });
+                    if (autoId) executeDelete(autoId);
+                }}
+            />
         </div>
     );
 };

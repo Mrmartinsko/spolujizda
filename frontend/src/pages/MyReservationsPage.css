@@ -134,6 +134,30 @@
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
+.reservation-header-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chevron {
+  font-size: 16px;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
 .route-info h3 {
   margin: 0;
   font-size: 1.05rem;

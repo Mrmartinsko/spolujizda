@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const formatTime = (dateString) => {
     const date = new Date(dateString);
@@ -23,6 +24,7 @@ const MojeOsobniChaty = () => {
     const [chaty, setChaty] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [deleteModal, setDeleteModal] = useState({ open: false, chatId: null });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -45,33 +47,36 @@ const MojeOsobniChaty = () => {
     const handleOpenChat = (chat) => {
         const druhyUzivatel = chat.ucastnici?.find(u => u.id !== user.id);
         if (!druhyUzivatel) {
-            alert("Chyba: nelze otevřít chat, chybí uživatel");
+            setError('Chyba: nelze otevřít chat, chybí uživatel');
             return;
         }
         navigate(`/chat/${druhyUzivatel.id}`);
     };
 
-    const handleDeleteChat = async (chatId, e) => {
-        e.stopPropagation(); // zabrání volání handleOpenChat při kliknutí na křížek
-        if (!window.confirm("Opravdu chcete smazat tento chat?")) return;
-
+    const executeDeleteChat = async (chatId) => {
         try {
             await api.delete(`/chat/osobni/${chatId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChaty(prev => prev.filter(c => c.id !== chatId));
+            setError(null);
         } catch (err) {
             console.error(err);
-            alert("Nepodařilo se smazat chat");
+            setError('Nepodařilo se smazat chat');
         }
     };
 
+    const handleDeleteChat = (chatId, e) => {
+        e.stopPropagation(); // zabrání volání handleOpenChat při kliknutí na křížek
+        setDeleteModal({ open: true, chatId });
+    };
+
     if (loading) return <p>Načítají se osobní chaty...</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
     return (
         <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
             <h2>Moje osobní chaty</h2>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             {chaty.length === 0 ? (
                 <p>Zatím nemáte žádné osobní chaty.</p>
             ) : (
@@ -135,6 +140,19 @@ const MojeOsobniChaty = () => {
                     })}
                 </ul>
             )}
+            <ConfirmModal
+                isOpen={deleteModal.open}
+                title="Smazat chat"
+                message="Opravdu chcete smazat tento chat?"
+                confirmText="Smazat chat"
+                danger
+                onCancel={() => setDeleteModal({ open: false, chatId: null })}
+                onConfirm={() => {
+                    const chatId = deleteModal.chatId;
+                    setDeleteModal({ open: false, chatId: null });
+                    if (chatId) executeDeleteChat(chatId);
+                }}
+            />
         </div>
     );
 };

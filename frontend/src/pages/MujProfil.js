@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import CarManager from "../components/cars/CarManager";
+import CarManager from '../components/cars/CarManager';
+import './MujProfil.css';
 
 const MujProfil = () => {
     const { user, setUser } = useAuth();
     const [editMode, setEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-    // hodnocení ze serveru
     const [hodRidic, setHodRidic] = useState({ statistiky: { celkem: 0, prumer: 0 } });
     const [hodPasazer, setHodPasazer] = useState({ statistiky: { celkem: 0, prumer: 0 } });
 
@@ -24,7 +26,6 @@ const MujProfil = () => {
         });
     }, [user]);
 
-    // načti hodnocení po načtení profilu
     useEffect(() => {
         const fetchRatings = async () => {
             try {
@@ -43,7 +44,7 @@ const MujProfil = () => {
                 setHodRidic(rRidic.data);
                 setHodPasazer(rPasazer.data);
             } catch (e) {
-                console.error("Chyba při načítání hodnocení:", e);
+                console.error('Chyba při načítání hodnocení:', e);
             }
         };
 
@@ -52,7 +53,7 @@ const MujProfil = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleEditClick = () => {
@@ -69,18 +70,37 @@ const MujProfil = () => {
             jmeno: user?.profil?.jmeno || '',
             bio: user?.profil?.bio || ''
         });
+        setError('');
+        setSuccess('');
     };
 
     const handleSaveChanges = async () => {
+        const trimmedJmeno = (formData.jmeno || '').trim();
+        if (!trimmedJmeno) {
+            setError('Uživatelské jméno je povinné.');
+            return;
+        }
+        if (trimmedJmeno.length > 20) {
+            setError('Uživatelské jméno může mít maximálně 20 znaků.');
+            return;
+        }
+
         setLoading(true);
+        setError('');
+        setSuccess('');
         try {
             const token = localStorage.getItem('token');
+            const payload = {
+                ...formData,
+                jmeno: trimmedJmeno
+            };
+
             const response = await axios.put(
                 'http://localhost:5000/api/uzivatele/profil',
-                formData,
+                payload,
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 }
@@ -89,11 +109,11 @@ const MujProfil = () => {
             if (response.data.uzivatel) {
                 setUser(response.data.uzivatel);
                 setEditMode(false);
-                alert('Profil byl úspěšně aktualizován!');
+                setSuccess('Profil byl úspěšně aktualizován.');
             }
-        } catch (error) {
-            console.error('Chyba při aktualizaci profilu:', error);
-            alert('Chyba při aktualizaci profilu: ' + (error.response?.data?.error || 'Neznámá chyba'));
+        } catch (saveError) {
+            console.error('Chyba při aktualizaci profilu:', saveError);
+            setError(saveError.response?.data?.error || 'Chyba při aktualizaci profilu.');
         } finally {
             setLoading(false);
         }
@@ -105,16 +125,18 @@ const MujProfil = () => {
     const celkemPasazer = hodPasazer?.statistiky?.celkem || 0;
 
     return (
-        <div>
-            <h1>Můj profil</h1>
-            <div className="card">
+        <div className="muj-profil-page">
+            <h1 className="muj-profil-title">Můj profil</h1>
+            <div className="card muj-profil-card">
                 <h3>Základní informace</h3>
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
                 {user?.profil ? (
                     <div>
                         {editMode ? (
                             <div>
                                 <div style={{ marginBottom: '15px' }}>
-                                    <label><strong>Jméno:</strong></label>
+                                    <label><strong>Uživatelské jméno:</strong></label>
                                     <input
                                         type="text"
                                         name="jmeno"
@@ -122,6 +144,7 @@ const MujProfil = () => {
                                         onChange={handleInputChange}
                                         className="form-control"
                                         style={{ marginTop: '5px' }}
+                                        maxLength={20}
                                     />
                                 </div>
 
@@ -152,17 +175,17 @@ const MujProfil = () => {
                             </div>
                         ) : (
                             <div>
-                                <p><strong>Jméno:</strong> {user.profil.jmeno}</p>
+                                <p><strong>Uživatelské jméno:</strong> {user.profil.jmeno}</p>
                                 <p><strong>Email:</strong> {user.email}</p>
                                 <p><strong>Bio:</strong> {user.profil.bio || 'Není vyplněno'}</p>
 
                                 <p>
                                     <strong>Hodnocení jako řidič:</strong>{' '}
-                                    {celkemRidic > 0 ? `⭐ ${prumerRidic.toFixed(1)} (${celkemRidic}×)` : 'Bez hodnocení'}
+                                    {celkemRidic > 0 ? `★ ${prumerRidic.toFixed(1)} (${celkemRidic}×)` : 'Bez hodnocení'}
                                 </p>
                                 <p>
                                     <strong>Hodnocení jako pasažér:</strong>{' '}
-                                    {celkemPasazer > 0 ? `⭐ ${prumerPasazer.toFixed(1)} (${celkemPasazer}×)` : 'Bez hodnocení'}
+                                    {celkemPasazer > 0 ? `★ ${prumerPasazer.toFixed(1)} (${celkemPasazer}×)` : 'Bez hodnocení'}
                                 </p>
 
                                 <p><strong>Počet aut:</strong> {user.profil.pocet_aut || 0}</p>
@@ -173,7 +196,7 @@ const MujProfil = () => {
                     <p>Profil nenalezen</p>
                 )}
 
-                <div style={{ marginTop: '20px' }}>
+                <div className="muj-profil-actions">
                     {editMode ? (
                         <>
                             <button

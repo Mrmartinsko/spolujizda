@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './ReservationManager.css';
+import ConfirmModal from '../common/ConfirmModal';
 
 const ReservationManager = () => {
     const { token } = useAuth();
     const [rezervace, setRezervace] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [cancelModal, setCancelModal] = useState({ open: false, rezervaceId: null });
     const [filter, setFilter] = useState('all'); // all, pending, accepted, rejected
 
     useEffect(() => {
@@ -36,25 +39,56 @@ const ReservationManager = () => {
             );
 
             fetchRezervace();
-            alert(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
+            setError('');
+            setSuccess(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
         } catch (err) {
-            alert(err.response?.data?.error || `Chyba při ${action} rezervace`);
+            setSuccess('');
+            setError(err.response?.data?.error || `Chyba při ${action} rezervace`);
         }
     };
 
-    const handleCancelReservation = async (rezervaceId) => {
-        if (window.confirm('Opravdu chcete zrušit tuto rezervaci?')) {
-            try {
-                await axios.delete(`http://localhost:5000/api/rezervace/${rezervaceId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                fetchRezervace();
-                alert('Rezervace byla zrušena');
-            } catch (err) {
-                alert(err.response?.data?.error || 'Chyba při rušení rezervace');
-            }
+    const executeCancelReservation = async (rezervaceId) => {
+        const target = rezervace.find((r) => r.id === rezervaceId);
+        if (!canCancelReservationByRule(target)) {
+            setSuccess('');
+            setError('Rezervaci lze zrušit jen pokud je jízda aktivní a před odjezdem.');
+            return;
         }
+
+        try {
+            await axios.delete(`http://localhost:5000/api/rezervace/${rezervaceId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            fetchRezervace();
+            setError('');
+            setSuccess('Rezervace byla zrušena');
+        } catch (err) {
+            setSuccess('');
+            setError(err.response?.data?.error || 'Chyba při rušení rezervace');
+        }
+    };
+
+    const handleCancelReservation = (rezervaceId) => {
+        const target = rezervace.find((r) => r.id === rezervaceId);
+        if (!canCancelReservationByRule(target)) {
+            setSuccess('');
+            setError('Rezervaci lze zrušit jen pokud je jízda aktivní a před odjezdem.');
+            return;
+        }
+        setCancelModal({ open: true, rezervaceId });
+    };
+
+    const hasNotDepartedYet = (ride) => {
+        if (!ride?.cas_odjezdu) return false;
+        const d = new Date(ride.cas_odjezdu);
+        if (Number.isNaN(d.getTime())) return false;
+        return d > new Date();
+    };
+
+    const canCancelReservationByRule = (rezervaceItem) => {
+        if (!rezervaceItem?.jizda) return false;
+        return rezervaceItem.jizda.status === 'aktivni' && hasNotDepartedYet(rezervaceItem.jizda);
     };
 
     const formatDate = (dateString) => {
@@ -84,6 +118,7 @@ const ReservationManager = () => {
             <h2>Správa rezervací</h2>
 
             {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
 
             <div className="filter-controls">
                 <button
@@ -162,7 +197,9 @@ const ReservationManager = () => {
                                     </>
                                 )}
 
-                                {rezervace.typ === 'odeslana' && rezervace.status === 'cekajici' && (
+                                {rezervace.typ === 'odeslana' &&
+                                    rezervace.status === 'cekajici' &&
+                                    canCancelReservationByRule(rezervace) && (
                                     <button
                                         className="btn-cancel"
                                         onClick={() => handleCancelReservation(rezervace.id)}
@@ -175,6 +212,19 @@ const ReservationManager = () => {
                     ))}
                 </div>
             )}
+            <ConfirmModal
+                isOpen={cancelModal.open}
+                title="Zrušit rezervaci"
+                message="Opravdu chcete zrušit tuto rezervaci?"
+                confirmText="Zrušit rezervaci"
+                danger
+                onCancel={() => setCancelModal({ open: false, rezervaceId: null })}
+                onConfirm={() => {
+                    const rezervaceId = cancelModal.rezervaceId;
+                    setCancelModal({ open: false, rezervaceId: null });
+                    if (rezervaceId) executeCancelReservation(rezervaceId);
+                }}
+            />
         </div>
     );
 };

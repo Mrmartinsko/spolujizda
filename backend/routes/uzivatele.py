@@ -28,14 +28,31 @@ def update_profil():
     if not uzivatel.profil:
         return jsonify({"error": "Profil nenalezen"}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
     try:
         # Aktualizace profilu
         if "jmeno" in data:
-            uzivatel.profil.jmeno = data["jmeno"]
+            jmeno = (data.get("jmeno") or "").strip()
+            if not jmeno:
+                return jsonify({"error": "Uživatelské jméno je povinné."}), 400
+            if len(jmeno) > 20:
+                return jsonify({"error": "Uživatelské jméno může mít maximálně 20 znaků."}), 400
+
+            existing_profile = (
+                Profil.query.filter(
+                    db.func.lower(Profil.jmeno) == jmeno.lower(),
+                    Profil.uzivatel_id != uzivatel_id,
+                )
+                .first()
+            )
+            if existing_profile:
+                return jsonify({"error": "Toto uživatelské jméno je již obsazené."}), 409
+
+            uzivatel.profil.jmeno = jmeno
         if "bio" in data:
-            uzivatel.profil.bio = data["bio"]
+            bio = data.get("bio")
+            uzivatel.profil.bio = bio.strip() if isinstance(bio, str) else bio
         if "fotka" in data:
             uzivatel.profil.fotka = data["fotka"]
 

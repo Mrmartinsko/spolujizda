@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import re
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -12,6 +13,23 @@ from models.rezervace import Rezervace
 
 
 jizdy_bp = Blueprint("jizdy", __name__)
+
+
+def _validate_location_field(value, field_name):
+    if not isinstance(value, str):
+        return False, f"Pole {field_name} musí být text"
+
+    normalized = value.strip()
+    if not normalized:
+        return False, f"Pole {field_name} je povinné"
+    if len(normalized) > 15:
+        return False, f"Pole {field_name} může mít maximálně 15 znaků"
+    if re.search(r"[^A-Za-zÀ-ž0-9\s-]", normalized):
+        return False, f"Pole {field_name} může obsahovat jen písmena a maximálně dvě čísla"
+    if len(re.findall(r"\d", normalized)) > 2:
+        return False, f"Pole {field_name} může obsahovat maximálně dvě čísla"
+
+    return True, normalized
 
 
 def _validate_mezistanice_list(data):
@@ -31,8 +49,13 @@ def _validate_mezistanice_list(data):
             return False, "mezistanice musí být seznam neprázdných textů"
 
     # strip + zachovat pořadí
-    mezistanice = [m.strip() for m in mezistanice]
-    return True, mezistanice
+    normalized_stops = []
+    for m in mezistanice:
+        ok, validated = _validate_location_field(m, "mezistanice")
+        if not ok:
+            return False, validated
+        normalized_stops.append(validated)
+    return True, normalized_stops
 
 
 @jizdy_bp.route("/", methods=["GET"])
@@ -126,6 +149,14 @@ def create_jizda():
     if not auto:
         return jsonify({"error": "Auto nenalezeno nebo nepatří uživateli"}), 404
 
+    ok, odkud = _validate_location_field(data.get("odkud"), "odkud")
+    if not ok:
+        return jsonify({"error": odkud}), 400
+
+    ok, kam = _validate_location_field(data.get("kam"), "kam")
+    if not ok:
+        return jsonify({"error": kam}), 400
+
     ok, mezistanice = _validate_mezistanice_list(data)
     if not ok:
         return jsonify({"error": mezistanice}), 400
@@ -140,11 +171,26 @@ def create_jizda():
         if cas_odjezdu <= datetime.now():
             return jsonify({"error": "Čas odjezdu musí být v budoucnosti"}), 400
 
+        existing_rides = Jizda.query.filter_by(
+            ridic_id=uzivatel_id,
+            status="aktivni",
+        ).all()
+        for existing in existing_rides:
+            existing_start = existing.cas_odjezdu
+            existing_end = existing.cas_prijezdu
+            if not existing_start or not existing_end:
+                continue
+            if (
+                cas_odjezdu < (existing_end + timedelta(minutes=5))
+                and cas_prijezdu > (existing_start - timedelta(minutes=5))
+            ):
+                return jsonify({"error": "Časy jízd se nesmí krýt a musí mezi nimi být alespoň 5 minut."}), 409
+
         jizda = Jizda(
             ridic_id=uzivatel_id,
             auto_id=data["auto_id"],
-            odkud=data["odkud"],
-            kam=data["kam"],
+            odkud=odkud,
+            kam=kam,
             cas_odjezdu=cas_odjezdu,
             cas_prijezdu=cas_prijezdu,
             cena=float(data["cena"]),
@@ -211,9 +257,15 @@ def update_jizda(jizda_id):
 
         # --- BASIC FIELDS ---
         if "odkud" in data:
-            jizda.odkud = data["odkud"]
+            ok, odkud = _validate_location_field(data.get("odkud"), "odkud")
+            if not ok:
+                return jsonify({"error": odkud}), 400
+            jizda.odkud = odkud
         if "kam" in data:
-            jizda.kam = data["kam"]
+            ok, kam = _validate_location_field(data.get("kam"), "kam")
+            if not ok:
+                return jsonify({"error": kam}), 400
+            jizda.kam = kam
         if "cena" in data:
             jizda.cena = float(data["cena"])
 
@@ -240,6 +292,23 @@ def update_jizda(jizda_id):
                 return jsonify({"error": "Čas odjezdu musí být před časem příjezdu"}), 400
             if new_cas_odjezdu <= datetime.now():
                 return jsonify({"error": "Čas odjezdu musí být v budoucnosti"}), 400
+
+            existing_rides = Jizda.query.filter_by(
+                ridic_id=uzivatel_id,
+                status="aktivni",
+            ).all()
+            for existing in existing_rides:
+                if existing.id == jizda.id:
+                    continue
+                existing_start = existing.cas_odjezdu
+                existing_end = existing.cas_prijezdu
+                if not existing_start or not existing_end:
+                    continue
+                if (
+                    new_cas_odjezdu < (existing_end + timedelta(minutes=5))
+                    and new_cas_prijezdu > (existing_start - timedelta(minutes=5))
+                ):
+                    return jsonify({"error": "Časy jízd se nesmí krýt a musí mezi nimi být alespoň 5 minut."}), 409
 
         jizda.cas_odjezdu = new_cas_odjezdu
         jizda.cas_prijezdu = new_cas_prijezdu

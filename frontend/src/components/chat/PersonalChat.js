@@ -12,12 +12,13 @@ const PersonalChat = ({ otherUserId, onClose, isInline = false }) => {
     const [chatData, setChatData] = useState(null);
     const [sending, setSending] = useState(false);
     const [otherUserName, setOtherUserName] = useState('');
+    const [error, setError] = useState('');
     const messagesEndRef = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!otherUserId) {
-            alert("Chyba: Neznámý uživatel chatu");
+            setError('Chyba: Neznámý uživatel chatu');
             return;
         }
         fetchChat();
@@ -46,7 +47,7 @@ const PersonalChat = ({ otherUserId, onClose, isInline = false }) => {
             setOtherUserName(druhej.profil?.jmeno || druhej.email);
         } catch (error) {
             console.error('Chyba při načítání chatu:', error);
-            alert('Nepodařilo se načíst chat');
+            setError('Nepodařilo se načíst chat');
         } finally {
             setLoading(false);
         }
@@ -66,9 +67,10 @@ const PersonalChat = ({ otherUserId, onClose, isInline = false }) => {
 
             setMessages(prev => [...prev, response.data.zprava]);
             setNewMessage('');
+            setError('');
         } catch (error) {
             console.error('Chyba při odesílání zprávy:', error);
-            alert('Nepodařilo se odeslat zprávu');
+            setError('Nepodařilo se odeslat zprávu');
         } finally {
             setSending(false);
         }
@@ -110,6 +112,7 @@ const PersonalChat = ({ otherUserId, onClose, isInline = false }) => {
                         ✕
                     </button>
                 </div>
+                {error && <div className="error-message">{error}</div>}
 
                 <div className="chat-messages">
                     {messages.length === 0 ? (

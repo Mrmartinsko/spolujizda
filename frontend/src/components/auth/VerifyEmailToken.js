@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+﻿import React, { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './Auth.css';
@@ -11,22 +11,28 @@ const VerifyEmailToken = () => {
   const didRun = useRef(false);
 
   useEffect(() => {
-    // zabrání dvojitému spuštění v React StrictMode (dev)
     if (didRun.current) return;
     didRun.current = true;
 
     const verify = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
+        await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
         setStatus('ok');
-        setMessage(res.data?.message || 'Email úspěšně ověřen.');
+        setMessage('Email úspěšně ověřen.');
       } catch (err) {
         const data = err.response?.data;
         const msg = data?.error || 'Nepodařilo se ověřit email.';
 
-        if (msg.toLowerCase().includes('vypršel')) {
+        const normalized = msg.toLowerCase();
+
+        if (normalized.includes('vypršel') || normalized.includes('vyprsel')) {
           setStatus('expired');
-        } else if (msg.toLowerCase().includes('neplatný') || msg.toLowerCase().includes('použitý')) {
+        } else if (
+          normalized.includes('neplatný') ||
+          normalized.includes('neplatny') ||
+          normalized.includes('použitý') ||
+          normalized.includes('pouzity')
+        ) {
           setStatus('invalid');
         } else {
           setStatus('error');
@@ -35,8 +41,9 @@ const VerifyEmailToken = () => {
       }
     };
 
-    if (token) verify();
-    else {
+    if (token) {
+      verify();
+    } else {
       setStatus('invalid');
       setMessage('Chybí token.');
     }
@@ -48,13 +55,13 @@ const VerifyEmailToken = () => {
         <div className="auth-card">
           <div className="auth-header">
             <h2>Ověření emailu</h2>
-            {status === 'loading' && <p>Ověřuji…</p>}
+            {status === 'loading' && <p>Ověřuji...</p>}
             {status !== 'loading' && <p>{message}</p>}
           </div>
 
           {status === 'ok' && (
             <div className="success-message">
-              Email je úspěšně ověřen 🎉
+              Email je úspěšně ověřen.
               <div style={{ marginTop: 12 }}>
                 <Link to="/login" className="auth-button">
                   Přihlásit se
@@ -85,13 +92,15 @@ const VerifyEmailToken = () => {
             </div>
           )}
 
-          <div className="auth-footer" style={{ marginTop: 10 }}>
-            <p>
-              <Link to="/login" className="auth-link">Přihlásit se</Link>
-              {' '}nebo{' '}
-              <Link to="/verify-email" className="auth-link">poslat ověření znovu</Link>
-            </p>
-          </div>
+          {status !== 'ok' && (
+            <div className="auth-footer" style={{ marginTop: 10 }}>
+              <p>
+                <Link to="/login" className="auth-link">Přihlásit se</Link>
+                {' '}nebo{' '}
+                <Link to="/verify-email" className="auth-link">poslat ověření znovu</Link>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
