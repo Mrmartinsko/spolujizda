@@ -29,12 +29,34 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    const jmeno = (formData.jmeno || '').trim();
+    const email = (formData.email || '').trim();
+    const telefon = (formData.telefon || '').trim();
+    const password = formData.password || '';
+    const confirmPassword = formData.confirmPassword || '';
+    const phoneRegex = /^(?:\+\d{1,3}[\s-]?)?(?:\d{3}[\s-]?){2}\d{3}$/;
+
+    if (!jmeno || !email || !telefon || !password || !confirmPassword) {
+      setError('Vyplňte prosím všechna pole.');
+      return;
+    }
+
+    if (jmeno.length > 20) {
+      setError('Uživatelské jméno může mít maximálně 20 znaků.');
+      return;
+    }
+
+    if (!phoneRegex.test(telefon)) {
+      setError('Telefon musí být ve formátu např. +420 123 456 789');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setError('Hesla se neshodují');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError('Heslo musí mít alespoň 6 znaků');
       return;
     }
@@ -43,13 +65,13 @@ const Register = () => {
 
     try {
       await register({
-        jmeno: formData.jmeno,
-        email: formData.email,
-        telefon: formData.telefon,
-        password: formData.password
+        jmeno,
+        email,
+        telefon,
+        password
       });
 
-      navigate('/verify-email', { state: { email: formData.email } });
+      navigate('/verify-email', { state: { email } });
     } catch (err) {
       const data = err.response?.data;
       setError(data?.error || 'Chyba při registraci');
@@ -71,7 +93,7 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="jmeno">Jméno</label>
+              <label htmlFor="jmeno">Uživatelské jméno</label>
               <input
                 type="text"
                 id="jmeno"
@@ -79,7 +101,8 @@ const Register = () => {
                 value={formData.jmeno}
                 onChange={handleChange}
                 required
-                placeholder="Zadejte vaše jméno"
+                maxLength={20}
+                placeholder="Zadejte uživatelské jméno"
               />
             </div>
 
@@ -105,7 +128,7 @@ const Register = () => {
                 value={formData.telefon}
                 onChange={handleChange}
                 required
-                placeholder="Zadejte váš telefon"
+                placeholder="Např. +420 123 456 789"
               />
             </div>
 

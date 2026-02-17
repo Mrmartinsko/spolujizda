@@ -3,12 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './MyReservationsPage.css';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const MyReservationsPage = () => {
   const { token, user } = useAuth();
   const [rezervace, setRezervace] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [cancelModal, setCancelModal] = useState({ open: false, rezervaceId: null });
+  const [expanded, setExpanded] = useState({});
   const [filter, setFilter] = useState('all'); // all, cekajici, prijata, odmitnuta, zrusena
   const navigate = useNavigate();
 
@@ -47,20 +51,67 @@ const MyReservationsPage = () => {
     }
   };
 
-  const handleCancelReservation = async (rezervaceId) => {
-    if (window.confirm('Opravdu chcete zrušit tuto rezervaci?')) {
-      try {
-        await axios.delete(
-          `http://localhost:5000/api/rezervace/${rezervaceId}/zrusit`,
-          { headers }
-        );
-
-        alert('Rezervace byla zrušena');
-        fetchRezervace();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Chyba při rušení rezervace');
-      }
+  const executeCancelReservation = async (rezervaceId) => {
+    const target = rezervace.find((r) => r.id === rezervaceId);
+    if (!canCancelReservationByRule(target)) {
+      setSuccess('');
+      setError('Rezervaci lze zrušit jen pokud je jízda aktivní a před odjezdem.');
+      return;
     }
+
+    try {
+      setError('');
+      setSuccess('');
+      await axios.delete(
+        `http://localhost:5000/api/rezervace/${rezervaceId}/zrusit`,
+        { headers }
+      );
+
+      setSuccess('Rezervace byla zrušena');
+      fetchRezervace();
+    } catch (err) {
+      setSuccess('');
+      setError(err.response?.data?.error || 'Chyba při rušení rezervace');
+    }
+  };
+
+  useEffect(() => {
+    if (!rezervace || rezervace.length === 0) {
+      setExpanded({});
+      return;
+    }
+
+    const initialExpanded = {};
+    rezervace.forEach((r) => {
+      initialExpanded[r.id] = r.jizda?.status === 'aktivni';
+    });
+    setExpanded(initialExpanded);
+  }, [rezervace]);
+
+  const handleCancelReservation = (rezervaceId) => {
+    const target = rezervace.find((r) => r.id === rezervaceId);
+    if (!canCancelReservationByRule(target)) {
+      setSuccess('');
+      setError('Rezervaci lze zrušit jen pokud je jízda aktivní a před odjezdem.');
+      return;
+    }
+    setCancelModal({ open: true, rezervaceId });
+  };
+
+  const toggleExpanded = (rezervaceId) => {
+    setExpanded((prev) => ({ ...prev, [rezervaceId]: !prev[rezervaceId] }));
+  };
+
+  const hasNotDepartedYet = (ride) => {
+    if (!ride?.cas_odjezdu) return false;
+    const d = new Date(ride.cas_odjezdu);
+    if (Number.isNaN(d.getTime())) return false;
+    return d > new Date();
+  };
+
+  const canCancelReservationByRule = (rezervaceItem) => {
+    if (!rezervaceItem?.jizda) return false;
+    return rezervaceItem.jizda.status === 'aktivni' && hasNotDepartedYet(rezervaceItem.jizda);
   };
 
   const formatDate = (dateString) => {
@@ -188,6 +239,7 @@ const MyReservationsPage = () => {
           </button>
         </div>
       )}
+      {success && <div className="success-message">{success}</div>}
 
       <div className="filters">
         <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>
@@ -215,125 +267,157 @@ const MyReservationsPage = () => {
               : `Nemáte žádné rezervace se statusem "${getStatusText(filter)}"`}
           </div>
         ) : (
-          filteredRezervace.map((r) => (
-            <div key={r.id} className="reservation-card">
-              <div className="reservation-header">
-                <div className="route-info">
-                  <h3>
-                    {r.jizda?.odkud || 'N/A'} → {r.jizda?.kam || 'N/A'}
-                  </h3>
-                  <span className="price">{r.jizda?.cena ?? 0} Kč</span>
-                </div>
+          filteredRezervace.map((r) => {
+            const isExpanded = !!expanded[r.id];
+            const canCancelReservation = canCancelReservationByRule(r);
 
-                <div
-                  className="status-badge"
-                  style={{ backgroundColor: getStatusColor(r.status) }}
+            return (
+              <div key={r.id} className="reservation-card">
+                <button
+                  type="button"
+                  className="reservation-header reservation-header-btn"
+                  onClick={() => toggleExpanded(r.id)}
                 >
-                  {getStatusText(r.status)}
-                </div>
-              </div>
-
-              <div className="reservation-details">
-                <div className="time-info">
-                  <div className="time-item">
-                    <strong>Odjezd:</strong> {formatDate(r.jizda?.cas_odjezdu)}
+                  <div className="route-info">
+                    <h3>
+                      {r.jizda?.odkud || 'N/A'} › {r.jizda?.kam || 'N/A'}
+                    </h3>
+                    <span className="price">{r.jizda?.cena ?? 0} Kč</span>
                   </div>
-                  <div className="time-item">
-                    <strong>Příjezd:</strong> {formatDate(r.jizda?.cas_prijezdu)}
-                  </div>
-                </div>
 
-                <div className="driver-info">
-                  <strong>Řidič:</strong>{' '}
-                  {r.jizda?.ridic?.id ? (
-                    <button
-                      type="button"
-                      className="driver-link"
-                      onClick={() => navigate(`/profil/${r.jizda.ridic.id}`)}
-                      title="Otevřít profil řidiče"
+                  <div className="header-right">
+                    <div
+                      className="status-badge"
+                      style={{ backgroundColor: getStatusColor(r.status) }}
                     >
-                      {r.jizda.ridic.jmeno || 'Řidič'}
-                    </button>
-                  ) : (
-                    <span>Neznámý</span>
-                  )}
-                </div>
-
-                <div className="ride-status-info">
-                  <strong>Status jízdy:</strong>{' '}
-                  <span className={`ride-status-badge ${r.jizda?.status || ''}`}>
-                    {getRideStatusText(r.jizda?.status)}
-                  </span>
-                </div>
-
-                {r.jizda?.auto && !r.jizda.auto.smazane && (
-                  <div className="car-info">
-                    <strong>Auto:</strong> {r.jizda.auto.znacka} {r.jizda.auto.model}
-                    {r.jizda.auto.spz && ` (${r.jizda.auto.spz})`}
+                      {getStatusText(r.status)}
+                    </div>
+                    <span className={`chevron ${isExpanded ? 'open' : ''}`}>v</span>
                   </div>
-                )}
+                </button>
 
-                {r.jizda?.auto?.smazane && (
-                  <div className="car-info">
-                    <strong>Auto:</strong> Smazané auto
-                  </div>
-                )}
+                {isExpanded && (
+                  <>
+                    <div className="reservation-details">
+                      <div className="time-info">
+                        <div className="time-item">
+                          <strong>Odjezd:</strong> {formatDate(r.jizda?.cas_odjezdu)}
+                        </div>
+                        <div className="time-item">
+                          <strong>Příjezd:</strong> {formatDate(r.jizda?.cas_prijezdu)}
+                        </div>
+                      </div>
 
-                {/* ✅ Pasažéři (jen pokud uživatel je součástí jízdy / řidič) */}
-                {r.jizda && (
-                  <div className="passengers-section">
-                    <strong>Pasažéři:</strong>
-                    {renderPassengers(r.jizda)}
-                  </div>
-                )}
+                      <div className="driver-info">
+                        <strong>Řidič:</strong>{' '}
+                        {r.jizda?.ridic?.id ? (
+                          <button
+                            type="button"
+                            className="driver-link"
+                            onClick={() => navigate(`/profil/${r.jizda.ridic.id}`)}
+                            title="Otevřít profil řidiče"
+                          >
+                            {r.jizda.ridic.jmeno || 'Řidič'}
+                          </button>
+                        ) : (
+                          <span>Neznámý</span>
+                        )}
+                      </div>
 
-                {r.poznamka && (
-                  <div className="note-info">
-                    <strong>Poznámka:</strong> {r.poznamka}
-                  </div>
+                      <div className="ride-status-info">
+                        <strong>Status jízdy:</strong>{' '}
+                        <span className={`ride-status-badge ${r.jizda?.status || ''}`}>
+                          {getRideStatusText(r.jizda?.status)}
+                        </span>
+                      </div>
+
+                      {r.jizda?.auto && !r.jizda.auto.smazane && (
+                        <div className="car-info">
+                          <strong>Auto:</strong> {r.jizda.auto.znacka} {r.jizda.auto.model}
+                          {r.jizda.auto.spz && ` (${r.jizda.auto.spz})`}
+                        </div>
+                      )}
+
+                      {r.jizda?.auto?.smazane && (
+                        <div className="car-info">
+                          <strong>Auto:</strong> Smazané auto
+                        </div>
+                      )}
+
+                      {r.jizda && (
+                        <div className="passengers-section">
+                          <strong>Pasažéři:</strong>
+                          {renderPassengers(r.jizda)}
+                        </div>
+                      )}
+
+                      {r.poznamka && (
+                        <div className="note-info">
+                          <strong>Poznámka:</strong> {r.poznamka}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="reservation-actions">
+                      {r.status === 'cekajici' && canCancelReservation && (
+                        <button
+                          className="btn-cancel"
+                          onClick={() => handleCancelReservation(r.id)}
+                        >
+                          Zrušit rezervaci
+                        </button>
+                      )}
+
+                      {r.status === 'prijata' && (
+                        <div className="accepted-info">
+                          <span className="success-text">Rezervace přijata!</span>
+                          {canCancelReservation && (
+                            <button
+                              className="btn-cancel"
+                              onClick={() => handleCancelReservation(r.id)}
+                            >
+                              Zrušit rezervaci
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {r.status === 'odmitnuta' && (
+                        <div className="rejected-info">
+                          <span className="error-text">Rezervace odmítnuta</span>
+                        </div>
+                      )}
+
+                      {r.status === 'zrusena' && (
+                        <div className="cancelled-info">
+                          <span className="muted-text">Rezervace zrušena</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
-
-              <div className="reservation-actions">
-                {r.status === 'cekajici' && (
-                  <button
-                    className="btn-cancel"
-                    onClick={() => handleCancelReservation(r.id)}
-                  >
-                    Zrušit rezervaci
-                  </button>
-                )}
-
-                {r.status === 'prijata' && (
-                  <div className="accepted-info">
-                    <span className="success-text">✅ Rezervace přijata!</span>
-                    <button
-                      className="btn-cancel"
-                      onClick={() => handleCancelReservation(r.id)}
-                    >
-                      Zrušit rezervaci
-                    </button>
-                  </div>
-                )}
-
-                {r.status === 'odmitnuta' && (
-                  <div className="rejected-info">
-                    <span className="error-text">❌ Rezervace odmítnuta</span>
-                  </div>
-                )}
-
-                {r.status === 'zrusena' && (
-                  <div className="cancelled-info">
-                    <span className="muted-text">Rezervace zrušena</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
+      <ConfirmModal
+        isOpen={cancelModal.open}
+        title="Zrušit rezervaci"
+        message="Opravdu chcete zrušit tuto rezervaci?"
+        confirmText="Zrušit rezervaci"
+        danger
+        onCancel={() => setCancelModal({ open: false, rezervaceId: null })}
+        onConfirm={() => {
+          const rezervaceId = cancelModal.rezervaceId;
+          setCancelModal({ open: false, rezervaceId: null });
+          if (rezervaceId) executeCancelReservation(rezervaceId);
+        }}
+      />
     </div>
   );
 };
 
 export default MyReservationsPage;
+
+

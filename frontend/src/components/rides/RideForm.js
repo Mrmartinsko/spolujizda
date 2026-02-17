@@ -79,6 +79,7 @@ const RideForm = ({ onRideCreated }) => {
     const [auta, setAuta] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const [creatingCar, setCreatingCar] = useState(false);
     const [noCars, setNoCars] = useState(false);
@@ -86,6 +87,24 @@ const RideForm = ({ onRideCreated }) => {
     // mezistanice
     const [mezistanice, setMezistanice] = useState([]);
     const [novaMezistanice, setNovaMezistanice] = useState("");
+
+    const validateLocationField = (value, fieldLabel) => {
+        const normalized = (value || "").trim();
+        if (!normalized) {
+            return `${fieldLabel} je povinné`;
+        }
+        if (normalized.length > 15) {
+            return `${fieldLabel} může mít maximálně 15 znaků`;
+        }
+        if (/[^A-Za-zÀ-ž0-9\s-]/.test(normalized)) {
+            return `${fieldLabel} může obsahovat jen písmena a maximálně dvě čísla`;
+        }
+        const digitsCount = (normalized.match(/\d/g) || []).length;
+        if (digitsCount > 2) {
+            return `${fieldLabel} může obsahovat maximálně dvě čísla`;
+        }
+        return null;
+    };
 
     useEffect(() => {
         fetchUserCars();
@@ -115,12 +134,20 @@ const RideForm = ({ onRideCreated }) => {
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if ((name === "odkud" || name === "kam") && value.length > 15) return;
+        setFormData({ ...formData, [name]: value });
     };
 
     const pridatMezistanici = () => {
         const value = novaMezistanice.trim();
         if (!value) return;
+
+        const locationError = validateLocationField(value, "Mezistanice");
+        if (locationError) {
+            setError(locationError);
+            return;
+        }
 
         // zákaz duplicit (můžeš smazat, pokud nechceš)
         if (mezistanice.some(m => m.toLowerCase() === value.toLowerCase())) {
@@ -130,6 +157,7 @@ const RideForm = ({ onRideCreated }) => {
 
         setMezistanice(prev => [...prev, value]);
         setNovaMezistanice("");
+        setError("");
     };
 
     const smazatMezistanici = (index) => {
@@ -158,6 +186,30 @@ const RideForm = ({ onRideCreated }) => {
         e.preventDefault();
         setLoading(true);
         setError('');
+        setSuccess('');
+
+        const odkudError = validateLocationField(formData.odkud, "Odkud");
+        if (odkudError) {
+            setError(odkudError);
+            setLoading(false);
+            return;
+        }
+
+        const kamError = validateLocationField(formData.kam, "Kam");
+        if (kamError) {
+            setError(kamError);
+            setLoading(false);
+            return;
+        }
+
+        for (const stop of mezistanice) {
+            const stopError = validateLocationField(stop, "Mezistanice");
+            if (stopError) {
+                setError(stopError);
+                setLoading(false);
+                return;
+            }
+        }
 
         const payload = {
             auto_id: formData.auto_id,
@@ -195,7 +247,7 @@ const RideForm = ({ onRideCreated }) => {
             setMezistanice([]);
             setNovaMezistanice("");
 
-            alert('Jízda byla úspěšně nabídnuta!');
+            setSuccess('Jízda byla úspěšně nabídnuta!');
         } catch (err) {
             setError(err.response?.data?.error || 'Chyba při vytváření jízdy');
         } finally {
@@ -207,6 +259,7 @@ const RideForm = ({ onRideCreated }) => {
         <div className="ride-form">
             <h2>Nabídnout jízdu</h2>
             {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
 
             {noCars && !creatingCar && (
                 <div className="no-cars">
@@ -240,6 +293,7 @@ const RideForm = ({ onRideCreated }) => {
                             value={formData.odkud}
                             onChange={handleChange}
                             required
+                            maxLength={15}
                             placeholder="Výchozí místo"
                         />
                     </div>
@@ -252,6 +306,7 @@ const RideForm = ({ onRideCreated }) => {
                             value={formData.kam}
                             onChange={handleChange}
                             required
+                            maxLength={15}
                             placeholder="Cílové místo"
                         />
                     </div>
@@ -265,6 +320,7 @@ const RideForm = ({ onRideCreated }) => {
                                 type="text"
                                 value={novaMezistanice}
                                 onChange={(e) => setNovaMezistanice(e.target.value)}
+                                maxLength={15}
                                 placeholder="Např. Jihlava"
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {

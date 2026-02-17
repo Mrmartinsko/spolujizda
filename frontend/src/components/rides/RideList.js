@@ -3,11 +3,18 @@ import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './RideList.css';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../common/ConfirmModal';
+import PromptModal from '../common/PromptModal';
 
 const RideList = ({ rides, onRideUpdate }) => {
   const { token, user } = useAuth();
   const [showReservations, setShowReservations] = useState({});
   const [rezervace, setRezervace] = useState({});
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [reservationModal, setReservationModal] = useState({ open: false, rideId: null });
+  const [deleteRideModal, setDeleteRideModal] = useState({ open: false, rideId: null });
+  const [kickPassengerModal, setKickPassengerModal] = useState({ open: false, rideId: null, passengerId: null });
   const navigate = useNavigate();
   
 
@@ -38,6 +45,11 @@ const RideList = ({ rides, onRideUpdate }) => {
     const d = new Date(ride.cas_odjezdu);
     if (Number.isNaN(d.getTime())) return false;
     return d > new Date();
+  };
+
+  const canCancelRideByRule = (ride) => {
+    if (!ride) return false;
+    return ride.status === 'aktivni' && hasNotDepartedYet(ride);
   };
 
   // vyhození je možné jen do 1 hodiny před odjezdem
@@ -73,21 +85,27 @@ const RideList = ({ rides, onRideUpdate }) => {
     return fullName || p.prezdivka || p.username || 'Neznámý uživatel';
   };
 
-  const handleReservation = async (jizdaId) => {
+  const submitReservation = async (jizdaId, poznamka = '') => {
     try {
-      const poznamka = prompt('Přidejte poznámku k rezervaci (volitelné):');
+      setError('');
+      setSuccess('');
 
       await axios.post(
         'http://localhost:5000/api/rezervace/',
-        { jizda_id: jizdaId, poznamka: poznamka || '' },
+        { jizda_id: jizdaId, poznamka },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert('Rezervace byla odeslána!');
+      setSuccess('Rezervace byla odeslána!');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
-      alert(err.response?.data?.error || 'Chyba při rezervaci');
+      setSuccess('');
+      setError(err.response?.data?.error || 'Chyba při rezervaci');
     }
+  };
+
+  const handleReservation = (jizdaId) => {
+    setReservationModal({ open: true, rideId: jizdaId });
   };
 
   const fetchReservations = async (jizdaId) => {
@@ -102,7 +120,8 @@ const RideList = ({ rides, onRideUpdate }) => {
       }));
     } catch (err) {
       console.error('Chyba při načítání rezervací:', err);
-      alert(err.response?.data?.error || 'Chyba při načítání rezervací');
+      setSuccess('');
+      setError(err.response?.data?.error || 'Chyba při načítání rezervací');
     }
   };
 
@@ -130,49 +149,75 @@ const RideList = ({ rides, onRideUpdate }) => {
 
   const handleReservationAction = async (rezervaceId, action, jizdaId) => {
     try {
+      setError('');
+      setSuccess('');
       await axios.post(
         `http://localhost:5000/api/rezervace/${rezervaceId}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
+      setSuccess(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
       await fetchReservations(jizdaId);
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
-      alert(err.response?.data?.error || `Chyba při ${action} rezervace`);
+      setSuccess('');
+      setError(err.response?.data?.error || `Chyba při ${action} rezervace`);
     }
   };
 
-  const handleDeleteRide = async (jizdaId) => {
-    if (window.confirm('Opravdu chcete zrušit tuto jízdu?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/jizdy/${jizdaId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        alert('Jízda byla zrušena');
-        if (onRideUpdate) onRideUpdate();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Chyba při rušení jízdy');
-      }
+  const executeDeleteRide = async (jizdaId) => {
+    const ride = (rides || []).find((r) => r.id === jizdaId);
+    if (!canCancelRideByRule(ride)) {
+      setSuccess('');
+      setError('Jízdu lze zrušit jen pokud je aktivní a před odjezdem.');
+      return;
     }
-  };
-
-  const handleKickPassenger = async (rideId, passengerId) => {
-    if (!window.confirm('Opravdu vyhodit pasažéra z jízdy?')) return;
 
     try {
+      setError('');
+      setSuccess('');
+      await axios.delete(`http://localhost:5000/api/jizdy/${jizdaId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setSuccess('Jízda byla zrušena');
+      if (onRideUpdate) onRideUpdate();
+    } catch (err) {
+      setSuccess('');
+      setError(err.response?.data?.error || 'Chyba při rušení jízdy');
+    }
+  };
+
+  const handleDeleteRide = (jizdaId) => {
+    const ride = (rides || []).find((r) => r.id === jizdaId);
+    if (!canCancelRideByRule(ride)) {
+      setSuccess('');
+      setError('Jízdu lze zrušit jen pokud je aktivní a před odjezdem.');
+      return;
+    }
+    setDeleteRideModal({ open: true, rideId: jizdaId });
+  };
+
+  const executeKickPassenger = async (rideId, passengerId) => {
+    try {
+      setError('');
+      setSuccess('');
       await axios.delete(
         `http://localhost:5000/api/jizdy/${rideId}/pasazeri/${passengerId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert('Pasažér byl vyhozen.');
+      setSuccess('Pasažér byl vyhozen.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
-      alert(err.response?.data?.error || 'Chyba při vyhazování pasažéra');
+      setSuccess('');
+      setError(err.response?.data?.error || 'Chyba při vyhazování pasažéra');
     }
+  };
+
+  const handleKickPassenger = (rideId, passengerId) => {
+    setKickPassengerModal({ open: true, rideId, passengerId });
   };
 
   if (!rides || rides.length === 0) {
@@ -185,6 +230,8 @@ const RideList = ({ rides, onRideUpdate }) => {
 
   return (
     <div className="ride-list">
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
       {rides.map((ride) => {
         const isExpanded = !!expanded[ride.id];
 
@@ -208,7 +255,7 @@ const RideList = ({ rides, onRideUpdate }) => {
 
         const canEdit = isDriver && isActive && notDeparted;
 
-        const canCancel = isDriver && isActive;
+        const canCancel = isDriver && isActive && notDeparted;
 
         // rezervace vidí/řeší jen řidič, jen aktivní, jen před odjezdem
         const canManageReservations = isDriver && isActive && notDeparted;
@@ -444,6 +491,46 @@ const RideList = ({ rides, onRideUpdate }) => {
           </div>
         );
       })}
+      <PromptModal
+        isOpen={reservationModal.open}
+        title="Odeslat rezervaci"
+        message="Můžete přidat poznámku pro řidiče (volitelné)."
+        label="Poznámka"
+        placeholder="Např. nastoupím na druhé zastávce"
+        confirmText="Odeslat rezervaci"
+        onCancel={() => setReservationModal({ open: false, rideId: null })}
+        onConfirm={(value) => {
+          const rideId = reservationModal.rideId;
+          setReservationModal({ open: false, rideId: null });
+          if (rideId) submitReservation(rideId, value?.trim() || '');
+        }}
+      />
+      <ConfirmModal
+        isOpen={deleteRideModal.open}
+        title="Zrušit jízdu"
+        message="Opravdu chcete zrušit tuto jízdu?"
+        confirmText="Zrušit jízdu"
+        danger
+        onCancel={() => setDeleteRideModal({ open: false, rideId: null })}
+        onConfirm={() => {
+          const rideId = deleteRideModal.rideId;
+          setDeleteRideModal({ open: false, rideId: null });
+          if (rideId) executeDeleteRide(rideId);
+        }}
+      />
+      <ConfirmModal
+        isOpen={kickPassengerModal.open}
+        title="Vyhodit pasažéra"
+        message="Opravdu vyhodit pasažéra z jízdy?"
+        confirmText="Vyhodit"
+        danger
+        onCancel={() => setKickPassengerModal({ open: false, rideId: null, passengerId: null })}
+        onConfirm={() => {
+          const { rideId, passengerId } = kickPassengerModal;
+          setKickPassengerModal({ open: false, rideId: null, passengerId: null });
+          if (rideId && passengerId) executeKickPassenger(rideId, passengerId);
+        }}
+      />
     </div>
   );
 };

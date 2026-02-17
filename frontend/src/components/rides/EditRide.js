@@ -46,6 +46,18 @@ export default function EditRide() {
     mezistanice: [],
   });
 
+  const validateLocationField = (value, fieldLabel) => {
+    const normalized = (value || "").trim();
+    if (!normalized) return `${fieldLabel} je povinné`;
+    if (normalized.length > 15) return `${fieldLabel} může mít maximálně 15 znaků`;
+    if (/[^A-Za-zÀ-ž0-9\s-]/.test(normalized)) {
+      return `${fieldLabel} může obsahovat jen písmena a maximálně dvě čísla`;
+    }
+    const digitsCount = (normalized.match(/\d/g) || []).length;
+    if (digitsCount > 2) return `${fieldLabel} může obsahovat maximálně dvě čísla`;
+    return null;
+  };
+
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const fetchRide = async () => {
@@ -94,7 +106,7 @@ export default function EditRide() {
   const updateStop = (idx, value) =>
     setField(
       "mezistanice",
-      form.mezistanice.map((s, i) => (i === idx ? value : s))
+      form.mezistanice.map((s, i) => (i === idx ? value.slice(0, 15) : s))
     );
 
   const changeRideCar = async (auto) => {
@@ -114,9 +126,32 @@ export default function EditRide() {
     setError("");
 
     try {
+      const odkudError = validateLocationField(form.odkud, "Odkud");
+      if (odkudError) {
+        setError(odkudError);
+        setSaving(false);
+        return;
+      }
+
+      const kamError = validateLocationField(form.kam, "Kam");
+      if (kamError) {
+        setError(kamError);
+        setSaving(false);
+        return;
+      }
+
+      for (const stop of form.mezistanice.map((s) => s.trim()).filter(Boolean)) {
+        const stopError = validateLocationField(stop, "Mezistanice");
+        if (stopError) {
+          setError(stopError);
+          setSaving(false);
+          return;
+        }
+      }
+
       const payload = {
-        odkud: form.odkud,
-        kam: form.kam,
+        odkud: form.odkud.trim(),
+        kam: form.kam.trim(),
         cas_odjezdu: toISO(form.datum_odjezdu, form.cas_odjezdu),
         cas_prijezdu: toISO(form.datum_prijezdu, form.cas_prijezdu),
         cena: Number(form.cena),
@@ -179,12 +214,20 @@ export default function EditRide() {
       <form onSubmit={handleSubmit} className="edit-form">
         <div className="edit-input">
           <label>Odkud</label>
-          <input value={form.odkud} onChange={(e) => setField("odkud", e.target.value)} />
+          <input
+            value={form.odkud}
+            maxLength={15}
+            onChange={(e) => setField("odkud", e.target.value.slice(0, 15))}
+          />
         </div>
 
         <div className="edit-input">
           <label>Kam</label>
-          <input value={form.kam} onChange={(e) => setField("kam", e.target.value)} />
+          <input
+            value={form.kam}
+            maxLength={15}
+            onChange={(e) => setField("kam", e.target.value.slice(0, 15))}
+          />
         </div>
 
         <div className="edit-grid">
@@ -251,6 +294,7 @@ export default function EditRide() {
               <div key={idx} className="stop-row">
                 <input
                   value={s}
+                  maxLength={15}
                   onChange={(e) => updateStop(idx, e.target.value)}
                   placeholder={`Mezistanice ${idx + 1}`}
                 />

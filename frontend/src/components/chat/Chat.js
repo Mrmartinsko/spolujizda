@@ -62,9 +62,10 @@ const Chat = ({ jizdaId, onClose }) => {
             );
 
             setNovaZprava('');
+            setError('');
             fetchZpravy(); // Aktualizace zpráv
         } catch (err) {
-            alert(err.response?.data?.error || 'Chyba při odesílání zprávy');
+            setError(err.response?.data?.error || 'Chyba při odesílání zprávy');
         }
     };
 
