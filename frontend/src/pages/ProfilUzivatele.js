@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -12,10 +12,7 @@ const ProfilUzivatele = () => {
     const [uzivatel, setUzivatel] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [blocking, setBlocking] = useState(false);
     const [showChat, setShowChat] = useState(false);
-    const [actionError, setActionError] = useState('');
-    const [actionSuccess, setActionSuccess] = useState('');
 
     // 🔥 hodnocení
     const [hodRidic, setHodRidic] = useState({ hodnoceni: [], statistiky: { celkem: 0, prumer: 0, rozdeleni: {} } });
@@ -74,20 +71,7 @@ const ProfilUzivatele = () => {
         if (id) fetchHodnoceni();
     }, [id]);
 
-    const handleBlock = async () => {
-        try {
-            setBlocking(true);
-            setActionError('');
-            setActionSuccess('');
-            await api.post(`/uzivatele/${id}/blokovat`);
-            setActionSuccess('Uživatel byl úspěšně blokován');
-        } catch (error) {
-            console.error('Chyba při blokování:', error);
-            setActionError('Nepodařilo se blokovat uživatele');
-        } finally {
-            setBlocking(false);
-        }
-    };
+    // Blokování uživatelů je na frontendu dočasně vypnuté.
 
     const handleOpenChat = () => setShowChat(true);
     const handleCloseChat = () => setShowChat(false);
@@ -255,25 +239,8 @@ const ProfilUzivatele = () => {
                         >
                             💬 Napsat zprávu
                         </button>
-                        <button
-                            onClick={handleBlock}
-                            disabled={blocking}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: blocking ? 'not-allowed' : 'pointer',
-                                opacity: blocking ? 0.6 : 1
-                            }}
-                        >
-                            {blocking ? 'Blokuje se...' : 'Blokovat uživatele'}
-                        </button>
                     </div>
                 </div>
-                {actionError && <p style={{ color: 'red', marginTop: 0 }}>{actionError}</p>}
-                {actionSuccess && <p style={{ color: 'green', marginTop: 0 }}>{actionSuccess}</p>}
 
                 {uzivatel.profil.bio && (
                     <div style={{ marginBottom: '20px' }}>
