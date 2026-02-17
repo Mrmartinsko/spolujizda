@@ -16,7 +16,6 @@ import ReservationManager from './components/reservations/ReservationManager';
 import PrivateRoute from './components/auth/PrivateRoute';
 import MujProfil from './pages/MujProfil';
 import Nastaveni from './pages/Nastaveni';
-import Chat from './pages/Chat';
 import VyhledatJizdu from './pages/VyhledatJizdu';
 import ProfilUzivatele from './pages/ProfilUzivatele';
 import './styles/theme.css';
@@ -144,15 +143,6 @@ function App() {
                   element={
                     <PrivateRoute>
                       <VyhledatJizdu />
-                    </PrivateRoute>
-                  }
-                />
-
-                <Route
-                  path="chat"
-                  element={
-                    <PrivateRoute>
-                      <Chat />
                     </PrivateRoute>
                   }
                 />
