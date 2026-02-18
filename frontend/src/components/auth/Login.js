@@ -39,7 +39,12 @@ const Login = () => {
                 return;
             }
 
-            // běžná chyba (špatné heslo apod.)
+            if (err.response?.status === 401) {
+                setError('Špatné přihlašovací údaje');
+                return;
+            }
+
+            // běžná chyba
             setError(data?.error || 'Chyba při přihlašování');
         } finally {
             setLoading(false);
