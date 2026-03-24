@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
+import LocationAutocompleteInput from './LocationAutocompleteInput';
 import './RideForm.css';
 
-// Jednoduchý inline formulář pro vytvoření auta
 const CarForm = ({ token, onCarCreated, onCancel }) => {
     const [carData, setCarData] = useState({
         znacka: '',
@@ -15,7 +15,8 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
-        setCarData({ ...carData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setCarData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -31,7 +32,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
             );
             onCarCreated(response.data.auto);
         } catch (err) {
-            setError(err.response?.data?.error || 'Chyba při vytváření auta');
+            setError(err.response?.data?.error || 'Chyba pri vytvareni auta');
         } finally {
             setLoading(false);
         }
@@ -39,11 +40,11 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
 
     return (
         <div className="car-form">
-            <h3>Vytvořit auto</h3>
+            <h3>Vytvorit auto</h3>
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>Značka:</label>
+                    <label>Znacka:</label>
                     <input type="text" name="znacka" value={carData.znacka} onChange={handleChange} required />
                 </div>
                 <div className="form-group">
@@ -58,18 +59,38 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
                     <label>SPZ:</label>
                     <input type="text" name="spz" value={carData.spz} onChange={handleChange} />
                 </div>
-                <button type="submit" disabled={loading}>{loading ? 'Vytváří se...' : 'Vytvořit auto'}</button>
-                <button type="button" onClick={onCancel} disabled={loading}>Zrušit</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Vytvari se...' : 'Vytvorit auto'}
+                </button>
+                <button type="button" onClick={onCancel} disabled={loading}>
+                    Zrusit
+                </button>
             </form>
         </div>
     );
 };
 
+const emptyLocationMeta = {
+    text: '',
+    place_id: null,
+    address: '',
+};
+
+const createStop = (text = '', meta = null) => ({
+    text,
+    place_id: meta?.place_id || null,
+    address: meta?.address || '',
+});
+
 const RideForm = ({ onRideCreated }) => {
     const { token } = useAuth();
     const [formData, setFormData] = useState({
         odkud: '',
+        odkud_place_id: null,
+        odkud_address: '',
         kam: '',
+        kam_place_id: null,
+        kam_address: '',
         casOdjezdu: '',
         casPrijezdu: '',
         cena: '',
@@ -80,28 +101,21 @@ const RideForm = ({ onRideCreated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-
     const [creatingCar, setCreatingCar] = useState(false);
     const [noCars, setNoCars] = useState(false);
-
-    // mezistanice
     const [mezistanice, setMezistanice] = useState([]);
-    const [novaMezistanice, setNovaMezistanice] = useState("");
+    const [novaMezistanice, setNovaMezistanice] = useState(emptyLocationMeta);
 
     const validateLocationField = (value, fieldLabel) => {
-        const normalized = (value || "").trim();
+        const normalized = (value || '').trim();
         if (!normalized) {
-            return `${fieldLabel} je povinné`;
+            return `${fieldLabel} je povinne`;
         }
-        if (normalized.length > 15) {
-            return `${fieldLabel} může mít maximálně 15 znaků`;
+        if (normalized.length > 50) {
+            return `${fieldLabel} muze mit maximalne 50 znaku`;
         }
-        if (/[^A-Za-zÀ-ž0-9\s-]/.test(normalized)) {
-            return `${fieldLabel} může obsahovat jen písmena a maximálně dvě čísla`;
-        }
-        const digitsCount = (normalized.match(/\d/g) || []).length;
-        if (digitsCount > 2) {
-            return `${fieldLabel} může obsahovat maximálně dvě čísla`;
+        if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
+            return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky`;
         }
         return null;
     };
@@ -129,35 +143,48 @@ const RideForm = ({ onRideCreated }) => {
                 setNoCars(false);
             }
         } catch (err) {
-            console.error('Chyba při načítání aut:', err);
+            console.error('Chyba pri nacitani aut:', err);
         }
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if ((name === "odkud" || name === "kam") && value.length > 15) return;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleLocationChange = (fieldName, value, meta) => {
+        setFormData(prev => ({
+            ...prev,
+            [fieldName]: value,
+            [`${fieldName}_place_id`]: meta?.place_id || null,
+            [`${fieldName}_address`]: meta?.address || '',
+        }));
+    };
+
+    const handleNovaMezistaniceChange = (_, value, meta) => {
+        setNovaMezistanice(createStop(value, meta));
     };
 
     const pridatMezistanici = () => {
-        const value = novaMezistanice.trim();
-        if (!value) return;
+        const value = novaMezistanice.text.trim();
+        if (!value) {
+            return;
+        }
 
-        const locationError = validateLocationField(value, "Mezistanice");
+        const locationError = validateLocationField(value, 'Mezistanice');
         if (locationError) {
             setError(locationError);
             return;
         }
 
-        // zákaz duplicit (můžeš smazat, pokud nechceš)
-        if (mezistanice.some(m => m.toLowerCase() === value.toLowerCase())) {
-            setNovaMezistanice("");
+        if (mezistanice.some((m) => (m.place_id && novaMezistanice.place_id ? m.place_id === novaMezistanice.place_id : m.text.toLowerCase() === value.toLowerCase()))) {
+            setNovaMezistanice(emptyLocationMeta);
             return;
         }
 
-        setMezistanice(prev => [...prev, value]);
-        setNovaMezistanice("");
-        setError("");
+        setMezistanice(prev => [...prev, createStop(value, novaMezistanice)]);
+        setNovaMezistanice(emptyLocationMeta);
+        setError('');
     };
 
     const smazatMezistanici = (index) => {
@@ -165,7 +192,9 @@ const RideForm = ({ onRideCreated }) => {
     };
 
     const posunNahoru = (index) => {
-        if (index === 0) return;
+        if (index === 0) {
+            return;
+        }
         setMezistanice(prev => {
             const copy = [...prev];
             [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
@@ -175,7 +204,9 @@ const RideForm = ({ onRideCreated }) => {
 
     const posunDolu = (index) => {
         setMezistanice(prev => {
-            if (index >= prev.length - 1) return prev;
+            if (index >= prev.length - 1) {
+                return prev;
+            }
             const copy = [...prev];
             [copy[index], copy[index + 1]] = [copy[index + 1], copy[index]];
             return copy;
@@ -188,14 +219,14 @@ const RideForm = ({ onRideCreated }) => {
         setError('');
         setSuccess('');
 
-        const odkudError = validateLocationField(formData.odkud, "Odkud");
+        const odkudError = validateLocationField(formData.odkud, 'Odkud');
         if (odkudError) {
             setError(odkudError);
             setLoading(false);
             return;
         }
 
-        const kamError = validateLocationField(formData.kam, "Kam");
+        const kamError = validateLocationField(formData.kam, 'Kam');
         if (kamError) {
             setError(kamError);
             setLoading(false);
@@ -203,7 +234,7 @@ const RideForm = ({ onRideCreated }) => {
         }
 
         for (const stop of mezistanice) {
-            const stopError = validateLocationField(stop, "Mezistanice");
+            const stopError = validateLocationField(stop.text, 'Mezistanice');
             if (stopError) {
                 setError(stopError);
                 setLoading(false);
@@ -214,16 +245,23 @@ const RideForm = ({ onRideCreated }) => {
         const payload = {
             auto_id: formData.auto_id,
             odkud: formData.odkud,
+            odkud_place_id: formData.odkud_place_id,
+            odkud_address: formData.odkud_address,
             kam: formData.kam,
-            mezistanice: mezistanice, // <-- tady
+            kam_place_id: formData.kam_place_id,
+            kam_address: formData.kam_address,
+            mezistanice: mezistanice.map((stop) => ({
+                text: stop.text,
+                place_id: stop.place_id,
+                address: stop.address,
+            })),
             cas_odjezdu: formData.casOdjezdu,
             cas_prijezdu: formData.casPrijezdu,
             cena: formData.cena,
             pocet_mist: formData.pocetMist
         };
 
-        // volitelné: neposílat prázdné pole
-        if (!payload.mezistanice || payload.mezistanice.length === 0) {
+        if (payload.mezistanice.length === 0) {
             delete payload.mezistanice;
         }
 
@@ -232,24 +270,28 @@ const RideForm = ({ onRideCreated }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (onRideCreated) onRideCreated(response.data);
+            if (onRideCreated) {
+                onRideCreated(response.data);
+            }
 
             setFormData({
                 odkud: '',
+                odkud_place_id: null,
+                odkud_address: '',
                 kam: '',
+                kam_place_id: null,
+                kam_address: '',
                 casOdjezdu: '',
                 casPrijezdu: '',
                 cena: '',
                 pocetMist: 1,
                 auto_id: ''
             });
-
             setMezistanice([]);
-            setNovaMezistanice("");
-
-            setSuccess('Jízda byla úspěšně nabídnuta!');
+            setNovaMezistanice(emptyLocationMeta);
+            setSuccess('Jizda byla uspesne nabidnuta.');
         } catch (err) {
-            setError(err.response?.data?.error || 'Chyba při vytváření jízdy');
+            setError(err.response?.data?.error || 'Chyba pri vytvareni jizdy');
         } finally {
             setLoading(false);
         }
@@ -257,15 +299,15 @@ const RideForm = ({ onRideCreated }) => {
 
     return (
         <div className="ride-form">
-            <h2>Nabídnout jízdu</h2>
+            <h2>Nabidnout jizdu</h2>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
             {noCars && !creatingCar && (
                 <div className="no-cars">
-                    <p>Nemáte vytvořené žádné auto.</p>
+                    <p>Nemate vytvorene zadne auto.</p>
                     <button type="button" onClick={() => setCreatingCar(true)}>
-                        Vytvořit auto
+                        Vytvorit auto
                     </button>
                 </div>
             )}
@@ -285,61 +327,53 @@ const RideForm = ({ onRideCreated }) => {
 
             {!creatingCar && (
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Odkud:</label>
-                        <input
-                            type="text"
-                            name="odkud"
-                            value={formData.odkud}
-                            onChange={handleChange}
-                            required
-                            maxLength={15}
-                            placeholder="Výchozí místo"
-                        />
-                    </div>
+                    <LocationAutocompleteInput
+                        label="Odkud:"
+                        name="odkud"
+                        value={formData.odkud}
+                        onChange={handleLocationChange}
+                        required
+                        placeholder="Vychozi mesto"
+                    />
+
+                    <LocationAutocompleteInput
+                        label="Kam:"
+                        name="kam"
+                        value={formData.kam}
+                        onChange={handleLocationChange}
+                        required
+                        placeholder="Cilove mesto"
+                    />
 
                     <div className="form-group">
-                        <label>Kam:</label>
-                        <input
-                            type="text"
-                            name="kam"
-                            value={formData.kam}
-                            onChange={handleChange}
-                            required
-                            maxLength={15}
-                            placeholder="Cílové místo"
-                        />
-                    </div>
-
-                    {/* Mezistanice */}
-                    <div className="form-group">
-                        <label>Mezistanice (nepovinné):</label>
+                        <label>Mezistanice (nepovinne):</label>
 
                         <div className="mezistanice-row">
-                            <input
-                                type="text"
-                                value={novaMezistanice}
-                                onChange={(e) => setNovaMezistanice(e.target.value)}
-                                maxLength={15}
-                                placeholder="Např. Jihlava"
+                            <LocationAutocompleteInput
+                                name="novaMezistanice"
+                                value={novaMezistanice.text}
+                                onChange={handleNovaMezistaniceChange}
+                                hideLabel
+                                wrapperClassName="mezistanice-autocomplete"
+                                placeholder="Napr. Jihlava"
                                 onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
+                                    if (e.key === 'Enter') {
                                         e.preventDefault();
                                         pridatMezistanici();
                                     }
                                 }}
                             />
                             <button type="button" className="mezistanice-add" onClick={pridatMezistanici}>
-                                Přidat
+                                Pridat
                             </button>
                         </div>
 
                         {mezistanice.length > 0 && (
                             <ul className="mezistanice-list">
                                 {mezistanice.map((m, i) => (
-                                    <li key={`${m}-${i}`} className="mezistanice-item">
+                                    <li key={`${m.place_id || m.text}-${i}`} className="mezistanice-item">
                                         <span className="mezistanice-index">{i + 1}.</span>
-                                        <span className="mezistanice-text">{m}</span>
+                                        <span className="mezistanice-text">{m.text}</span>
                                         <div className="mezistanice-actions">
                                             <button
                                                 type="button"
@@ -347,15 +381,15 @@ const RideForm = ({ onRideCreated }) => {
                                                 disabled={i === 0}
                                                 title="Posunout nahoru"
                                             >
-                                                ↑
+                                                Nahoru
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => posunDolu(i)}
                                                 disabled={i === mezistanice.length - 1}
-                                                title="Posunout dolů"
+                                                title="Posunout dolu"
                                             >
-                                                ↓
+                                                Dolu
                                             </button>
                                             <button
                                                 type="button"
@@ -372,7 +406,7 @@ const RideForm = ({ onRideCreated }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Čas odjezdu:</label>
+                        <label>Cas odjezdu:</label>
                         <input
                             type="datetime-local"
                             name="casOdjezdu"
@@ -383,7 +417,7 @@ const RideForm = ({ onRideCreated }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Čas příjezdu:</label>
+                        <label>Cas prijezdu:</label>
                         <input
                             type="datetime-local"
                             name="casPrijezdu"
@@ -394,7 +428,7 @@ const RideForm = ({ onRideCreated }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Cena (Kč):</label>
+                        <label>Cena (Kc):</label>
                         <input
                             type="number"
                             name="cena"
@@ -407,7 +441,7 @@ const RideForm = ({ onRideCreated }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Počet míst:</label>
+                        <label>Pocet mist:</label>
                         <input
                             type="number"
                             name="pocetMist"
@@ -428,7 +462,7 @@ const RideForm = ({ onRideCreated }) => {
                             required
                         >
                             <option value="">Vyberte auto</option>
-                            {auta.map(auto => (
+                            {auta.map((auto) => (
                                 <option key={auto.id} value={auto.id}>
                                     {auto.znacka} {auto.model} ({auto.spz})
                                 </option>
@@ -437,7 +471,7 @@ const RideForm = ({ onRideCreated }) => {
                     </div>
 
                     <button type="submit" disabled={loading}>
-                        {loading ? 'Vytváří se...' : 'Nabídnout jízdu'}
+                        {loading ? 'Vytvari se...' : 'Nabidnout jizdu'}
                     </button>
                 </form>
             )}

@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import SelectCarModal from "../cars/SelectCarModal";
+import LocationAutocompleteInput from "./LocationAutocompleteInput";
 import "./EditRide.css";
 
 const API = "http://localhost:5000/api";
@@ -17,6 +18,12 @@ function toISO(dateStr, timeStr) {
   return `${dateStr}T${timeStr}:00`;
 }
 
+const createStop = (text = "", meta = null) => ({
+  text,
+  place_id: meta?.place_id || null,
+  address: meta?.address || "",
+});
+
 export default function EditRide() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -30,13 +37,15 @@ export default function EditRide() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
   const [ride, setRide] = useState(null);
   const [showSelectCar, setShowSelectCar] = useState(false);
-
   const [form, setForm] = useState({
     odkud: "",
+    odkud_place_id: null,
+    odkud_address: "",
     kam: "",
+    kam_place_id: null,
+    kam_address: "",
     datum_odjezdu: "",
     cas_odjezdu: "",
     datum_prijezdu: "",
@@ -48,17 +57,24 @@ export default function EditRide() {
 
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || "").trim();
-    if (!normalized) return `${fieldLabel} je povinné`;
-    if (normalized.length > 15) return `${fieldLabel} může mít maximálně 15 znaků`;
-    if (/[^A-Za-zÀ-ž0-9\s-]/.test(normalized)) {
-      return `${fieldLabel} může obsahovat jen písmena a maximálně dvě čísla`;
+    if (!normalized) return `${fieldLabel} je povinne`;
+    if (normalized.length > 50) return `${fieldLabel} muze mit maximalne 50 znaku`;
+    if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
+      return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky`;
     }
-    const digitsCount = (normalized.match(/\d/g) || []).length;
-    if (digitsCount > 2) return `${fieldLabel} může obsahovat maximálně dvě čísla`;
     return null;
   };
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleLocationChange = (fieldName, value, meta) => {
+    setForm((prev) => ({
+      ...prev,
+      [fieldName]: value,
+      [`${fieldName}_place_id`]: meta?.place_id || null,
+      [`${fieldName}_address`]: meta?.address || "",
+    }));
+  };
 
   const fetchRide = async () => {
     setLoading(true);
@@ -75,11 +91,15 @@ export default function EditRide() {
       const stops = (j?.mezistanice || [])
         .slice()
         .sort((a, b) => (a.poradi ?? 0) - (b.poradi ?? 0))
-        .map((m) => m.misto);
+        .map((m) => createStop(m.misto, { place_id: m.misto_place_id, address: m.misto_address }));
 
       setForm({
         odkud: j?.odkud ?? "",
+        odkud_place_id: j?.odkud_place_id ?? null,
+        odkud_address: j?.odkud_address ?? "",
         kam: j?.kam ?? "",
+        kam_place_id: j?.kam_place_id ?? null,
+        kam_address: j?.kam_address ?? "",
         datum_odjezdu: odj.date,
         cas_odjezdu: odj.time,
         datum_prijezdu: prij.date,
@@ -89,7 +109,7 @@ export default function EditRide() {
         mezistanice: stops,
       });
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodařilo se načíst jízdu.");
+      setError(e.response?.data?.error || "Nepodarilo se nacist jizdu.");
     } finally {
       setLoading(false);
     }
@@ -100,13 +120,13 @@ export default function EditRide() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const addStop = () => setField("mezistanice", [...form.mezistanice, ""]);
+  const addStop = () => setField("mezistanice", [...form.mezistanice, createStop()]);
   const removeStop = (idx) =>
     setField("mezistanice", form.mezistanice.filter((_, i) => i !== idx));
-  const updateStop = (idx, value) =>
+  const updateStop = (idx, value, meta) =>
     setField(
       "mezistanice",
-      form.mezistanice.map((s, i) => (i === idx ? value.slice(0, 15) : s))
+      form.mezistanice.map((s, i) => (i === idx ? createStop(value, meta || s) : s))
     );
 
   const changeRideCar = async (auto) => {
@@ -116,7 +136,7 @@ export default function EditRide() {
       await fetchRide();
       setShowSelectCar(false);
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodařilo se změnit auto.");
+      setError(e.response?.data?.error || "Nepodarilo se zmenit auto.");
     }
   };
 
@@ -140,7 +160,7 @@ export default function EditRide() {
         return;
       }
 
-      for (const stop of form.mezistanice.map((s) => s.trim()).filter(Boolean)) {
+      for (const stop of form.mezistanice.map((s) => s.text.trim()).filter(Boolean)) {
         const stopError = validateLocationField(stop, "Mezistanice");
         if (stopError) {
           setError(stopError);
@@ -151,27 +171,37 @@ export default function EditRide() {
 
       const payload = {
         odkud: form.odkud.trim(),
+        odkud_place_id: form.odkud_place_id,
+        odkud_address: form.odkud_address,
         kam: form.kam.trim(),
+        kam_place_id: form.kam_place_id,
+        kam_address: form.kam_address,
         cas_odjezdu: toISO(form.datum_odjezdu, form.cas_odjezdu),
         cas_prijezdu: toISO(form.datum_prijezdu, form.cas_prijezdu),
         cena: Number(form.cena),
         pocet_mist: Number(form.pocet_mist),
-        mezistanice: form.mezistanice.map((s) => s.trim()).filter(Boolean),
+        mezistanice: form.mezistanice
+          .map((s) => ({
+            text: s.text.trim(),
+            place_id: s.place_id,
+            address: s.address,
+          }))
+          .filter((s) => s.text),
       };
 
       await axios.put(`${API}/jizdy/${id}`, payload, { headers });
       navigate("/moje-jizdy");
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodařilo se uložit změny.");
+      setError(e.response?.data?.error || "Nepodarilo se ulozit zmeny.");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="edit-ride-loading">Načítám…</div>;
+  if (loading) return <div className="edit-ride-loading">Nacitam...</div>;
 
   const autoText = ride?.auto?.smazane
-    ? "Smazané auto"
+    ? "Smazane auto"
     : `${ride?.auto?.znacka ?? ""} ${ride?.auto?.model ?? ""}${
         ride?.auto?.spz ? ` (${ride.auto.spz})` : ""
       }`.trim();
@@ -179,9 +209,9 @@ export default function EditRide() {
   return (
     <div className="edit-ride-page">
       <div className="edit-ride-header">
-        <h2 className="edit-ride-title">Upravit jízdu</h2>
+        <h2 className="edit-ride-title">Upravit jizdu</h2>
         <button className="btn-secondary" type="button" onClick={() => navigate(-1)}>
-          Zpět
+          Zpet
         </button>
       </div>
 
@@ -190,15 +220,15 @@ export default function EditRide() {
       <div className="edit-section">
         <h3>Auto</h3>
         <div className="edit-auto-box">
-          <div className="edit-auto-text">{autoText || "—"}</div>
+          <div className="edit-auto-text">{autoText || "-"}</div>
           <button type="button" className="btn-primary" onClick={() => setShowSelectCar(true)}>
-            Změnit auto
+            Zmenit auto
           </button>
         </div>
 
         {ride?.auto?.smazane && (
           <div className="edit-warning">
-            Toto auto bylo smazáno. Vyber prosím jiné auto pro tuto jízdu.
+            Toto auto bylo smazano. Vyber prosim jine auto pro tuto jizdu.
           </div>
         )}
       </div>
@@ -212,23 +242,23 @@ export default function EditRide() {
       )}
 
       <form onSubmit={handleSubmit} className="edit-form">
-        <div className="edit-input">
-          <label>Odkud</label>
-          <input
-            value={form.odkud}
-            maxLength={15}
-            onChange={(e) => setField("odkud", e.target.value.slice(0, 15))}
-          />
-        </div>
+        <LocationAutocompleteInput
+          label="Odkud"
+          name="odkud"
+          value={form.odkud}
+          onChange={handleLocationChange}
+          required
+          placeholder="Vychozi mesto"
+        />
 
-        <div className="edit-input">
-          <label>Kam</label>
-          <input
-            value={form.kam}
-            maxLength={15}
-            onChange={(e) => setField("kam", e.target.value.slice(0, 15))}
-          />
-        </div>
+        <LocationAutocompleteInput
+          label="Kam"
+          name="kam"
+          value={form.kam}
+          onChange={handleLocationChange}
+          required
+          placeholder="Cilove mesto"
+        />
 
         <div className="edit-grid">
           <div className="edit-input">
@@ -240,7 +270,7 @@ export default function EditRide() {
             />
           </div>
           <div className="edit-input">
-            <label>Čas odjezdu</label>
+            <label>Cas odjezdu</label>
             <input
               type="time"
               value={form.cas_odjezdu}
@@ -251,7 +281,7 @@ export default function EditRide() {
 
         <div className="edit-grid">
           <div className="edit-input">
-            <label>Datum příjezdu</label>
+            <label>Datum prijezdu</label>
             <input
               type="date"
               value={form.datum_prijezdu}
@@ -259,7 +289,7 @@ export default function EditRide() {
             />
           </div>
           <div className="edit-input">
-            <label>Čas příjezdu</label>
+            <label>Cas prijezdu</label>
             <input
               type="time"
               value={form.cas_prijezdu}
@@ -274,7 +304,7 @@ export default function EditRide() {
             <input value={form.cena} onChange={(e) => setField("cena", e.target.value)} />
           </div>
           <div className="edit-input">
-            <label>Počet míst</label>
+            <label>Pocet mist</label>
             <input value={form.pocet_mist} onChange={(e) => setField("pocet_mist", e.target.value)} />
           </div>
         </div>
@@ -283,19 +313,21 @@ export default function EditRide() {
           <div className="stops-header">
             <h3>Mezistanice</h3>
             <button type="button" className="btn-secondary" onClick={addStop}>
-              + Přidat
+              + Pridat
             </button>
           </div>
 
-          {form.mezistanice.length === 0 && <div className="stops-empty">Žádné mezistanice</div>}
+          {form.mezistanice.length === 0 && <div className="stops-empty">Zadne mezistanice</div>}
 
           <div className="stops-list">
             {form.mezistanice.map((s, idx) => (
-              <div key={idx} className="stop-row">
-                <input
-                  value={s}
-                  maxLength={15}
-                  onChange={(e) => updateStop(idx, e.target.value)}
+              <div key={s.place_id || `${s.text}-${idx}`} className="stop-row">
+                <LocationAutocompleteInput
+                  name={`mezistanice-${idx}`}
+                  value={s.text}
+                  onChange={(_, value, meta) => updateStop(idx, value, meta)}
+                  hideLabel
+                  wrapperClassName="stop-autocomplete"
                   placeholder={`Mezistanice ${idx + 1}`}
                 />
                 <button type="button" className="btn-danger" onClick={() => removeStop(idx)}>
@@ -308,7 +340,7 @@ export default function EditRide() {
 
         <div className="edit-actions">
           <button type="submit" className="btn-success" disabled={saving}>
-            {saving ? "Ukládám…" : "Uložit"}
+            {saving ? "Ukladam..." : "Ulozit"}
           </button>
         </div>
       </form>

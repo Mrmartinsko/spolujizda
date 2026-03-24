@@ -83,6 +83,11 @@ button[type="submit"]:disabled {
   margin-bottom: 10px;
 }
 
+.mezistanice-autocomplete {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .mezistanice-row input {
   flex: 1;
 }

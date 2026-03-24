@@ -10,7 +10,11 @@ class Jizda(db.Model):
     ridic_id = db.Column(db.Integer, db.ForeignKey("uzivatel.id"), nullable=False)
     auto_id = db.Column(db.Integer, db.ForeignKey("auto.id", ondelete="SET NULL"), nullable=True)
     odkud = db.Column(db.String(255), nullable=False)
+    odkud_place_id = db.Column(db.String(64), nullable=True, index=True)
+    odkud_address = db.Column(db.String(255), nullable=True)
     kam = db.Column(db.String(255), nullable=False)
+    kam_place_id = db.Column(db.String(64), nullable=True, index=True)
+    kam_address = db.Column(db.String(255), nullable=True)
     cas_odjezdu = db.Column(db.DateTime, nullable=False)
     cas_prijezdu = db.Column(db.DateTime, nullable=False)
     cena = db.Column(db.Float, nullable=False)
@@ -87,7 +91,11 @@ class Jizda(db.Model):
                 }
             ),
             "odkud": self.odkud,
+            "odkud_place_id": self.odkud_place_id,
+            "odkud_address": self.odkud_address,
             "kam": self.kam,
+            "kam_place_id": self.kam_place_id,
+            "kam_address": self.kam_address,
             "cas_odjezdu": self.cas_odjezdu.isoformat() if self.cas_odjezdu else None,
             "cas_prijezdu": self.cas_prijezdu.isoformat() if self.cas_prijezdu else None,
             "cena": self.cena,
@@ -103,7 +111,13 @@ class Jizda(db.Model):
             ],
             # mezistanice (vždy pole, i když prázdné)
             "mezistanice": [
-                {"id": m.id, "misto": m.misto, "poradi": m.poradi}
+                {
+                    "id": m.id,
+                    "misto": m.misto,
+                    "misto_place_id": m.misto_place_id,
+                    "misto_address": m.misto_address,
+                    "poradi": m.poradi,
+                }
                 for m in self.mezistanice
             ],
         }
