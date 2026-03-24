@@ -134,6 +134,10 @@
   align-items: center;
 }
 
+.stop-autocomplete {
+  margin-bottom: 0;
+}
+
 .stop-row input {
   padding: 10px 12px;
   border: 1px solid #ddd;

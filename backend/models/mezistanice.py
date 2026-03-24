@@ -14,6 +14,8 @@ class Mezistanice(db.Model):
     )
 
     misto = db.Column(db.String(255), nullable=False)
+    misto_place_id = db.Column(db.String(64), nullable=True, index=True)
+    misto_address = db.Column(db.String(255), nullable=True)
     poradi = db.Column(db.Integer, nullable=False)
 
     # vztah zpátky na Jizda

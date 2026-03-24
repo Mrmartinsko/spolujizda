@@ -34,6 +34,7 @@ try:
     from routes.chat import chat_bp
     from routes.hodnoceni import hodnoceni_bp
     from routes.jizdy import jizdy_bp
+    from routes.mesta import mesta_bp
     from routes.rezervace import rezervace_bp
     from routes.uzivatele import uzivatele_bp
     from routes.oznameni import oznameni_bp
@@ -57,6 +58,7 @@ def create_app(config_name="development"):
         app.register_blueprint(auth_bp, url_prefix="/api/auth")
         app.register_blueprint(uzivatele_bp, url_prefix="/api/uzivatele")
         app.register_blueprint(jizdy_bp, url_prefix="/api/jizdy")
+        app.register_blueprint(mesta_bp, url_prefix="/api/mesta")
         app.register_blueprint(rezervace_bp, url_prefix="/api/rezervace")
         app.register_blueprint(hodnoceni_bp, url_prefix="/api/hodnoceni")
         app.register_blueprint(chat_bp, url_prefix="/api/chat")
