@@ -1,0 +1,89 @@
+.reservation-passenger-summary {
+  margin-top: 6px;
+}
+
+.reservation-passenger-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reservation-profile-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #007bff;
+  cursor: pointer;
+}
+
+.reservation-profile-link:hover {
+  text-decoration: underline;
+}
+
+.reservation-profile-link:focus-visible {
+  outline: 2px solid rgba(0, 123, 255, 0.25);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.reservation-primary-passenger {
+  font-weight: 700;
+  color: #212529;
+}
+
+.reservation-extra-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #edf1f5;
+  color: #5c6773;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.reservation-passenger-toggle {
+  border: 1px solid #d7dee7;
+  background: #f3f6f9;
+  color: #607080;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.reservation-passenger-toggle:hover {
+  background: #e9eef4;
+  color: #425466;
+}
+
+.reservation-passenger-toggle.open {
+  background: #e5ebf2;
+  color: #334155;
+}
+
+.reservation-companions {
+  margin-top: 6px;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 2px solid #e5e7eb;
+  color: #6c757d;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.reservation-companions-label {
+  font-weight: 700;
+  color: #6c757d;
+}
+
+.reservation-companions-text {
+  color: #8a9198;
+  cursor: default;
+}

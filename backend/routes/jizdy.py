@@ -12,6 +12,7 @@ from models.mezistanice import Mezistanice
 from models.rezervace import Rezervace
 from models.uzivatel import Uzivatel
 from utils.cities import get_city_by_place_id
+from utils.jizdy import zrusit_jizdu
 from utils.text_normalization import normalize_search_text, sanitize_location_text
 
 
@@ -185,6 +186,10 @@ def _classify_ride_match(ride, odkud_query, kam_query):
     return None
 
 
+def _filter_rides_by_volna_mista(jizdy, pocet_pasazeru):
+    return [jizda for jizda in jizdy if jizda.ma_dostatek_volnych_mist(pocet_pasazeru)]
+
+
 @jizdy_bp.route("/", methods=["GET"])
 def get_jizdy():
     """Simple listing filter.
@@ -253,13 +258,8 @@ def get_jizdy():
         except ValueError:
             return jsonify({"error": "Neplatny format data (YYYY-MM-DD)"}), 400
 
-    if pocet_pasazeru:
-        query = query.filter(Jizda.pocet_mist >= pocet_pasazeru)
-
     jizdy = query.order_by(Jizda.cas_odjezdu).all()
-
-    if pocet_pasazeru:
-        jizdy = [j for j in jizdy if j.get_volna_mista() >= pocet_pasazeru]
+    jizdy = _filter_rides_by_volna_mista(jizdy, pocet_pasazeru)
 
     return jsonify({"jizdy": [j.to_dict() for j in jizdy], "celkem": len(jizdy)})
 
@@ -413,11 +413,11 @@ def update_jizda(jizda_id):
             jizda.kam_address = kam["address"]
 
         if "cena" in data:
-            jizda.cena = float(data["cena"])
+            return jsonify({"error": "Cenu existujici jizdy nelze menit"}), 400
 
         if "pocet_mist" in data:
             new_pocet_mist = int(data["pocet_mist"])
-            if new_pocet_mist < len(jizda.pasazeri):
+            if new_pocet_mist < jizda.get_pocet_prijatych_mist():
                 return jsonify({"error": "Pocet mist nemuze byt mensi nez pocet jiz prijatych pasazeru"}), 400
             jizda.pocet_mist = new_pocet_mist
 
@@ -490,7 +490,7 @@ def delete_jizda(jizda_id):
         return jsonify({"error": "Nemate opravneni zrusit tuto jizdu"}), 403
 
     try:
-        jizda.status = "zrusena"
+        zrusit_jizdu(jizda)
         db.session.commit()
         return jsonify({"message": "Jizda uspesne zrusena"})
     except Exception:
@@ -550,13 +550,13 @@ def vyhledat_jizdy():
     seen_ids = set()
 
     for ride in full_match:
-        if ride.id in seen_ids or ride.get_volna_mista() < pocet_pasazeru:
+        if ride.id in seen_ids or not ride.ma_dostatek_volnych_mist(pocet_pasazeru):
             continue
         seen_ids.add(ride.id)
         result.append({"match_type": "full", "ride": ride.to_dict()})
 
     for ride in partial_match:
-        if ride.id in seen_ids or ride.get_volna_mista() < pocet_pasazeru:
+        if ride.id in seen_ids or not ride.ma_dostatek_volnych_mist(pocet_pasazeru):
             continue
         seen_ids.add(ride.id)
         result.append({"match_type": "partial", "ride": ride.to_dict()})

@@ -57,15 +57,34 @@ class Jizda(db.Model):
 
     def get_volna_mista(self):
         """Vrátí počet volných míst"""
-        obsazena_mista = len(self.pasazeri)
-        return self.pocet_mist - obsazena_mista
+        obsazena_mista = self.get_pocet_prijatych_mist()
+        return max(0, self.pocet_mist - obsazena_mista)
 
-    def muze_rezervovat(self, uzivatel_id):
+    def get_pocet_prijatych_mist(self):
+        if not self.id:
+            return sum(
+                rezervace.pocet_mist for rezervace in self.rezervace if rezervace.status == "prijata"
+            )
+
+        from models.rezervace import Rezervace
+
+        prijate_rezervace = Rezervace.query.filter_by(jizda_id=self.id, status="prijata").all()
+        return sum(rezervace.pocet_mist for rezervace in prijate_rezervace)
+
+    def get_pocet_cekajicich_rezervaci(self):
+        return sum(1 for rezervace in self.rezervace if rezervace.status == "cekajici")
+
+    def ma_dostatek_volnych_mist(self, pocet_pasazeru):
+        if not pocet_pasazeru:
+            return True
+        return self.get_volna_mista() >= pocet_pasazeru
+
+    def muze_rezervovat(self, uzivatel_id, pocet_mist=1):
         """Zkontroluje, zda může uživatel rezervovat místo"""
         if self.ridic_id == uzivatel_id:
             return False, "Řidič nemůže rezervovat vlastní jízdu"
 
-        if self.get_volna_mista() <= 0:
+        if not self.ma_dostatek_volnych_mist(pocet_mist):
             return False, "Jízda je plně obsazená"
 
         # Zkontroluje, zda už uživatel není pasažér
@@ -101,6 +120,7 @@ class Jizda(db.Model):
             "cena": self.cena,
             "pocet_mist": self.pocet_mist,
             "volna_mista": self.get_volna_mista(),
+            "pocet_cekajicich_rezervaci": self.get_pocet_cekajicich_rezervaci(),
             "status": self.status,
             "pasazeri": [
                 {

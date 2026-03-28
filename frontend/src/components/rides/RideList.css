@@ -145,6 +145,13 @@
   flex-wrap: wrap;
 }
 
+.passenger-item.reservation-entry {
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4px 0;
+  width: 100%;
+}
+
 .passenger-pill {
   border: 1px solid #e5e7eb;
   background: #f9fafb;
@@ -226,6 +233,19 @@
 
 .btn-reserve:hover {
     background: #0056b3;
+}
+
+.reservation-modal-input {
+    width: 100%;
+    border: 1px solid #cfcfcf;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 14px;
+    font: inherit;
+}
+
+.reservation-modal-passenger-group {
+    margin-bottom: 2px;
 }
 
 .btn-delete {

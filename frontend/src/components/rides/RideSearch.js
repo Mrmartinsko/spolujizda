@@ -151,7 +151,11 @@ const RideSearch = ({ onSearchResults }) => {
                             <p>Nacitam...</p>
                         </div>
                     ) : searchResults.length > 0 ? (
-                        <RideList rides={searchResults} onRideUpdate={handleRideUpdate} />
+                        <RideList
+                            rides={searchResults}
+                            onRideUpdate={handleRideUpdate}
+                            defaultReservationMist={searchData.pocet_pasazeru}
+                        />
                     ) : (
                         <div className="no-results">
                             <p>Zadne jizdy nebyly nalezeny. Zkuste zmenit parametry vyhledavani.</p>
