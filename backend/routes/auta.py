@@ -6,8 +6,31 @@ from models.uzivatel import Uzivatel
 from utils.validators import validate_spz
 from sqlalchemy import false
 from models.jizda import Jizda
+from utils.jizdy import zrusit_jizdu
 
 auta_bp = Blueprint("auta", __name__)
+
+
+def _get_aktivni_jizdy_auta(auto_id):
+    return Jizda.query.filter(
+        Jizda.auto_id == auto_id,
+        Jizda.status == "aktivni"
+    ).all()
+
+
+def _soft_delete_auto(auto, profil_id):
+    bylo_primarni = auto.primarni
+    auto.smazane = True
+    auto.primarni = False
+
+    if bylo_primarni:
+        nove_primarni = Auto.query.filter(
+            Auto.profil_id == profil_id,
+            Auto.smazane == false(),
+            Auto.id != auto.id
+        ).first()
+        if nove_primarni:
+            nove_primarni.primarni = True
 
 def get_uzivatel_a_profil():
     """Helper pro získání aktuálního uživatele a jeho profilu"""
@@ -144,27 +167,17 @@ def delete_auto(auto_id):
     ).first_or_404()
 
     # Kontrola, zda má aktivní jízdy
-    if auto.ma_aktivni_jizdy():
-        print(f"Auto {auto.id} má aktivní jízdy!")  # DEBUG
+    aktivni_jizdy = _get_aktivni_jizdy_auta(auto.id)
+    if aktivni_jizdy:
         return jsonify({
             "error": "AUTO_MA_AKTIVNI_JIZDY",
+            "pocet_aktivnich_jizd": len(aktivni_jizdy),
             "message": "Toto auto má aktivní jízdy, je třeba jej nahradit"
         }), 409
 
     # Pokud nemá aktivní jízdy, pokračujeme v mazání
-    bylo_primarni = auto.primarni
-
     try:
-        auto.smazane = True
-        auto.primarni = False
-
-        if bylo_primarni:
-            nove_primarni = Auto.query.filter(
-                Auto.profil_id == uzivatel.profil.id,
-                Auto.smazane == false()
-            ).first()
-            if nove_primarni:
-                nove_primarni.primarni = True
+        _soft_delete_auto(auto, uzivatel.profil.id)
 
         db.session.commit()
         return jsonify({"message": "Auto bylo úspěšně smazáno (archivováno)"})
@@ -219,7 +232,8 @@ def replace_auto(stare_auto_id):
         Auto.smazane == False
     ).first_or_404()
 
-    if not stare_auto.ma_aktivni_jizdy():
+    aktivni_jizdy = _get_aktivni_jizdy_auta(stare_auto.id)
+    if not aktivni_jizdy:
         return jsonify({
             "error": "AUTO_NEMA_AKTIVNI_JIZDY",
             "message": "Toto auto nemá žádné aktivní jízdy"
@@ -247,29 +261,13 @@ def replace_auto(stare_auto_id):
 
     try:
         # Přepsat auto u všech aktivních jízd
-        aktivni_jizdy = Jizda.query.filter(
-            Jizda.auto_id == stare_auto.id,
-            Jizda.status == "aktivni"
-        ).all()
-
         for j in aktivni_jizdy:
             j.auto_id = nove_auto.id
 
         # Označit staré auto jako smazané a zrušit primární
-        bylo_primarni = stare_auto.primarni
-        stare_auto.smazane = True
-        stare_auto.primarni = False
+        _soft_delete_auto(stare_auto, uzivatel.profil.id)
 
         # Pokud bylo primární, vybrat nové primární auto
-        if bylo_primarni:
-            ma_primarni = Auto.query.filter(
-                Auto.profil_id == uzivatel.profil.id,
-                Auto.smazane == False,
-                Auto.id != stare_auto.id
-            ).first()
-            if ma_primarni:
-                ma_primarni.primarni = True
-
         db.session.commit()
 
         return jsonify({
@@ -280,5 +278,43 @@ def replace_auto(stare_auto_id):
         db.session.rollback()
         return jsonify({
             "error": "CHYBA_PRI_NAHRAZE",
+            "message": str(e)
+        }), 500
+
+
+@auta_bp.route("/<int:auto_id>/zrusit-aktivni-jizdy", methods=["POST"])
+@jwt_required()
+def zrusit_aktivni_jizdy_auta(auto_id):
+    uzivatel, err, code = get_uzivatel_a_profil()
+    if err:
+        return err, code
+
+    auto = Auto.query.filter(
+        Auto.id == auto_id,
+        Auto.profil_id == uzivatel.profil.id,
+        Auto.smazane == false()
+    ).first_or_404()
+
+    aktivni_jizdy = _get_aktivni_jizdy_auta(auto.id)
+    if not aktivni_jizdy:
+        return jsonify({
+            "error": "AUTO_NEMA_AKTIVNI_JIZDY",
+            "message": "Toto auto nema zadne aktivni jizdy"
+        }), 400
+
+    try:
+        for jizda in aktivni_jizdy:
+            zrusit_jizdu(jizda)
+
+        _soft_delete_auto(auto, uzivatel.profil.id)
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Bylo zruseno {len(aktivni_jizdy)} aktivnich jizd a auto bylo smazano"
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "CHYBA_PRI_RUSENI_JIZD",
             "message": str(e)
         }), 500

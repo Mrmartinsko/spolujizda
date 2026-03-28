@@ -10,6 +10,36 @@ from models.hodnoceni import Hodnoceni
 
 rezervace_bp = Blueprint("rezervace", __name__)
 
+MAX_DELKA_JMENA_PASAZERA = 80
+
+
+def _validate_dalsi_pasazeri(raw_pasazeri, pocet_mist):
+    if raw_pasazeri is None:
+        raw_pasazeri = []
+
+    if not isinstance(raw_pasazeri, list):
+        return None, "Dalsi pasazeri musi byt seznam jmen"
+
+    expected_count = max(0, pocet_mist - 1)
+    if len(raw_pasazeri) != expected_count:
+        return None, "Pocet jmen dalsich pasazeru musi odpovidat poctu rezervovanych mist"
+
+    normalized = []
+    for jmeno in raw_pasazeri:
+        if not isinstance(jmeno, str):
+            return None, "Kazde jmeno dalsiho pasazera musi byt text"
+
+        trimmed = jmeno.strip()
+        if not trimmed:
+            return None, "Jmena dalsich pasazeru nesmi byt prazdna"
+
+        if len(trimmed) > MAX_DELKA_JMENA_PASAZERA:
+            return None, f"Jmeno dalsiho pasazera muze mit maximalne {MAX_DELKA_JMENA_PASAZERA} znaku"
+
+        normalized.append(trimmed)
+
+    return normalized, None
+
 
 @rezervace_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -22,7 +52,23 @@ def create_rezervace():
         return jsonify({"error": "ID jízdy je povinné"}), 400
 
     jizda_id = data["jizda_id"]
+    pocet_mist = data.get("pocet_mist", 1)
+    dalsi_pasazeri = data.get("dalsi_pasazeri", [])
     poznamka = data.get("poznamka", "")
+
+    try:
+        pocet_mist = int(pocet_mist)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Pocet mist musi byt cele cislo"}), 400
+
+    if pocet_mist <= 0:
+        return jsonify({"error": "Pocet mist musi byt alespon 1"}), 400
+
+    dalsi_pasazeri, chyba_dalsich_pasazeru = _validate_dalsi_pasazeri(
+        dalsi_pasazeri, pocet_mist
+    )
+    if chyba_dalsich_pasazeru:
+        return jsonify({"error": chyba_dalsich_pasazeru}), 400
 
      # měkká povinnost: před novou rezervací musí pasažér ohodnotit řidiče z dokončených jízd 
     now = datetime.now()
@@ -80,7 +126,7 @@ def create_rezervace():
         return jsonify({"error": "Jízda nenalezena"}), 404
 
     # Kontrola, zda může uživatel rezervovat
-    muze, zprava = jizda.muze_rezervovat(uzivatel_id)
+    muze, zprava = jizda.muze_rezervovat(uzivatel_id, pocet_mist)
     if not muze:
         return jsonify({"error": zprava}), 400
 
@@ -96,7 +142,11 @@ def create_rezervace():
 
     try:
         rezervace = Rezervace(
-            uzivatel_id=uzivatel_id, jizda_id=jizda_id, poznamka=poznamka
+            uzivatel_id=uzivatel_id,
+            jizda_id=jizda_id,
+            poznamka=poznamka,
+            pocet_mist=pocet_mist,
+            dalsi_pasazeri=dalsi_pasazeri,
         )
 
         db.session.add(rezervace)
@@ -117,7 +167,12 @@ def prijmout_rezervaci(rezervace_id):
     """Přijetí rezervace (pouze řidič)"""
     uzivatel_id = int(get_jwt_identity())
 
-    rezervace = Rezervace.query.get_or_404(rezervace_id)
+    rezervace = (
+        Rezervace.query.filter_by(id=rezervace_id)
+        .with_for_update()
+        .first_or_404()
+    )
+    jizda = Jizda.query.filter_by(id=rezervace.jizda_id).with_for_update().first()
 
     # Pouze řidič může přijímat rezervace
     if rezervace.jizda.ridic_id != uzivatel_id:
@@ -128,6 +183,10 @@ def prijmout_rezervaci(rezervace_id):
 
     try:
         # Použijeme metodu prijmout() z modelu, která přidá uživatele mezi pasažéry
+        if not jizda or not jizda.ma_dostatek_volnych_mist(rezervace.pocet_mist):
+            db.session.rollback()
+            return jsonify({"error": "Jizda je plne obsazena"}), 400
+
         rezervace.prijmout()
         db.session.commit()
 

@@ -4,6 +4,7 @@ import axios from 'axios';
 import './MyReservationsPage.css';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/common/ConfirmModal';
+import ReservationPassengerSummary from '../components/reservations/ReservationPassengerSummary';
 
 const MyReservationsPage = () => {
   const { token, user } = useAuth();
@@ -270,6 +271,8 @@ const MyReservationsPage = () => {
           filteredRezervace.map((r) => {
             const isExpanded = !!expanded[r.id];
             const canCancelReservation = canCancelReservationByRule(r);
+            const mainPassengerId = r.uzivatel?.id;
+            const mainPassengerName = getPassengerDisplayName(r.uzivatel);
 
             return (
               <div key={r.id} className="reservation-card">
@@ -344,6 +347,18 @@ const MyReservationsPage = () => {
                         </div>
                       )}
 
+                      <div className="passengers-section">
+                        <strong>Rezervace pro:</strong>
+                        <ReservationPassengerSummary
+                          reservation={r}
+                          primaryPassengerName={mainPassengerName}
+                          primaryPassengerId={mainPassengerId}
+                          onOpenProfile={() => {
+                            if (mainPassengerId) navigate(`/profil/${mainPassengerId}`);
+                          }}
+                        />
+                      </div>
+
                       {r.jizda && (
                         <div className="passengers-section">
                           <strong>Pasažéři:</strong>
@@ -356,6 +371,10 @@ const MyReservationsPage = () => {
                           <strong>Poznámka:</strong> {r.poznamka}
                         </div>
                       )}
+                    </div>
+
+                    <div className="note-info">
+                      <strong>Počet míst:</strong> {r.pocet_mist ?? 1}
                     </div>
 
                     <div className="reservation-actions">

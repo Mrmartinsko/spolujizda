@@ -18,7 +18,7 @@ const CarManager = () => {
     const [editing, setEditing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null });
+    const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null, aktivniJizdyCount: 0 });
     const [deleteModal, setDeleteModal] = useState({ open: false, autoId: null });
 
     useEffect(() => {
@@ -99,7 +99,11 @@ const CarManager = () => {
 
             if (errorCode === 409 && errorData?.error === "AUTO_MA_AKTIVNI_JIZDY") {
                 // Otevřít modal ReplaceCar
-                setShowReplaceCar({ active: true, autoId });
+                setShowReplaceCar({
+                    active: true,
+                    autoId,
+                    aktivniJizdyCount: errorData?.pocet_aktivnich_jizd || 0
+                });
             } else {
                 setError(errorData?.error || 'Chyba při mazání auta');
             }
@@ -231,9 +235,10 @@ const CarManager = () => {
             {showReplaceCar.active && (
                 <ReplaceCar
                     autoId={showReplaceCar.autoId}
-                    onClose={() => setShowReplaceCar({ active: false, autoId: null })}
+                    aktivniJizdyCount={showReplaceCar.aktivniJizdyCount}
+                    onClose={() => setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 })}
                     onCarReplaced={() => {
-                        setShowReplaceCar({ active: false, autoId: null });
+                        setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 });
                         fetchAuta();
                     }}
                 />

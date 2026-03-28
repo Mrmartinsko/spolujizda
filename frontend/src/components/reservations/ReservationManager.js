@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './ReservationManager.css';
+import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../common/ConfirmModal';
+import './ReservationManager.css';
+import ReservationPassengerSummary from './ReservationPassengerSummary';
 
 const ReservationManager = () => {
     const { token } = useAuth();
+    const navigate = useNavigate();
     const [rezervace, setRezervace] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [cancelModal, setCancelModal] = useState({ open: false, rezervaceId: null });
-    const [filter, setFilter] = useState('all'); // all, pending, accepted, rejected
+    const [filter, setFilter] = useState('all');
 
     useEffect(() => {
         fetchRezervace();
@@ -92,21 +95,28 @@ const ReservationManager = () => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return '—';
         return new Date(dateString).toLocaleString('cs-CZ');
     };
 
     const getStatusText = (status) => {
         const statusMap = {
-            'cekajici': 'Čekající',
-            'prijata': 'Přijata',
-            'odmitnuta': 'Odmítnuta'
+            cekajici: 'Čekající',
+            prijata: 'Přijata',
+            odmitnuta: 'Odmítnuta'
         };
         return statusMap[status] || status;
     };
 
-    const filteredRezervace = rezervace.filter(rezervace => {
+    const getPassengerDisplayName = (passenger) => {
+        if (!passenger) return 'Neznámý uživatel';
+        const fullName = [passenger.jmeno, passenger.prijmeni].filter(Boolean).join(' ').trim();
+        return fullName || passenger.prezdivka || passenger.username || 'Neznámý uživatel';
+    };
+
+    const filteredRezervace = rezervace.filter((item) => {
         if (filter === 'all') return true;
-        return rezervace.status === filter;
+        return item.status === filter;
     });
 
     if (loading) {
@@ -137,7 +147,7 @@ const ReservationManager = () => {
                     className={filter === 'prijata' ? 'active' : ''}
                     onClick={() => setFilter('prijata')}
                 >
-                    Přijané
+                    Přijaté
                 </button>
                 <button
                     className={filter === 'odmitnuta' ? 'active' : ''}
@@ -153,63 +163,81 @@ const ReservationManager = () => {
                 </div>
             ) : (
                 <div className="reservations-list">
-                    {filteredRezervace.map(rezervace => (
-                        <div key={rezervace.id} className="reservation-card">
-                            <div className="reservation-header">
-                                <h3>{rezervace.jizda.odkud} → {rezervace.jizda.kam}</h3>
-                                <span className={`status ${rezervace.status}`}>
-                                    {getStatusText(rezervace.status)}
-                                </span>
-                            </div>
+                    {filteredRezervace.map((item) => {
+                        const mainPassengerId = item.uzivatel?.id;
+                        const mainPassengerName = getPassengerDisplayName(item.uzivatel);
 
-                            <div className="reservation-details">
-                                <div className="ride-info">
-                                    <p><strong>Odjezd:</strong> {formatDate(rezervace.jizda.cas_odjezdu)}</p>
-                                    <p><strong>Cena:</strong> {rezervace.jizda.cena} Kč</p>
-                                    <p><strong>Řidič:</strong> {rezervace.jizda.ridic?.jmeno || 'Neznámý'}</p>
-                                    {rezervace.jizda.auto && (
-                                        <p><strong>Auto:</strong> {rezervace.jizda.auto.znacka} {rezervace.jizda.auto.model}</p>
+                        return (
+                            <div key={item.id} className="reservation-card">
+                                <div className="reservation-header">
+                                    <h3>{item.jizda.odkud} → {item.jizda.kam}</h3>
+                                    <span className={`status ${item.status}`}>
+                                        {getStatusText(item.status)}
+                                    </span>
+                                </div>
+
+                                <div className="reservation-details">
+                                    <div className="ride-info">
+                                        <p><strong>Odjezd:</strong> {formatDate(item.jizda.cas_odjezdu)}</p>
+                                        <p><strong>Cena:</strong> {item.jizda.cena} Kč</p>
+                                        <p><strong>Řidič:</strong> {item.jizda.ridic?.jmeno || 'Neznámý'}</p>
+                                        {item.jizda.auto && (
+                                            <p><strong>Auto:</strong> {item.jizda.auto.znacka} {item.jizda.auto.model}</p>
+                                        )}
+                                    </div>
+
+                                    <ReservationPassengerSummary
+                                        reservation={item}
+                                        primaryPassengerName={mainPassengerName}
+                                        primaryPassengerId={mainPassengerId}
+                                        onOpenProfile={() => {
+                                            if (mainPassengerId) navigate(`/profil/${mainPassengerId}`);
+                                        }}
+                                    />
+
+                                    <div className="reservation-note">
+                                        <strong>Počet míst:</strong> {item.pocet_mist ?? 1}
+                                    </div>
+
+                                    {item.poznamka && (
+                                        <div className="reservation-note">
+                                            <strong>Poznámka:</strong> {item.poznamka}
+                                        </div>
                                     )}
                                 </div>
 
-                                {rezervace.poznamka && (
-                                    <div className="reservation-note">
-                                        <strong>Poznámka:</strong> {rezervace.poznamka}
-                                    </div>
-                                )}
-                            </div>
+                                <div className="reservation-actions">
+                                    {item.typ === 'prijata' && item.status === 'cekajici' && (
+                                        <>
+                                            <button
+                                                className="btn-accept"
+                                                onClick={() => handleReservationAction(item.id, 'prijmout')}
+                                            >
+                                                Přijmout
+                                            </button>
+                                            <button
+                                                className="btn-reject"
+                                                onClick={() => handleReservationAction(item.id, 'odmitnout')}
+                                            >
+                                                Odmítnout
+                                            </button>
+                                        </>
+                                    )}
 
-                            <div className="reservation-actions">
-                                {rezervace.typ === 'prijata' && rezervace.status === 'cekajici' && (
-                                    <>
-                                        <button
-                                            className="btn-accept"
-                                            onClick={() => handleReservationAction(rezervace.id, 'prijmout')}
-                                        >
-                                            Přijmout
-                                        </button>
-                                        <button
-                                            className="btn-reject"
-                                            onClick={() => handleReservationAction(rezervace.id, 'odmitnout')}
-                                        >
-                                            Odmítnout
-                                        </button>
-                                    </>
-                                )}
-
-                                {rezervace.typ === 'odeslana' &&
-                                    rezervace.status === 'cekajici' &&
-                                    canCancelReservationByRule(rezervace) && (
-                                    <button
-                                        className="btn-cancel"
-                                        onClick={() => handleCancelReservation(rezervace.id)}
-                                    >
-                                        Zrušit rezervaci
-                                    </button>
-                                )}
+                                    {item.typ === 'odeslana' &&
+                                        item.status === 'cekajici' &&
+                                        canCancelReservationByRule(item) && (
+                                            <button
+                                                className="btn-cancel"
+                                                onClick={() => handleCancelReservation(item.id)}
+                                            >
+                                                Zrušit rezervaci
+                                            </button>
+                                        )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
             <ConfirmModal

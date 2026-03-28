@@ -178,7 +178,6 @@ export default function EditRide() {
         kam_address: form.kam_address,
         cas_odjezdu: toISO(form.datum_odjezdu, form.cas_odjezdu),
         cas_prijezdu: toISO(form.datum_prijezdu, form.cas_prijezdu),
-        cena: Number(form.cena),
         pocet_mist: Number(form.pocet_mist),
         mezistanice: form.mezistanice
           .map((s) => ({
@@ -301,7 +300,7 @@ export default function EditRide() {
         <div className="edit-grid">
           <div className="edit-input">
             <label>Cena</label>
-            <input value={form.cena} onChange={(e) => setField("cena", e.target.value)} />
+            <input value={form.cena} disabled readOnly />
           </div>
           <div className="edit-input">
             <label>Pocet mist</label>
