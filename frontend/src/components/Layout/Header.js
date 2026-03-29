@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ProfileSearch from './ProfileSearch';
 import NotificationsDropdown from './NotificationsDropdown';
@@ -7,21 +8,23 @@ import './Header.css';
 
 const Header = () => {
   const { user, logout } = useAuth();
-
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <header className="header">
-      <div className="headerRow">
-        <div className="headerLeft">{/* breadcrumbs */}</div>
+      <div className="header__inner">
+        <div className="header__intro">
+          <span className="header__eyebrow">Komunitní spolujízda</span>
+          <div>
+            <h1 className="header__title">Ahoj, {user?.profil?.jmeno || 'vítej'}.</h1>
+            <p className="header__subtitle">Naplánuj cestu, spravuj rezervace a zůstaň ve spojení s ostatními.</p>
+          </div>
+        </div>
 
-        <div className="headerRight">
+        <div className="header__actions">
           <ProfileSearch />
-
-          {/* ✅ Nové notifikace jako samostatná komponenta */}
           <NotificationsDropdown />
 
-          {/* Profil */}
           <div
             className="profileWrap"
             tabIndex={-1}
@@ -31,35 +34,24 @@ const Header = () => {
               }
             }}
           >
-            <button
-              className="profileBtn"
-              onClick={() => setShowDropdown((p) => !p)}
-              type="button"
-            >
-              <div className="profileAvatar">
-                {user?.profil?.jmeno?.charAt(0)?.toUpperCase() || 'U'}
+            <button className="profileBtn" type="button" onClick={() => setShowDropdown((prev) => !prev)}>
+              <div className="profileAvatar">{user?.profil?.jmeno?.charAt(0)?.toUpperCase() || 'U'}</div>
+              <div className="profileMeta">
+                <span className="profileMeta__name">{user?.profil?.jmeno || 'Uživatel'}</span>
+                <span className="profileMeta__email">{user?.email || 'Přihlášený účet'}</span>
               </div>
-              <span className="profileName">
-                {user?.profil?.jmeno || 'Uživatel'}
-              </span>
-              <span className="profileCaret">▼</span>
+              <ChevronDown size={16} className={`profileCaret ${showDropdown ? 'is-open' : ''}`} />
             </button>
 
             {showDropdown && (
               <div className="dropdownCard profileCard">
-                <Link
-                  to="/profil"
-                  className="dropdownLink"
-                  onClick={() => setShowDropdown(false)}
-                >
-                  Můj profil
+                <Link to="/profil" className="dropdownLink" onClick={() => setShowDropdown(false)}>
+                  <UserRound size={16} />
+                  <span>Můj profil</span>
                 </Link>
-                <Link
-                  to="/nastaveni"
-                  className="dropdownLink"
-                  onClick={() => setShowDropdown(false)}
-                >
-                  Nastavení
+                <Link to="/nastaveni" className="dropdownLink" onClick={() => setShowDropdown(false)}>
+                  <Settings size={16} />
+                  <span>Nastavení</span>
                 </Link>
                 <button
                   className="dropdownDanger"
@@ -69,7 +61,8 @@ const Header = () => {
                   }}
                   type="button"
                 >
-                  Odhlásit se
+                  <LogOut size={16} />
+                  <span>Odhlásit se</span>
                 </button>
               </div>
             )}

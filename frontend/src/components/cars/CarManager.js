@@ -1,263 +1,268 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { PlusCircle } from 'lucide-react';
 import axios from 'axios';
-import './CarManager.css';
-import ReplaceCar from '../cars/ReplaceCar'; // modal pro nahrazení auta
+import { useAuth } from '../../context/AuthContext';
+import Alert from '../ui/Alert';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import ReplaceCar from './ReplaceCar';
 import ConfirmModal from '../common/ConfirmModal';
+import './CarManager.css';
+
+const initialFormData = {
+  znacka: '',
+  model: '',
+  barva: '',
+  spz: '',
+  primarni: false,
+};
 
 const CarManager = () => {
-    const { token } = useAuth();
-    const [auta, setAuta] = useState([]);
-    const [formData, setFormData] = useState({
-        znacka: '',
-        model: '',
-        barva: '',
-        spz: '',
-        primarni: false
+  const { token } = useAuth();
+  const [auta, setAuta] = useState([]);
+  const [formData, setFormData] = useState(initialFormData);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null, aktivniJizdyCount: 0 });
+  const [deleteModal, setDeleteModal] = useState({ open: false, autoId: null });
+
+  const fetchAuta = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/auta/moje', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAuta(response.data);
+      setError('');
+    } catch (err) {
+      setError('Auta se nepodařilo načíst.');
+    }
+  };
+
+  useEffect(() => {
+    fetchAuta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData({
+      ...formData,
+      [e.target.name]: value,
     });
-    const [editing, setEditing] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [showReplaceCar, setShowReplaceCar] = useState({ active: false, autoId: null, aktivniJizdyCount: 0 });
-    const [deleteModal, setDeleteModal] = useState({ open: false, autoId: null });
+  };
 
-    useEffect(() => {
-        fetchAuta();
-    }, []);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    const fetchAuta = async () => {
-        try {
-            const response = await axios.get('http://localhost:5000/api/auta/moje', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setAuta(response.data);
-        } catch (err) {
-            setError('Chyba při načítání aut');
-        }
-    };
-
-    const handleChange = (e) => {
-        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setFormData({
-            ...formData,
-            [e.target.name]: value
+    try {
+      if (editing) {
+        await axios.put(`http://localhost:5000/api/auta/${editing}`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        try {
-            if (editing) {
-                await axios.put(`http://localhost:5000/api/auta/${editing}`, formData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            } else {
-                await axios.post('http://localhost:5000/api/auta/moje-nove', formData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            }
-
-            setFormData({
-                znacka: '',
-                model: '',
-                barva: '',
-                spz: '',
-                primarni: false
-            });
-            setEditing(null);
-            fetchAuta();
-        } catch (err) {
-            setError(err.response?.data?.error || 'Chyba při ukládání auta');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEdit = (auto) => {
-        setFormData({
-            znacka: auto.znacka,
-            model: auto.model,
-            barva: auto.barva,
-            spz: auto.spz,
-            primarni: auto.primarni
+      } else {
+        await axios.post('http://localhost:5000/api/auta/moje-nove', formData, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setEditing(auto.id);
-    };
+      }
 
-    const executeDelete = async (autoId) => {
-        try {
-            await axios.delete(`http://localhost:5000/api/auta/${autoId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchAuta();
-        } catch (err) {
-            const errorCode = err.response?.status;
-            const errorData = err.response?.data;
+      setFormData(initialFormData);
+      setEditing(null);
+      fetchAuta();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Auto se nepodařilo uložit.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (errorCode === 409 && errorData?.error === "AUTO_MA_AKTIVNI_JIZDY") {
-                // Otevřít modal ReplaceCar
-                setShowReplaceCar({
-                    active: true,
-                    autoId,
-                    aktivniJizdyCount: errorData?.pocet_aktivnich_jizd || 0
-                });
-            } else {
-                setError(errorData?.error || 'Chyba při mazání auta');
-            }
-        }
-    };
+  const handleEdit = (auto) => {
+    setFormData({
+      znacka: auto.znacka,
+      model: auto.model,
+      barva: auto.barva,
+      spz: auto.spz,
+      primarni: auto.primarni,
+    });
+    setEditing(auto.id);
+  };
 
-    const handleDelete = (autoId) => {
-        setDeleteModal({ open: true, autoId });
-    };
+  const executeDelete = async (autoId) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/auta/${autoId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchAuta();
+    } catch (err) {
+      const errorCode = err.response?.status;
+      const errorData = err.response?.data;
 
-    const cancelEdit = () => {
-        setFormData({
-            znacka: '',
-            model: '',
-            barva: '',
-            spz: '',
-            primarni: false
+      if (errorCode === 409 && errorData?.error === 'AUTO_MA_AKTIVNI_JIZDY') {
+        setShowReplaceCar({
+          active: true,
+          autoId,
+          aktivniJizdyCount: errorData?.pocet_aktivnich_jizd || 0,
         });
-        setEditing(null);
-    };
+      } else {
+        setError(errorData?.error || 'Auto se nepodařilo smazat.');
+      }
+    }
+  };
 
-    return (
-        <div className="car-manager">
-            <h1>Moje auta</h1>
-            <div className="car-list">
-                {auta.length === 0 ? (
-                    <p>Zatím nemáte žádné auto přidané.</p>
-                ) : (
-                    <div className="cars-grid">
-                        {auta.map(auto => (
-                            <div key={auto.id} className="car-card">
-                                <div className="car-header">
-                                    <h4>{auto.znacka} {auto.model}</h4>
-                                    {auto.primarni && <span className="primary-badge">Primární</span>}
-                                </div>
-                                <div className="car-details">
-                                    <p><strong>Barva:</strong> {auto.barva}</p>
-                                    {auto.spz && <p><strong>SPZ:</strong> {auto.spz}</p>}
-                                </div>
-                                <div className="car-actions">
-                                    <button onClick={() => handleEdit(auto)}>Upravit</button>
-                                    <button onClick={() => handleDelete(auto.id)}>Smazat</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+  const cancelEdit = () => {
+    setFormData(initialFormData);
+    setEditing(null);
+  };
+
+  return (
+    <div className="page-shell car-manager">
+      <section className="page-hero page-hero--light">
+        <span className="page-hero__eyebrow">Garáž</span>
+        <h1 className="page-hero__title">Správa aut na jednom místě</h1>
+        <p className="page-hero__text">
+          Vyberte si primární auto, upravte detaily nebo přidejte další vůz pro jiný typ cesty.
+        </p>
+      </section>
+
+      {error && <Alert variant="error">{error}</Alert>}
+
+      <div className="grid-2">
+        <Card>
+          <div className="ui-card__header">
+            <div>
+              <h2 className="ui-card__title">Moje auta</h2>
+              <p className="ui-card__subtitle">Každé auto může mít jinou roli. Primární bude předvyplněné při tvorbě jízdy.</p>
             </div>
+            <Badge variant="primary">{auta.length} vozů</Badge>
+          </div>
 
-            <h2>Správa aut</h2>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="car-form">
-                <h3>{editing ? 'Upravit auto' : 'Přidat nové auto'}</h3>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Značka:</label>
-                            <input
-                                type="text"
-                                name="znacka"
-                                value={formData.znacka}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Model:</label>
-                            <input
-                                type="text"
-                                name="model"
-                                value={formData.model}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Barva:</label>
-                            <input
-                                type="text"
-                                name="barva"
-                                value={formData.barva}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>SPZ:</label>
-                            <input
-                                type="text"
-                                name="spz"
-                                value={formData.spz}
-                                onChange={handleChange}
-                                placeholder="např. 1A2 3456"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="primarni"
-                                checked={formData.primarni}
-                                onChange={handleChange}
-                            />
-                            Primární auto
-                        </label>
-                    </div>
-
-                    <div className="form-actions">
-                        <button type="submit" disabled={loading}>
-                            {loading ? 'Ukládá se...' : (editing ? 'Upravit' : 'Přidat')}
-                        </button>
-                        {editing && (
-                            <button type="button" onClick={cancelEdit}>
-                                Zrušit
-                            </button>
-                        )}
-                    </div>
-                </form>
+          {auta.length === 0 ? (
+            <div className="empty-state">
+              <h3 className="empty-state__title">Zatím tu není žádné auto</h3>
+              <p className="empty-state__text">Přidejte první vůz a nabídka jízd bude připravená hned na další krok.</p>
             </div>
+          ) : (
+            <div className="cars-grid">
+              {auta.map((auto) => (
+                <Card key={auto.id} interactive className="car-card">
+                  <div className="car-header">
+                    <div>
+                      <h3>{auto.znacka} {auto.model}</h3>
+                      <p>{auto.barva || 'Barva neuvedena'}{auto.spz ? ` • ${auto.spz}` : ''}</p>
+                    </div>
+                    {auto.primarni && <Badge variant="success">Primární</Badge>}
+                  </div>
 
-            {/* ReplaceCar modal */}
-            {showReplaceCar.active && (
-                <ReplaceCar
-                    autoId={showReplaceCar.autoId}
-                    aktivniJizdyCount={showReplaceCar.aktivniJizdyCount}
-                    onClose={() => setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 })}
-                    onCarReplaced={() => {
-                        setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 });
-                        fetchAuta();
-                    }}
-                />
+                  <div className="car-actions">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => handleEdit(auto)}>
+                      Upravit
+                    </Button>
+                    <Button type="button" variant="danger" size="sm" onClick={() => setDeleteModal({ open: true, autoId: auto.id })}>
+                      Smazat
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <div className="ui-card__header">
+            <div>
+              <h2 className="ui-card__title">{editing ? 'Upravit auto' : 'Přidat nové auto'}</h2>
+              <p className="ui-card__subtitle">Držíme jednoduchý formulář, aby bylo auto připravené během chvilky.</p>
+            </div>
+            {!editing && (
+              <Badge variant="neutral">
+                <PlusCircle size={14} />
+                Nový záznam
+              </Badge>
             )}
-            <ConfirmModal
-                isOpen={deleteModal.open}
-                title="Smazat auto"
-                message="Opravdu chcete smazat toto auto?"
-                confirmText="Smazat auto"
-                danger
-                onCancel={() => setDeleteModal({ open: false, autoId: null })}
-                onConfirm={() => {
-                    const autoId = deleteModal.autoId;
-                    setDeleteModal({ open: false, autoId: null });
-                    if (autoId) executeDelete(autoId);
-                }}
-            />
-        </div>
-    );
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="field-group">
+                <label className="field-label" htmlFor="znacka">
+                  Značka
+                </label>
+                <input id="znacka" className="ui-input" type="text" name="znacka" value={formData.znacka} onChange={handleChange} required />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="model">
+                  Model
+                </label>
+                <input id="model" className="ui-input" type="text" name="model" value={formData.model} onChange={handleChange} required />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="field-group">
+                <label className="field-label" htmlFor="barva">
+                  Barva
+                </label>
+                <input id="barva" className="ui-input" type="text" name="barva" value={formData.barva} onChange={handleChange} />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="spz">
+                  SPZ
+                </label>
+                <input id="spz" className="ui-input" type="text" name="spz" value={formData.spz} onChange={handleChange} placeholder="Např. 1A2 3456" />
+              </div>
+            </div>
+
+            <label className="checkbox-row">
+              <input type="checkbox" name="primarni" checked={formData.primarni} onChange={handleChange} />
+              Nastavit jako primární auto
+            </label>
+
+            <div className="form-actions">
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Ukládám…' : editing ? 'Uložit změny' : 'Přidat auto'}
+              </Button>
+              {editing && (
+                <Button type="button" variant="secondary" onClick={cancelEdit}>
+                  Zrušit úpravy
+                </Button>
+              )}
+            </div>
+          </form>
+        </Card>
+      </div>
+
+      {showReplaceCar.active && (
+        <ReplaceCar
+          autoId={showReplaceCar.autoId}
+          aktivniJizdyCount={showReplaceCar.aktivniJizdyCount}
+          onClose={() => setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 })}
+          onCarReplaced={() => {
+            setShowReplaceCar({ active: false, autoId: null, aktivniJizdyCount: 0 });
+            fetchAuta();
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={deleteModal.open}
+        title="Smazat auto"
+        message="Opravdu chcete smazat toto auto?"
+        confirmText="Smazat auto"
+        danger
+        onCancel={() => setDeleteModal({ open: false, autoId: null })}
+        onConfirm={() => {
+          const autoId = deleteModal.autoId;
+          setDeleteModal({ open: false, autoId: null });
+          if (autoId) executeDelete(autoId);
+        }}
+      />
+    </div>
+  );
 };
 
 export default CarManager;

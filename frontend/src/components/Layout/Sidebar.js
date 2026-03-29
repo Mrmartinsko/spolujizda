@@ -1,71 +1,72 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import {
+  CarFront,
+  CircleUserRound,
+  Home,
+  MessageCircleMore,
+  PlusCircle,
+  Search,
+  Settings,
+  Ticket,
+  Waypoints,
+} from 'lucide-react';
+
+const menuItems = [
+  { path: '/', label: 'Přehled', icon: Home },
+  { path: '/nabidnout-jizdu', label: 'Nabídnout jízdu', icon: PlusCircle },
+  { path: '/vyhledat-jizdu', label: 'Vyhledat jízdu', icon: Search },
+  { path: '/moje-jizdy', label: 'Moje jízdy', icon: Waypoints },
+  { path: '/moje-rezervace', label: 'Moje rezervace', icon: Ticket },
+  { path: '/moje-chaty', label: 'Osobní chaty', icon: MessageCircleMore },
+  { path: '/auta', label: 'Garáž', icon: CarFront },
+];
+
+const secondaryItems = [
+  { path: '/profil', label: 'Můj profil', icon: CircleUserRound },
+  { path: '/nastaveni', label: 'Nastavení', icon: Settings },
+];
 
 const Sidebar = () => {
-    const location = useLocation();
-
-    const menuItems = [
-        { path: '/', label: 'Domů', icon: '🏠' },
-        { path: '/nabidnout-jizdu', label: 'Nabídnout jízdu', icon: '🚗' },
-        { path: '/vyhledat-jizdu', label: 'Vyhledat jízdu', icon: '🔍' },
-        { path: '/moje-jizdy', label: 'Moje jízdy', icon: '📋' },
-        { path: '/moje-rezervace', label: 'Moje rezervace', icon: '🎫' },
-        { path: '/moje-chaty', label: 'Osobní chaty', icon: '💌' }
-    ];
-
-    return (
-        <div style={{
-            width: '250px',
-            backgroundColor: 'var(--sidebar-bg)',
-            color: 'var(--text-color)',
-            padding: '20px',
-            minHeight: '100vh',
-            borderRight: '1px solid var(--sidebar-border)',
-            transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease'
-        }}>
-            <div style={{ marginBottom: '30px' }}>
-                <h2 style={{
-                    color: 'var(--btn-primary-bg)',
-                    marginBottom: '10px',
-                    transition: 'color 0.3s ease'
-                }}>
-                    🚗 Spolujízda
-                </h2>
-            </div>
-
-            <nav>
-                {menuItems.map(item => (
-                    <Link
-                        key={item.path}
-                        to={item.path}
-                        style={{
-                            display: 'block',
-                            padding: '12px 16px',
-                            marginBottom: '5px',
-                            textDecoration: 'none',
-                            color: 'var(--text-color)',
-                            borderRadius: '4px',
-                            backgroundColor: location.pathname === item.path ? 'var(--btn-primary-bg)' : 'transparent',
-                            transition: 'background-color 0.2s, color 0.3s ease'
-                        }}
-                        onMouseOver={(e) => {
-                            if (location.pathname !== item.path) {
-                                e.target.style.backgroundColor = 'var(--bg-secondary)';
-                            }
-                        }}
-                        onMouseOut={(e) => {
-                            if (location.pathname !== item.path) {
-                                e.target.style.backgroundColor = 'transparent';
-                            }
-                        }}
-                    >
-                        <span style={{ marginRight: '10px' }}>{item.icon}</span>
-                        {item.label}
-                    </Link>
-                ))}
-            </nav>
+  return (
+    <aside className="sidebar">
+      <div className="sidebar__brand">
+        <div className="sidebar__brand-mark">S</div>
+        <div>
+          <div className="sidebar__brand-title">Spolujízda</div>
+          <div className="sidebar__brand-text">Studentské cesty po škole i domů</div>
         </div>
-    );
+      </div>
+
+      <nav className="sidebar__nav">
+        {menuItems.map(({ path, label, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end={path === '/'}
+            className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}
+          >
+            <Icon size={18} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="sidebar__section-label">Účet</div>
+      <nav className="sidebar__nav sidebar__nav--secondary">
+        {secondaryItems.map(({ path, label, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}
+          >
+            <Icon size={18} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
+  );
 };
 
 export default Sidebar;

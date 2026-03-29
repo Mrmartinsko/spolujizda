@@ -6,7 +6,9 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from models import db
 from models.hodnoceni import Hodnoceni
 from models.jizda import Jizda
+from models.oznameni import Oznameni
 from models.uzivatel import Uzivatel
+from utils.pending_ratings import sync_pending_ratings_for_user
 
 hodnoceni_bp = Blueprint("hodnoceni", __name__)
 
@@ -103,6 +105,12 @@ def create_hodnoceni():
         )
 
         db.session.add(hodnoceni)
+        Oznameni.query.filter_by(
+            prijemce_id=autor_id,
+            typ="hodnoceni_ceka",
+            jizda_id=jizda_id,
+            cilovy_uzivatel_id=cilovy_uzivatel_id,
+        ).update({"precteno": True}, synchronize_session=False)
         db.session.commit()
 
         return jsonify(
@@ -119,48 +127,7 @@ def create_hodnoceni():
 def pending_hodnoceni():
     """Vrátí dokončené jízdy, kde aktuální uživatel (pasažér) ještě neohodnotil řidiče."""
     uzivatel_id = int(get_jwt_identity())
-    now = datetime.now()
-
-    jizdy = (
-        Jizda.query.join(Jizda.pasazeri)
-        .filter(Uzivatel.id == uzivatel_id)
-        .all()
-    )
-
-    pending = []
-    changed = False
-
-    for j in jizdy:
-        if j.status == "aktivni" and j.cas_prijezdu and j.cas_prijezdu <= now:
-            j.status = "dokoncena"
-            changed = True
-
-        if j.status != "dokoncena":
-            continue
-
-        exist = Hodnoceni.query.filter_by(
-            autor_id=uzivatel_id,
-            cilovy_uzivatel_id=j.ridic_id,
-            jizda_id=j.id,
-            role="ridic",
-        ).first()
-
-        if not exist:
-            pending.append(
-                {
-                    "jizda_id": j.id,
-                    "jizda": j.to_dict(),
-                    "cilovy_uzivatel_id": j.ridic_id,
-                    "role": "ridic",
-                }
-            )
-
-    if changed:
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-
+    pending = sync_pending_ratings_for_user(uzivatel_id, create_notifications=True)
     return jsonify({"pending": pending})
 
 

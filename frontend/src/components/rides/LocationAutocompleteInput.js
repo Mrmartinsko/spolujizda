@@ -116,11 +116,12 @@ const LocationAutocompleteInput = ({
     const showDropdown = isOpen && query.trim().length >= MIN_QUERY_LENGTH;
 
     return (
-        <div className={`form-group autocomplete-field ${wrapperClassName}`.trim()} ref={rootRef}>
-            {!hideLabel && <label htmlFor={name}>{label}</label>}
+        <div className={`field-group autocomplete-field ${wrapperClassName}`.trim()} ref={rootRef}>
+            {!hideLabel && <label className="field-label" htmlFor={name}>{label}</label>}
             <input
                 id={name}
                 type="text"
+                className="ui-input"
                 name={name}
                 value={query}
                 onChange={handleInputChange}
@@ -138,7 +139,7 @@ const LocationAutocompleteInput = ({
 
             {showDropdown && (
                 <div className="autocomplete-dropdown">
-                    {isLoading && <div className="autocomplete-status">Nacitam...</div>}
+                    {isLoading && <div className="autocomplete-status">Načítám…</div>}
 
                     {!isLoading && results.map((item, index) => (
                         <button
@@ -158,7 +159,7 @@ const LocationAutocompleteInput = ({
                         </button>
                     ))}
 
-                    {showEmptyState && <div className="autocomplete-status">Zadne vysledky</div>}
+                    {showEmptyState && <div className="autocomplete-status">Žádné výsledky</div>}
                 </div>
             )}
         </div>

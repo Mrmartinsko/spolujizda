@@ -5,8 +5,10 @@ import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
 
 import Layout from './components/Layout/Layout';
+import ForgotPassword from './components/auth/ForgotPassword';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import ResetPassword from './components/auth/ResetPassword';
 import HomePage from './pages/HomePage';
 import CreateRidePage from './pages/CreateRidePage';
 import MyRidesPage from './pages/MyRidesPage';
@@ -43,6 +45,8 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/verify-email/:token" element={<VerifyEmailToken />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               

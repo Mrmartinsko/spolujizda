@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/authService';
 
 const AuthContext = createContext();
@@ -62,6 +62,18 @@ export const AuthProvider = ({ children }) => {
     return await authService.resendVerification(email);
   };
 
+  const forgotPassword = async (email) => {
+    return await authService.forgotPassword(email);
+  };
+
+  const verifyResetToken = async (token) => {
+    return await authService.verifyResetToken(token);
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    return await authService.resetPassword(token, newPassword);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -76,6 +88,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     resendVerification,
+    forgotPassword,
+    verifyResetToken,
+    resetPassword,
     logout,
     isAuthenticated,
     token: localStorage.getItem('token'),

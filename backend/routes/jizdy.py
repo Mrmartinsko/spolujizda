@@ -13,6 +13,7 @@ from models.rezervace import Rezervace
 from models.uzivatel import Uzivatel
 from utils.cities import get_city_by_place_id
 from utils.jizdy import zrusit_jizdu
+from utils.notifications import vytvorit_oznameni
 from utils.text_normalization import normalize_search_text, sanitize_location_text
 
 
@@ -101,6 +102,37 @@ def _validate_mezistanice_list(data):
         normalized_stops.append(parsed)
 
     return True, normalized_stops
+
+
+def _get_auto_label(auto):
+    if not auto:
+        return None
+
+    if getattr(auto, "smazane", False):
+        return "Smazane auto"
+
+    znacka = getattr(auto, "znacka", None) or ""
+    model = getattr(auto, "model", None) or ""
+    spz = getattr(auto, "spz", None)
+    label = " ".join(part for part in [znacka, model] if part).strip()
+    return f"{label} ({spz})".strip() if spz and label else (label or spz)
+
+
+def _collect_important_ride_changes(jizda, previous_state):
+    changed_labels = []
+
+    if previous_state["odkud"] != jizda.odkud:
+        changed_labels.append("odkud")
+    if previous_state["kam"] != jizda.kam:
+        changed_labels.append("kam")
+    if previous_state["cas_odjezdu"] != jizda.cas_odjezdu:
+        changed_labels.append("cas odjezdu")
+    if previous_state["cas_prijezdu"] != jizda.cas_prijezdu:
+        changed_labels.append("cas prijezdu")
+    if previous_state["auto_label"] != _get_auto_label(jizda.auto):
+        changed_labels.append("auto")
+
+    return changed_labels
 
 
 def _route_points_for_ride(ride):
@@ -384,6 +416,13 @@ def update_jizda(jizda_id):
         return jsonify({"error": "Jizdu uz nelze upravit, protoze uz odjela"}), 400
 
     data = request.get_json() or {}
+    previous_state = {
+        "odkud": jizda.odkud,
+        "kam": jizda.kam,
+        "cas_odjezdu": jizda.cas_odjezdu,
+        "cas_prijezdu": jizda.cas_prijezdu,
+        "auto_label": _get_auto_label(jizda.auto),
+    }
 
     try:
         if "auto_id" in data:
@@ -470,6 +509,22 @@ def update_jizda(jizda_id):
                     misto_address=misto["address"],
                     poradi=i,
                 ))
+
+        changed_labels = _collect_important_ride_changes(jizda, previous_state)
+
+        if changed_labels:
+            labels_text = ", ".join(changed_labels)
+            for pasazer in jizda.pasazeri:
+                vytvorit_oznameni(
+                    pasazer.id,
+                    f"Ridic upravil jizdu {jizda.odkud} -> {jizda.kam}. Zmenilo se: {labels_text}.",
+                    "jizda_zmena",
+                    kategorie="jizdy",
+                    odesilatel_id=uzivatel_id,
+                    target_path=f"/moje-rezervace?focusRide={jizda.id}",
+                    jizda_id=jizda.id,
+                    commit=False,
+                )
 
         db.session.commit()
         return jsonify({"message": "Jizda uspesne aktualizovana", "jizda": jizda.to_dict()})
