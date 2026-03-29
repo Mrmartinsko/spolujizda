@@ -1,124 +1,56 @@
-/* Celá stránka vyhledávání */
 .ride-search {
-    max-width: 900px;
-    margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
-/* Horní karta s filtrem */
-.ride-search > h2 {
-    margin-bottom: 15px;
-    text-align: left;
-    font-size: 22px;
-    color: #222;
+.ride-search__card {
+  padding: 24px;
 }
 
-/* Form karta */
-.ride-search form {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 20px;
+.ride-search__form {
+  margin-top: 8px;
 }
 
-/* Grid polí */
 .search-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr auto;
-    gap: 15px;
-    align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) 190px 160px auto;
+  gap: 14px;
+  align-items: end;
 }
 
-/* Form group */
-.form-group {
-    display: flex;
-    flex-direction: column;
+.ride-search__submit {
+  width: 100%;
 }
 
-.form-group label {
-    margin-bottom: 6px;
-    color: #555;
-    font-weight: 500;
-    font-size: 14px;
+.ride-search__results-copy {
+  margin: 4px 0 0;
+  color: var(--text-muted);
 }
-
-.form-group input {
-    padding: 10px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-}
-
-/* Tlačítko */
-button[type="submit"] {
-    padding: 10px 20px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    height: fit-content;
-}
-
-button[type="submit"]:hover {
-    background: #218838;
-    transform: translateY(-1px);
-}
-
-button[type="submit"]:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-}
-
-/* Error */
-.error-message {
-    background: #fff3f3;
-    color: #d63031;
-    padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    border: 1px solid #fab1a0;
-}
-
-/* ===== Výsledky ===== */
 
 .results-section {
-    margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.results-section h2 {
-    font-size: 18px;
-    margin-bottom: 15px;
-    color: #333;
-}
-
-/* Když nejsou výsledky */
 .no-results {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    color: #666;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  color: var(--text-muted);
+  text-align: center;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .search-fields {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
+@media (max-width: 1080px) {
+  .search-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
-    button[type="submit"] {
-        width: 100%;
-    }
+@media (max-width: 640px) {
+  .ride-search__card {
+    padding: 20px;
+  }
+
+  .search-fields {
+    grid-template-columns: 1fr;
+  }
 }

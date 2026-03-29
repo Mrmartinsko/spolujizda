@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Alert from '../ui/Alert';
+import Button from '../ui/Button';
 import './Auth.css';
 
 const VerifyEmail = () => {
@@ -22,17 +24,17 @@ const VerifyEmail = () => {
 
     const cleanEmail = (email || '').toLowerCase().trim();
     if (!cleanEmail) {
-      setError('Zadej prosím email, na který se má poslat ověřovací odkaz.');
+      setError('Zadejte email, na který se má poslat ověřovací odkaz.');
       return;
     }
 
     setLoading(true);
     try {
       await resendVerification(cleanEmail);
-      setInfo('Pokud účet existuje, ověřovací email byl znovu odeslán. Zkontroluj schránku.');
+      setInfo('Pokud účet existuje, ověřovací email byl znovu odeslán. Zkontrolujte schránku.');
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || 'Nepodařilo se odeslat ověřovací email.');
+      setError(data?.error || 'Ověřovací email se nepodařilo odeslat.');
     } finally {
       setLoading(false);
     }
@@ -42,52 +44,50 @@ const VerifyEmail = () => {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-card">
-          <div className="auth-header">
-            <h2>Ověř email</h2>
+          <aside className="auth-aside">
+            <div className="auth-brand">S</div>
+            <span className="auth-kicker">Ověření emailu</span>
+            <h1>Ještě jeden krok a účet je připravený</h1>
             <p>
-              Na tvůj email jsme poslali ověřovací odkaz. Klikni na něj a pak se přihlas.
+              Po ověření emailu budete moct plnohodnotně používat rezervace, chat i další části aplikace.
             </p>
-          </div>
+          </aside>
 
-          {info && <div className="success-message">{info}</div>}
-          {error && <div className="error-message">{error}</div>}
-
-          <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="Zadejte váš email"
-              />
+          <section className="auth-form-panel">
+            <div className="auth-header">
+              <h2>Ověřit email</h2>
+              <p>Na zadaný email jsme poslali odkaz. Pokud nepřišel, můžete si ho nechat poslat znovu.</p>
             </div>
 
-            <button
-              type="button"
-              className="auth-button"
-              onClick={handleResend}
-              disabled={loading}
-            >
-              {loading ? 'Odesílám...' : 'Poslat ověřovací email znovu'}
-            </button>
-          </form>
+            {info && <Alert variant="success">{info}</Alert>}
+            {error && <Alert variant="error">{error}</Alert>}
 
-          <div className="auth-footer">
-            <p>
-              Už jsi ověřil email?
-              <Link to="/login" className="auth-link">
-                Přihlásit se
-              </Link>
-            </p>
-          </div>
+            <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+              <div className="field-group">
+                <label className="field-label" htmlFor="email">
+                  Email
+                </label>
+                <input className="ui-input" type="email" id="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="vas@email.cz" />
+              </div>
 
-          <div style={{ marginTop: 12, opacity: 0.8, fontSize: 13 }}>
-            Tip: v dev režimu uvidíš ověřovací link v Ethereal (nebo v backend konzoli jako <b>VERIFY LINK</b>).
-          </div>
+              <Button type="button" onClick={handleResend} disabled={loading}>
+                {loading ? 'Odesílám…' : 'Poslat ověřovací email znovu'}
+              </Button>
+            </form>
+
+            <div className="auth-info-box">
+              V dev režimu najdete ověřovací odkaz i v Ethereal schránce nebo v backend konzoli jako <strong>VERIFY LINK</strong>.
+            </div>
+
+            <div className="auth-footer">
+              <p>
+                Už máte ověřeno?
+                <Link to="/login" className="auth-link">
+                  Přihlásit se
+                </Link>
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

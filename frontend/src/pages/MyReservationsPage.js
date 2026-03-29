@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './MyReservationsPage.css';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/common/ConfirmModal';
 import ReservationPassengerSummary from '../components/reservations/ReservationPassengerSummary';
 
@@ -16,11 +16,22 @@ const MyReservationsPage = () => {
   const [expanded, setExpanded] = useState({});
   const [filter, setFilter] = useState('all'); // all, cekajici, prijata, odmitnuta, zrusena
   const navigate = useNavigate();
+  const location = useLocation();
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
     [token]
   );
+
+  const focusReservationId = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get('focusReservation');
+    return raw ? Number(raw) : null;
+  }, [location.search]);
+
+  const focusRideId = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get('focusRide');
+    return raw ? Number(raw) : null;
+  }, [location.search]);
 
   useEffect(() => {
     if (token) fetchRezervace();
@@ -83,11 +94,20 @@ const MyReservationsPage = () => {
     }
 
     const initialExpanded = {};
+    let matchedStatus = null;
     rezervace.forEach((r) => {
-      initialExpanded[r.id] = r.jizda?.status === 'aktivni';
+      const isFocused =
+        (focusReservationId && r.id === focusReservationId) ||
+        (focusRideId && r.jizda_id === focusRideId);
+
+      initialExpanded[r.id] = isFocused || r.jizda?.status === 'aktivni';
+      if (isFocused) matchedStatus = r.status;
     });
     setExpanded(initialExpanded);
-  }, [rezervace]);
+    if (matchedStatus) {
+      setFilter((prev) => (prev === matchedStatus ? prev : matchedStatus));
+    }
+  }, [focusReservationId, focusRideId, rezervace]);
 
   const handleCancelReservation = (rezervaceId) => {
     const target = rezervace.find((r) => r.id === rezervaceId);
@@ -275,7 +295,15 @@ const MyReservationsPage = () => {
             const mainPassengerName = getPassengerDisplayName(r.uzivatel);
 
             return (
-              <div key={r.id} className="reservation-card">
+              <div
+                key={r.id}
+                className={`reservation-card ${
+                  (focusReservationId && r.id === focusReservationId) ||
+                  (focusRideId && r.jizda_id === focusRideId)
+                    ? 'focused'
+                    : ''
+                }`}
+              >
                 <button
                   type="button"
                   className="reservation-header reservation-header-btn"
@@ -376,6 +404,12 @@ const MyReservationsPage = () => {
                     <div className="note-info">
                       <strong>Počet míst:</strong> {r.pocet_mist ?? 1}
                     </div>
+
+                    {r.status === 'cekajici' && Number.isInteger(r.poradi_cekajici) && (
+                      <div className="queue-info">
+                        <strong>Poradi ve fronte:</strong> {r.poradi_cekajici}
+                      </div>
+                    )}
 
                     <div className="reservation-actions">
                       {r.status === 'cekajici' && canCancelReservation && (

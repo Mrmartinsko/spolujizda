@@ -1,12 +1,13 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
+import Alert from '../ui/Alert';
+import Button from '../ui/Button';
 import './Auth.css';
 
 const VerifyEmailToken = () => {
   const { token } = useParams();
-
-  const [status, setStatus] = useState('loading'); // loading | ok | expired | invalid | error
+  const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const didRun = useRef(false);
 
@@ -18,11 +19,10 @@ const VerifyEmailToken = () => {
       try {
         await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
         setStatus('ok');
-        setMessage('Email úspěšně ověřen.');
+        setMessage('Email byl úspěšně ověřen.');
       } catch (err) {
         const data = err.response?.data;
-        const msg = data?.error || 'Nepodařilo se ověřit email.';
-
+        const msg = data?.error || 'Email se nepodařilo ověřit.';
         const normalized = msg.toLowerCase();
 
         if (normalized.includes('vypršel') || normalized.includes('vyprsel')) {
@@ -45,7 +45,7 @@ const VerifyEmailToken = () => {
       verify();
     } else {
       setStatus('invalid');
-      setMessage('Chybí token.');
+      setMessage('Chybí ověřovací token.');
     }
   }, [token]);
 
@@ -53,54 +53,63 @@ const VerifyEmailToken = () => {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-card">
-          <div className="auth-header">
-            <h2>Ověření emailu</h2>
-            {status === 'loading' && <p>Ověřuji...</p>}
-            {status !== 'loading' && <p>{message}</p>}
-          </div>
+          <aside className="auth-aside">
+            <div className="auth-brand">S</div>
+            <span className="auth-kicker">Potvrzení účtu</span>
+            <h1>Ověřujeme, že je email opravdu váš</h1>
+            <p>
+              Jakmile je email potvrzený, aplikace vás pustí do všech důležitých částí bez dalších omezení.
+            </p>
+          </aside>
 
-          {status === 'ok' && (
-            <div className="success-message">
-              Email je úspěšně ověřen.
-              <div style={{ marginTop: 12 }}>
-                <Link to="/login" className="auth-button">
-                  Přihlásit se
-                </Link>
-              </div>
+          <section className="auth-form-panel">
+            <div className="auth-header">
+              <h2>Ověření emailu</h2>
+              {status === 'loading' && <p>Ověřuji odkaz…</p>}
+              {status !== 'loading' && <p>{message}</p>}
             </div>
-          )}
 
-          {(status === 'expired' || status === 'invalid') && (
-            <div className="error-message">
-              Odkaz je neplatný nebo vypršel. Zkus poslat ověřovací email znovu.
-              <div style={{ marginTop: 12 }}>
-                <Link to="/verify-email" className="auth-button">
+            {status === 'ok' && (
+              <div className="auth-panel-stack">
+                <Alert variant="success">Email je ověřený a účet je připravený.</Alert>
+                <Button as={Link} to="/login">
+                  Pokračovat na přihlášení
+                </Button>
+              </div>
+            )}
+
+            {(status === 'expired' || status === 'invalid') && (
+              <div className="auth-panel-stack">
+                <Alert variant="error">Odkaz je neplatný nebo už vypršel. Pošlete si nový ověřovací email.</Alert>
+                <Button as={Link} to="/verify-email">
                   Poslat ověření znovu
-                </Link>
+                </Button>
               </div>
-            </div>
-          )}
+            )}
 
-          {status === 'error' && (
-            <div className="error-message">
-              Nastala chyba. Zkus to prosím znovu nebo pošli ověření znovu.
-              <div style={{ marginTop: 12 }}>
-                <Link to="/verify-email" className="auth-button">
-                  Poslat ověření znovu
-                </Link>
+            {status === 'error' && (
+              <div className="auth-panel-stack">
+                <Alert variant="error">Nastala chyba. Zkuste to znovu, případně si pošlete nové ověření.</Alert>
+                <Button as={Link} to="/verify-email" variant="secondary">
+                  Otevřít ověření emailu
+                </Button>
               </div>
-            </div>
-          )}
+            )}
 
-          {status !== 'ok' && (
-            <div className="auth-footer" style={{ marginTop: 10 }}>
-              <p>
-                <Link to="/login" className="auth-link">Přihlásit se</Link>
-                {' '}nebo{' '}
-                <Link to="/verify-email" className="auth-link">poslat ověření znovu</Link>
-              </p>
-            </div>
-          )}
+            {status !== 'ok' && (
+              <div className="auth-footer">
+                <p>
+                  <Link to="/login" className="auth-link">
+                    Přihlášení
+                  </Link>
+                  {' • '}
+                  <Link to="/verify-email" className="auth-link">
+                    Poslat ověření znovu
+                  </Link>
+                </p>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>

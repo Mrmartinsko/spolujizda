@@ -5,7 +5,7 @@ from models.chat import Chat
 from models.jizda import Jizda
 from models.uzivatel import Uzivatel
 from models.zprava import Zprava
-from routes.oznameni import vytvorit_oznameni
+from utils.notifications import vytvorit_oznameni
 
 chat_bp = Blueprint("chat", __name__)
 
@@ -161,7 +161,15 @@ def odeslat_zpravu(chat_id):
                     # Osobní chat
                     zprava_oznameni = f"Nová zpráva od {jmeno_odesilatele}"
 
-                vytvorit_oznameni(ucastnik.id, zprava_oznameni, "chat")
+                vytvorit_oznameni(
+                    ucastnik.id,
+                    zprava_oznameni,
+                    "chat",
+                    kategorie="zpravy",
+                    odesilatel_id=uzivatel_id,
+                    target_path=f"/chat/{uzivatel_id}",
+                    jizda_id=chat.jizda_id,
+                )
 
         return jsonify({"message": "Zpráva odeslána", "zprava": zprava.to_dict()}), 201
 

@@ -1,7 +1,4 @@
-import secrets
-from datetime import datetime, timedelta
+from utils.auth_tokens import generate_token_with_expiration
 
 def generate_email_verification(hours=24):
-    token = secrets.token_urlsafe(48)
-    expires_at = datetime.utcnow() + timedelta(hours=hours)
-    return token, expires_at
+    return generate_token_with_expiration(hours=hours)

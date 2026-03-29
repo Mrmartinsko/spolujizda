@@ -12,6 +12,7 @@ from models import db, init_app
 from models.auto import Auto  # noqa
 from models.blokace import Blokace  # noqa
 from models.chat import Chat  # noqa
+from models.oznameni import Oznameni  # noqa
 from models.hodnoceni import Hodnoceni  # noqa
 from models.jizda import Jizda  # noqa
 from models.pasazeri import pasazeri  # noqa

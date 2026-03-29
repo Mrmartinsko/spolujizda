@@ -11,7 +11,6 @@ const ProfileSearch = () => {
   const [loading, setLoading] = useState(false);
 
   const tRef = useRef(null);
-
   const query = useMemo(() => q.trim(), [q]);
   const shouldSearch = query.length >= 2;
 
@@ -21,13 +20,13 @@ const ProfileSearch = () => {
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
 
     if (!shouldSearch) {
       setResults([]);
       setLoading(false);
       if (tRef.current) clearTimeout(tRef.current);
-      return;
+      return undefined;
     }
 
     if (tRef.current) clearTimeout(tRef.current);
@@ -37,7 +36,7 @@ const ProfileSearch = () => {
         const r = await searchUsers(query);
         setResults(r);
       } catch (e) {
-        console.error('Chyba při vyhledávání:', e);
+        console.error('Chyba při vyhledávání profilů:', e);
         setResults([]);
       } finally {
         setLoading(false);
@@ -67,7 +66,6 @@ const ProfileSearch = () => {
       tabIndex={-1}
       onFocus={() => setOpen(true)}
       onBlur={(e) => {
-        // zavři jen když focus odchází mimo celý search wrap
         if (!e.currentTarget.contains(e.relatedTarget)) {
           setOpen(false);
         }
@@ -79,15 +77,10 @@ const ProfileSearch = () => {
           className="psInput"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Hledat profil"
+          placeholder="Hledat spolužáka nebo řidiče"
         />
         {q && (
-          <button
-            className="psClear"
-            onClick={clear}
-            aria-label="Smazat"
-            type="button"
-          >
+          <button className="psClear" onClick={clear} aria-label="Smazat" type="button">
             <X size={18} />
           </button>
         )}
@@ -95,19 +88,14 @@ const ProfileSearch = () => {
 
       {open && (
         <div className="psDropdown">
-          {!shouldSearch && <div className="psHint">Napiš aspoň 2 znaky</div>}
-          {shouldSearch && loading && <div className="psHint">Vyhledává se…</div>}
+          {!shouldSearch && <div className="psHint">Napište aspoň 2 znaky.</div>}
+          {shouldSearch && loading && <div className="psHint">Vyhledávám…</div>}
           {shouldSearch && !loading && results.length === 0 && (
-            <div className="psHint">Žádné výsledky</div>
+            <div className="psHint">Nikdo takový nebyl nalezen.</div>
           )}
 
           {results.map((profil) => (
-            <Link
-              key={profil.id}
-              to={`/profil/${profil.id}`}
-              className="psItem"
-              onClick={closeAfterPick}
-            >
+            <Link key={profil.id} to={`/profil/${profil.id}`} className="psItem" onClick={closeAfterPick}>
               <div
                 className="psAvatar"
                 style={{
@@ -121,14 +109,12 @@ const ProfileSearch = () => {
                 <div className="psName">{profil.jmeno}</div>
                 <div className="psMeta">
                   {profil.hodnoceni_ridic && (
-                    <span>Řidič ⭐ {Number(profil.hodnoceni_ridic).toFixed(1)}</span>
+                    <span>Řidič • {Number(profil.hodnoceni_ridic).toFixed(1)}</span>
                   )}
                   {profil.hodnoceni_pasazer && (
-                    <span>Pasažér ⭐ {Number(profil.hodnoceni_pasazer).toFixed(1)}</span>
+                    <span>Pasažér • {Number(profil.hodnoceni_pasazer).toFixed(1)}</span>
                   )}
-                  {!profil.hodnoceni_ridic && !profil.hodnoceni_pasazer && (
-                    <span>Nový uživatel</span>
-                  )}
+                  {!profil.hodnoceni_ridic && !profil.hodnoceni_pasazer && <span>Nový uživatel</span>}
                 </div>
               </div>
             </Link>

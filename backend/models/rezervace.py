@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ class Rezervace(db.Model):
     pocet_mist = db.Column(db.Integer, nullable=False, default=1)
     dalsi_pasazeri = db.Column(db.Text, nullable=False, default="[]")
     poznamka = db.Column(db.Text)
+    vytvoreno = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(
         db.String(20), default="cekajici"
     )  # cekajici, prijata, odmitnuta
@@ -70,6 +72,8 @@ class Rezervace(db.Model):
             "pocet_mist": self.pocet_mist,
             "dalsi_pasazeri": self.get_dalsi_pasazeri(),
             "poznamka": self.poznamka,
+            "vytvoreno": self.vytvoreno.isoformat() if self.vytvoreno else None,
+            "poradi_cekajici": getattr(self, "poradi_cekajici", None),
             "status": self.status,
         }
 

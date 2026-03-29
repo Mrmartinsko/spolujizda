@@ -12,7 +12,9 @@ class Uzivatel(db.Model):
     email_verified = db.Column(db.Boolean, default=False, nullable=False)
     email_verified_at = db.Column(db.DateTime, nullable=True)  
     email_verification_token = db.Column(db.String(128), unique=True, index=True, nullable=True)
-    email_verification_expires_at = db.Column(db.DateTime, nullable=True)  
+    email_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    password_reset_token = db.Column(db.String(128), unique=True, index=True, nullable=True)
+    password_reset_expires_at = db.Column(db.DateTime, nullable=True)
     # Vztahy
     profil = db.relationship(
         "Profil", backref="uzivatel", uselist=False, cascade="all, delete-orphan"

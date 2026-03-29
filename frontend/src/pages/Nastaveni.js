@@ -1,189 +1,170 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
+import Alert from '../components/ui/Alert';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
 const Nastaveni = () => {
-    const { darkMode, toggleTheme } = useTheme();
-    const [passwordData, setPasswordData] = useState({
+  const [passwordData, setPasswordData] = useState({
+    stare_heslo: '',
+    nove_heslo: '',
+    potvrzeni_hesla: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [language] = useState('cs');
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (message || error) {
+      setMessage('');
+      setError('');
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!passwordData.stare_heslo || !passwordData.nove_heslo || !passwordData.potvrzeni_hesla) {
+      setError('Vyplňte všechna pole.');
+      return;
+    }
+
+    if (passwordData.nove_heslo !== passwordData.potvrzeni_hesla) {
+      setError('Nová hesla se neshodují.');
+      return;
+    }
+
+    if (passwordData.nove_heslo.length < 6) {
+      setError('Nové heslo musí mít alespoň 6 znaků.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await api.post('/auth/change-password', {
+        stare_heslo: passwordData.stare_heslo,
+        nove_heslo: passwordData.nove_heslo,
+      });
+
+      setMessage('Heslo bylo úspěšně změněno.');
+      setPasswordData({
         stare_heslo: '',
         nove_heslo: '',
-        potvrzeni_hesla: ''
-    });
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
+        potvrzeni_hesla: '',
+      });
+    } catch (requestError) {
+      console.error('Chyba při změně hesla:', requestError);
+      setError(requestError.response?.data?.error || 'Změna hesla se nepovedla.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handlePasswordChange = (e) => {
-        const { name, value } = e.target;
-        setPasswordData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        // Vymazat zprávy při změně inputu
-        if (message || error) {
-            setMessage('');
-            setError('');
-        }
-    };
+  return (
+    <div className="page-shell">
+      <section className="page-hero page-hero--light">
+        <span className="page-hero__eyebrow">Nastavení účtu</span>
+        <h1 className="page-hero__title">Mějte své přihlášení pod kontrolou</h1>
+        <p className="page-hero__text">
+          V nastavení teď zůstává jen to podstatné: jazyk rozhraní a bezpečná změna hesla.
+        </p>
+      </section>
 
-    const handlePasswordSubmit = async (e) => {
-        e.preventDefault();
+      <div className="grid-2">
+        <Card>
+          <div className="ui-card__header">
+            <div>
+              <h2 className="ui-card__title">Obecné</h2>
+              <p className="ui-card__subtitle">Aplikace momentálně běží v jednoduchém českém rozhraní.</p>
+            </div>
+          </div>
 
-        // Validace na frontendu
-        if (!passwordData.stare_heslo || !passwordData.nove_heslo || !passwordData.potvrzeni_hesla) {
-            setError('Všechna pole jsou povinná');
-            return;
-        }
+          <div className="field-group">
+            <label className="field-label" htmlFor="jazyk">
+              Jazyk
+            </label>
+            <select id="jazyk" className="ui-input" value={language} disabled>
+              <option value="cs">Čeština</option>
+            </select>
+            <p className="field-hint">Další jazyky můžeme doplnit později bez změny současného flow.</p>
+          </div>
+        </Card>
 
-        if (passwordData.nove_heslo !== passwordData.potvrzeni_hesla) {
-            setError('Nová hesla se neshodují');
-            return;
-        }
+        <Card>
+          <div className="ui-card__header">
+            <div>
+              <h2 className="ui-card__title">Bezpečnost</h2>
+              <p className="ui-card__subtitle">Změňte si heslo kdykoliv, když budete chtít mít jistotu.</p>
+            </div>
+          </div>
 
-        if (passwordData.nove_heslo.length < 6) {
-            setError('Nové heslo musí mít alespoň 6 znaků');
-            return;
-        }
+          {message && <Alert variant="success">{message}</Alert>}
+          {error && <Alert variant="error">{error}</Alert>}
 
-        setLoading(true);
-        setError('');
-        setMessage('');
-
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(
-                'http://localhost:5000/api/auth/change-password',
-                {
-                    stare_heslo: passwordData.stare_heslo,
-                    nove_heslo: passwordData.nove_heslo
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            setMessage('Heslo bylo úspěšně změněno');
-            setPasswordData({
-                stare_heslo: '',
-                nove_heslo: '',
-                potvrzeni_hesla: ''
-            });
-        } catch (error) {
-            console.error('Chyba při změně hesla:', error);
-            setError(error.response?.data?.error || 'Chyba při změně hesla');
-        } finally {
-            setLoading(false);
-        }
-    };
-    return (
-        <div>
-            <h1>Nastavení</h1>
-            <div className="card">
-                <h3>Obecné nastavení</h3>
-                <div className="form-group">
-                    <label className="form-label">Jazyk</label>
-                    <select className="form-input">
-                        <option value="cs">Čeština</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                            type="checkbox"
-                            checked={darkMode}
-                            onChange={toggleTheme}
-                        />
-                        Tmavý režim
-                    </label>
-                </div>
-
-                <div className="form-group">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input type="checkbox" defaultChecked />
-                        Emailová oznámení
-                    </label>
-                </div>
-
-                <button className="btn btn-primary">
-                    Uložit nastavení
-                </button>
+          <form onSubmit={handlePasswordSubmit}>
+            <div className="field-group">
+              <label className="field-label" htmlFor="stare_heslo">
+                Stávající heslo
+              </label>
+              <input
+                id="stare_heslo"
+                className="ui-input"
+                type="password"
+                name="stare_heslo"
+                value={passwordData.stare_heslo}
+                onChange={handlePasswordChange}
+                disabled={loading}
+              />
             </div>
 
-            <div className="card">
-                <h3>Změna hesla</h3>
-                {message && (
-                    <div className="message-success" style={{
-                        padding: '10px',
-                        borderRadius: '4px',
-                        marginBottom: '15px',
-                        border: '1px solid'
-                    }}>
-                        {message}
-                    </div>
-                )}
-                {error && (
-                    <div className="message-error" style={{
-                        padding: '10px',
-                        borderRadius: '4px',
-                        marginBottom: '15px',
-                        border: '1px solid'
-                    }}>
-                        {error}
-                    </div>
-                )}
-                <form onSubmit={handlePasswordSubmit}>
-                    <div className="form-group">
-                        <label className="form-label">Staré heslo</label>
-                        <input
-                            type="password"
-                            name="stare_heslo"
-                            value={passwordData.stare_heslo}
-                            onChange={handlePasswordChange}
-                            className="form-input"
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Nové heslo</label>
-                        <input
-                            type="password"
-                            name="nove_heslo"
-                            value={passwordData.nove_heslo}
-                            onChange={handlePasswordChange}
-                            className="form-input"
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Potvrdit nové heslo</label>
-                        <input
-                            type="password"
-                            name="potvrzeni_hesla"
-                            value={passwordData.potvrzeni_hesla}
-                            onChange={handlePasswordChange}
-                            className="form-input"
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                    >
-                        {loading ? 'Měním heslo...' : 'Změnit heslo'}
-                    </button>
-                </form>
+            <div className="field-group">
+              <label className="field-label" htmlFor="nove_heslo">
+                Nové heslo
+              </label>
+              <input
+                id="nove_heslo"
+                className="ui-input"
+                type="password"
+                name="nove_heslo"
+                value={passwordData.nove_heslo}
+                onChange={handlePasswordChange}
+                disabled={loading}
+              />
             </div>
-        </div>
-    );
+
+            <div className="field-group">
+              <label className="field-label" htmlFor="potvrzeni_hesla">
+                Potvrzení nového hesla
+              </label>
+              <input
+                id="potvrzeni_hesla"
+                className="ui-input"
+                type="password"
+                name="potvrzeni_hesla"
+                value={passwordData.potvrzeni_hesla}
+                onChange={handlePasswordChange}
+                disabled={loading}
+              />
+            </div>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Ukládám změnu…' : 'Uložit nové heslo'}
+            </Button>
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
 };
 
 export default Nastaveni;

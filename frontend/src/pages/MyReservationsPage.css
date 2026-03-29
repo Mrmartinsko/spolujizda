@@ -1,137 +1,109 @@
-/* ===== PAGE WRAP ===== */
 .my-reservations-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
-/* ===== HEADER ===== */
 .page-header {
-  text-align: center;
-  color: white;
-  margin-bottom: 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .page-header h1 {
-  font-size: 2.2rem;
-  margin: 0 0 10px 0;
-  font-weight: 800;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.25);
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(1.9rem, 2.4vw, 2.6rem);
 }
 
 .page-header p {
-  font-size: 1.05rem;
   margin: 0;
-  opacity: 0.92;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
-.loading {
-  text-align: center;
-  color: white;
-  font-size: 1.1rem;
-  padding: 60px 20px;
+.error-message,
+.success-message,
+.no-reservations,
+.reservation-card {
+  border-radius: 20px;
 }
 
-/* ===== ERROR ===== */
-.error-message {
-  background: rgba(255, 0, 0, 0.1);
-  color: #ffb3b3;
-  padding: 14px 16px;
-  border-radius: 10px;
-  margin: 0 auto 22px;
-  max-width: 900px;
-  text-align: center;
-  border: 1px solid rgba(255, 180, 180, 0.28);
-  backdrop-filter: blur(10px);
+.error-message,
+.success-message {
+  padding: 16px 18px;
+}
+
+.success-message {
+  background: var(--color-success-soft);
+  border: 1px solid rgba(23, 125, 82, 0.18);
+  color: var(--color-success);
 }
 
 .retry-btn {
   margin-left: 12px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  cursor: pointer;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(64, 103, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(64, 103, 255, 0.08);
+  color: var(--color-primary-strong);
   font-weight: 700;
-  transition: background 0.2s ease, transform 0.15s ease;
 }
 
-.retry-btn:hover {
-  background: rgba(255,255,255,0.18);
-  transform: translateY(-1px);
-}
-
-/* ===== FILTERS ===== */
 .filters {
   display: flex;
-  gap: 10px;
-  margin: 0 auto 22px;
-  justify-content: center;
   flex-wrap: wrap;
-  max-width: 1100px;
+  gap: 10px;
 }
 
 .filters button {
-  padding: 9px 14px;
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 14px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-default);
   font-weight: 700;
-  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
-  backdrop-filter: blur(10px);
-}
-
-.filters button:hover {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.55);
-  transform: translateY(-1px);
 }
 
 .filters button.active {
-  background: rgba(255,255,255,0.92);
-  color: #2d2d2d;
-  border-color: rgba(255,255,255,0.92);
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+  border-color: transparent;
 }
 
-/* ===== LIST ===== */
 .reservations-list {
-  max-width: 900px;
-  margin: 0 auto 40px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.no-reservations {
-  text-align: center;
-  background: rgba(255,255,255,0.95);
-  padding: 40px 22px;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-  color: #444;
-}
-
-/* ===== CARD ===== */
+.no-reservations,
 .reservation-card {
-  background: rgba(255,255,255,0.96);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.55);
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
-/* header row */
+.no-reservations {
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.reservation-card.focused {
+  border-color: rgba(255, 191, 73, 0.72);
+  box-shadow: 0 0 0 4px rgba(255, 191, 73, 0.18), var(--shadow-md);
+}
+
 .reservation-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-  padding: 16px 18px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .reservation-header-btn {
@@ -139,7 +111,19 @@
   border: none;
   background: transparent;
   text-align: left;
-  cursor: pointer;
+}
+
+.route-info h3 {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.price {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--color-success);
+  font-size: 1.12rem;
+  font-weight: 800;
 }
 
 .header-right {
@@ -148,218 +132,135 @@
   gap: 10px;
 }
 
-.chevron {
-  font-size: 16px;
-  color: #666;
-  transition: transform 0.2s ease;
-}
-
-.chevron.open {
-  transform: rotate(180deg);
-}
-
-.route-info h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: #222;
-  line-height: 1.25;
-}
-
-.price {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #28a745;
-}
-
 .status-badge {
   padding: 6px 10px;
-  border-radius: 999px;
-  color: #fff;
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  font-size: 0.82rem;
   font-weight: 800;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  align-self: flex-start;
 }
 
-/* details */
 .reservation-details {
-  padding: 14px 18px 4px 18px;
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 8px;
 }
 
 .time-info {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .time-item,
 .driver-info,
 .ride-status-info,
 .car-info,
-.note-info {
-  color: #444;
-  font-size: 14px;
-  margin-bottom: 10px;
+.note-info,
+.queue-info,
+.passengers-section {
+  color: var(--text-default);
+  line-height: 1.6;
 }
 
-.note-info {
-  padding-top: 6px;
-}
-
-/* ride status badge (přímo ve tvém JSX) */
 .ride-status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
   margin-left: 6px;
-  border: 1px solid rgba(0,0,0,0.06);
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .ride-status-badge.aktivni {
-  background: rgba(40, 167, 69, 0.15);
-  color: #1e7e34;
-  border-color: rgba(40, 167, 69, 0.35);
+  background: rgba(23, 125, 82, 0.12);
+  color: var(--color-success);
 }
 
 .ride-status-badge.zrusena {
-  background: rgba(220, 53, 69, 0.12);
-  color: #b02a37;
-  border-color: rgba(220, 53, 69, 0.28);
+  background: rgba(199, 65, 95, 0.12);
+  color: var(--color-danger);
 }
 
 .ride-status-badge.dokoncena {
-  background: rgba(108, 117, 125, 0.15);
-  color: #495057;
-  border-color: rgba(108, 117, 125, 0.30);
+  background: rgba(64, 103, 255, 0.12);
+  color: var(--color-primary-strong);
 }
 
-/* driver pill button */
 .driver-link {
-  background: rgba(0, 123, 255, 0.08);
-  border: none;
-  padding: 3px 10px;
-  margin: 0;
-  border-radius: 999px;
-
-  font: inherit;
-  font-weight: 800;
-  color: #007bff;
-
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.driver-link:hover {
-  background: rgba(0, 123, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-.driver-link:active {
-  transform: translateY(0);
-}
-
-.driver-link:focus-visible {
-  outline: 2px solid rgba(0, 123, 255, 0.35);
-  outline-offset: 2px;
-}
-
-/* actions */
-.reservation-actions {
-  padding: 12px 18px 16px 18px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 9px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 800;
-  transition: transform 0.15s ease, background 0.2s ease;
-}
-
-.btn-cancel:hover {
-  background: #c82333;
-  transform: translateY(-1px);
-}
-
-.accepted-info,
-.rejected-info,
-.cancelled-info {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-}
-
-.success-text {
-  color: #1f7a32;
-  font-weight: 800;
-}
-
-.error-text {
-  color: #b02a37;
-  font-weight: 800;
-}
-
-.muted-text {
-  color: #6c757d;
+  min-height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(64, 103, 255, 0.08);
+  color: var(--color-primary-strong);
   font-weight: 700;
-}
-.passengers-section {
-  margin-top: 10px;
 }
 
 .passengers-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .passenger-pill {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface-main);
 }
 
-.passenger-pill:hover {
-  background: #f3f4f6;
+.reservation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 10px 20px 20px;
 }
 
-.passenger-pill.me {
-  font-weight: 700;
+.btn-cancel {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(199, 65, 95, 0.18);
+  border-radius: 12px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-weight: 800;
 }
 
+.accepted-info,
+.rejected-info,
+.cancelled-info {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .my-reservations-page {
-    padding: 30px 14px;
-  }
+.success-text {
+  color: var(--color-success);
+  font-weight: 800;
+}
 
-  .page-header h1 {
-    font-size: 1.85rem;
-  }
+.error-text {
+  color: var(--color-danger);
+  font-weight: 800;
+}
 
+@media (max-width: 760px) {
   .time-info {
     grid-template-columns: 1fr;
   }
 
-  .reservation-header {
+  .reservation-header,
+  .accepted-info,
+  .rejected-info,
+  .cancelled-info {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -370,11 +271,5 @@
 
   .btn-cancel {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-header h1 {
-    font-size: 1.65rem;
   }
 }

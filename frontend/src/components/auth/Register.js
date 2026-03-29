@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Alert from '../ui/Alert';
+import Button from '../ui/Button';
 import './Auth.css';
 
 const Register = () => {
@@ -9,19 +11,17 @@ const Register = () => {
     email: '',
     telefon: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
-
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -37,27 +37,27 @@ const Register = () => {
     const phoneRegex = /^(?:\+\d{1,3}[\s-]?)?(?:\d{3}[\s-]?){2}\d{3}$/;
 
     if (!jmeno || !email || !telefon || !password || !confirmPassword) {
-      setError('Vyplňte prosím všechna pole.');
+      setError('Vyplňte všechna pole.');
       return;
     }
 
     if (jmeno.length > 20) {
-      setError('Uživatelské jméno může mít maximálně 20 znaků.');
+      setError('Jméno může mít maximálně 20 znaků.');
       return;
     }
 
     if (!phoneRegex.test(telefon)) {
-      setError('Telefon musí být ve formátu např. +420 123 456 789');
+      setError('Telefon zadejte třeba ve formátu +420 123 456 789.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Hesla se neshodují');
+      setError('Hesla se neshodují.');
       return;
     }
 
     if (password.length < 6) {
-      setError('Heslo musí mít alespoň 6 znaků');
+      setError('Heslo musí mít alespoň 6 znaků.');
       return;
     }
 
@@ -68,13 +68,13 @@ const Register = () => {
         jmeno,
         email,
         telefon,
-        password
+        password,
       });
 
       navigate('/verify-email', { state: { email } });
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || 'Chyba při registraci');
+      setError(data?.error || 'Registrace se nepovedla.');
     } finally {
       setLoading(false);
     }
@@ -84,93 +84,78 @@ const Register = () => {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-card">
-          <div className="auth-header">
-            <h2>Registrace</h2>
-            <p>Vytvořte si nový účet</p>
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="jmeno">Uživatelské jméno</label>
-              <input
-                type="text"
-                id="jmeno"
-                name="jmeno"
-                value={formData.jmeno}
-                onChange={handleChange}
-                required
-                maxLength={20}
-                placeholder="Zadejte uživatelské jméno"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="Zadejte váš email"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="telefon">Telefon</label>
-              <input
-                type="tel"
-                id="telefon"
-                name="telefon"
-                value={formData.telefon}
-                onChange={handleChange}
-                required
-                placeholder="Např. +420 123 456 789"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Heslo</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="Zadejte heslo (min. 6 znaků)"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Potvrdit heslo</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder="Zadejte heslo znovu"
-              />
-            </div>
-
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Registruji...' : 'Zaregistrovat se'}
-            </button>
-          </form>
-
-          <div className="auth-footer">
+          <aside className="auth-aside">
+            <div className="auth-brand">S</div>
+            <span className="auth-kicker">Nový účet</span>
+            <h1>Připojte se ke školní komunitě na cestách</h1>
             <p>
-              Už máte účet?
-              <Link to="/login" className="auth-link">
-                Přihlaste se
-              </Link>
+              Po registraci budete moct rovnou nabízet jízdy, rezervovat místa a psát ostatním bez zbytečných kroků navíc.
             </p>
-          </div>
+            <div className="auth-points">
+              <div className="auth-point">Ověřený email pro bezpečnější domluvu.</div>
+              <div className="auth-point">Jednotný přehled jízd, aut i rezervací.</div>
+              <div className="auth-point">Jednoduché hodnocení po dokončení cesty.</div>
+            </div>
+          </aside>
+
+          <section className="auth-form-panel">
+            <div className="auth-header">
+              <h2>Registrace</h2>
+              <p>Stačí pár údajů a účet bude připravený během chvilky.</p>
+            </div>
+
+            {error && <Alert variant="error">{error}</Alert>}
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="field-group">
+                <label className="field-label" htmlFor="jmeno">
+                  Uživatelské jméno
+                </label>
+                <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleChange} required maxLength={20} placeholder="Např. Jana Nováková" />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="email">
+                  Email
+                </label>
+                <input className="ui-input" type="email" id="email" name="email" value={formData.email} onChange={handleChange} required placeholder="vas@email.cz" />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="telefon">
+                  Telefon
+                </label>
+                <input className="ui-input" type="tel" id="telefon" name="telefon" value={formData.telefon} onChange={handleChange} required placeholder="+420 123 456 789" />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="password">
+                  Heslo
+                </label>
+                <input className="ui-input" type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Minimálně 6 znaků" />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="confirmPassword">
+                  Potvrzení hesla
+                </label>
+                <input className="ui-input" type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Zadejte heslo znovu" />
+              </div>
+
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Vytvářím účet…' : 'Vytvořit účet'}
+              </Button>
+            </form>
+
+            <div className="auth-footer">
+              <p>
+                Už účet máte?
+                <Link to="/login" className="auth-link">
+                  Přihlaste se
+                </Link>
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

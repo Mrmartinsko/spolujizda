@@ -1,141 +1,126 @@
 .ride-list {
-    max-width: 800px;
-    margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .no-rides {
-    text-align: center;
-    color: #666;
-    font-size: 16px;
-    padding: 40px;
-    background: white;
-    border-radius: 8px;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  text-align: center;
 }
 
-/* KARTA */
 .ride-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 22px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
 .ride-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-/* HLAVIČKA jako tlačítko (accordion) */
-.ride-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: none;
-    width: 100%;
-    background: white;
-    cursor: pointer;
-    text-align: left;
+.ride-card.focused {
+  border-color: rgba(255, 191, 73, 0.72);
+  box-shadow: 0 0 0 4px rgba(255, 191, 73, 0.18), var(--shadow-md);
+}
 
-    padding: 16px 20px;
-    border-bottom: 1px solid #eee;
+.ride-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: none;
+  background: transparent;
+  text-align: left;
 }
 
 .ride-header:hover {
-    background: #fafafa;
+  background: var(--surface-alt);
 }
 
 .ride-header-btn {
-    /* kdybys měl v JSX className="ride-header ride-header-btn",
-       tak tohle jen fixne default styly buttonu */
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
+  appearance: none;
 }
 
 .ride-route {
-    margin: 0;
-    color: #333;
-    font-size: 18px;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 1.16rem;
+  line-height: 1.35;
 }
 
 .ride-header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .ride-price {
-    font-size: 20px;
-    font-weight: bold;
-    color: #28a745;
+  color: var(--color-success);
+  font-size: 1.28rem;
+  font-weight: 800;
 }
 
 .chevron {
-    display: inline-block;
-    transition: transform 0.15s ease;
-    font-size: 16px;
-    opacity: 0.7;
-    line-height: 1;
+  color: var(--text-soft);
+  transition: transform var(--transition-fast);
 }
 
 .chevron.open {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
-/* DETAILY (po rozbalení) */
 .ride-details {
-    padding: 16px 20px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    border-bottom: 1px solid #eee;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  padding: 0 20px 18px;
+  border-top: 1px solid var(--border-soft);
 }
 
 .ride-time,
-.ride-info {
-    color: #555;
-    font-size: 14px;
+.ride-info,
+.ride-status {
+  color: var(--text-default);
+  line-height: 1.6;
 }
+
+.ride-status {
+  grid-column: 1 / -1;
+}
+
 .driver-link {
-    background: rgba(0, 123, 255, 0.08);
-    border: none;
-    padding: 3px 8px;
-    margin: 0;
-    border-radius: 999px;
-
-    font: inherit;
-    font-weight: 600;
-    color: #007bff;
-
-    cursor: pointer;
-    transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(64, 103, 255, 0.1);
+  color: var(--color-primary-strong);
+  font-weight: 700;
 }
 
 .driver-link:hover {
-    background: rgba(0, 123, 255, 0.18);
-    transform: translateY(-1px);
+  background: rgba(64, 103, 255, 0.16);
 }
 
-.driver-link:active {
-    transform: translateY(0);
-}
-
-.driver-link:focus-visible {
-    outline: 2px solid rgba(0, 123, 255, 0.35);
-    outline-offset: 2px;
-}
 .passengers-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .passenger-item {
@@ -148,339 +133,176 @@
 .passenger-item.reservation-entry {
   align-items: flex-start;
   justify-content: space-between;
-  padding: 4px 0;
-  width: 100%;
 }
 
 .passenger-pill {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface-main);
+  color: var(--text-default);
 }
-
-.passenger-pill:hover { background: #f3f4f6; }
 
 .passenger-pill.me {
   font-weight: 700;
 }
 
 .btn-kick {
-  border: 1px solid #fecaca;
-  background: #fff1f2;
-  color: #b91c1c;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(199, 65, 95, 0.18);
+  border-radius: 12px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-weight: 700;
 }
 
-.btn-kick:hover { filter: brightness(0.98); }
-
-.muted { color: #6b7280; font-size: 13px; }
-
-.ride-status {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.btn-kick.disabled {
+  opacity: 0.55;
 }
 
-/* Status badge */
 .status {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .status.aktivni {
-    background: #d4edda;
-    color: #155724;
+  background: rgba(23, 125, 82, 0.12);
+  color: var(--color-success);
 }
 
 .status.zrusena {
-    background: #f8d7da;
-    color: #721c24;
+  background: rgba(199, 65, 95, 0.12);
+  color: var(--color-danger);
 }
 
 .status.dokoncena {
-    background: #d1ecf1;
-    color: #0c5460;
+  background: rgba(64, 103, 255, 0.12);
+  color: var(--color-primary-strong);
 }
 
-/* AKCE (po rozbalení) */
 .ride-actions {
-    padding: 0 20px 16px 20px;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 0 20px 20px;
 }
 
-.btn-reserve {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
+.btn-reserve,
+.btn-delete,
+.btn-reservations,
+.btn-edit,
+.btn-accept,
+.btn-reject {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-weight: 700;
 }
 
-.btn-reserve:hover {
-    background: #0056b3;
+.btn-reserve,
+.btn-reservations,
+.btn-edit,
+.btn-accept {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+  color: #ffffff;
 }
 
-.reservation-modal-input {
-    width: 100%;
-    border: 1px solid #cfcfcf;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 14px;
-    font: inherit;
+.btn-delete,
+.btn-reject {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: rgba(199, 65, 95, 0.18);
 }
 
-.reservation-modal-passenger-group {
-    margin-bottom: 2px;
-}
-
-.btn-delete {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
-
-.btn-delete:hover {
-    background: #c82333;
-}
-
-/* Tlačítko rezervací (řidič) */
-.btn-reservations {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-reservations:hover {
-    background: #0056b3;
-    transform: translateY(-1px);
-}
-
-/* Sekce rezervací */
 .reservations-section {
-    margin: 0 20px 20px 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #e9ecef;
+  margin: 0 20px 20px;
+  padding: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: var(--surface-main);
 }
 
 .reservations-section h4 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 1.1rem;
+  margin: 0 0 14px;
+  color: var(--text-strong);
 }
 
 .reservations-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .reservation-item {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.reservation-info {
-    flex: 1;
-}
-
-.passenger-name {
-    font-size: 1rem;
-    margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: #ffffff;
 }
 
 .reservation-status {
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .reservation-note {
-    font-size: 0.9rem;
-    color: #6c757d;
-    margin-top: 5px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .reservation-actions {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
-.btn-accept {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.kick-hint {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
-.btn-accept:hover {
-    background: #218838;
-    transform: translateY(-1px);
-}
+@media (max-width: 760px) {
+  .ride-header,
+  .reservation-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-.btn-reject {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
+  .ride-details {
+    grid-template-columns: 1fr;
+  }
 
-.btn-reject:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-}
+  .ride-actions,
+  .reservation-actions {
+    width: 100%;
+  }
 
-.no-reservations {
-    text-align: center;
-    color: #6c757d;
-    font-style: italic;
-    padding: 20px;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-}
-.btn-edit {
-    background-color: #007bff; /* modrá */
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.btn-edit:hover {
-    background-color: #0056b3;
-}
-
-.btn-edit:active {
-    transform: scale(0.97);
-}
-
-.btn-edit:disabled {
-    background-color: #b0c4de;
-    cursor: not-allowed;
-}
-.status {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-/* Aktivní */
-.status.aktivni {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-/* Zrušená */
-.status.zrusena {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-/* Dokončená */
-.status.dokoncena {
-    background-color: #d1ecf1;
-    color: #0c5460;
-}
-
-/* Fallback */
-.status {
-    background-color: #e2e3e5;
-    color: #383d41;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .ride-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .ride-details {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-
-    .ride-actions {
-        justify-content: stretch;
-    }
-
-    .btn-reserve,
-    .btn-delete,
-    .btn-reservations {
-        flex: 1;
-    }
-
-    .reservation-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .reservation-actions {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    .btn-accept,
-    .btn-reject {
-        flex: 1;
-    }
-
-    /* Na mobilu radši dovolíme zalamování trasy */
-    .ride-route {
-        white-space: normal;
-        overflow: visible;
-        text-overflow: initial;
-    }
+  .btn-reserve,
+  .btn-delete,
+  .btn-reservations,
+  .btn-edit,
+  .btn-accept,
+  .btn-reject {
+    flex: 1;
+  }
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './RideList.css';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../common/ConfirmModal';
 import ReservationPassengerSummary from '../reservations/ReservationPassengerSummary';
 
@@ -28,18 +28,38 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
   const [kickPassengerModal, setKickPassengerModal] = useState({ open: false, rideId: null, passengerId: null });
   const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
+  const focusRideId = Number(new URLSearchParams(location.search).get('focusRide')) || null;
+  const shouldOpenReservations = new URLSearchParams(location.search).get('openReservations') === '1';
 
   useEffect(() => {
     if (!rides || rides.length === 0) return;
 
     const initialExpanded = {};
     rides.forEach((ride) => {
-      if (ride.status === 'aktivni') {
+      if (ride.status === 'aktivni' || (focusRideId && ride.id === focusRideId)) {
         initialExpanded[ride.id] = true;
       }
     });
     setExpanded(initialExpanded);
-  }, [rides]);
+  }, [focusRideId, rides]);
+
+  useEffect(() => {
+    if (!focusRideId || !shouldOpenReservations || !rides || rides.length === 0) return;
+
+    const targetRide = rides.find((ride) => ride.id === focusRideId);
+    if (!targetRide) return;
+
+    setExpanded((prev) => ({ ...prev, [focusRideId]: true }));
+
+    if (targetRide.ridic_id === user?.id) {
+      setShowReservations((prev) => ({ ...prev, [focusRideId]: true }));
+      if (!rezervace[focusRideId]) {
+        fetchReservations(focusRideId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRideId, rezervace, rides, shouldOpenReservations, user]);
 
   useEffect(() => {
     if (!user || !rides || rides.length === 0) return;
@@ -52,6 +72,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         fetchReservations(ride.id);
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, rezervace, rides, user]);
 
   const formatDate = (dateString) => {
@@ -335,7 +356,12 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         const canKickPassengersUi = isDriver && isActive && timeOkForKick;
 
         return (
-          <div key={ride.id} className={`ride-card ${isExpanded ? 'expanded' : ''}`}>
+          <div
+            key={ride.id}
+            className={`ride-card ${isExpanded ? 'expanded' : ''} ${
+              focusRideId === ride.id ? 'focused' : ''
+            }`}
+          >
             <button
               type="button"
               className="ride-header ride-header-btn"
@@ -589,6 +615,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
                                 <div className="reservation-note">
                                   <strong>Mist:</strong> {r.pocet_mist ?? 1}
                                 </div>
+                                {r.status === 'cekajici' && Number.isInteger(r.poradi_cekajici) && (
+                                  <div className="reservation-note">
+                                    <strong>Poradi:</strong> {r.poradi_cekajici}
+                                  </div>
+                                )}
                                 {r.poznamka && (
                                   <div className="reservation-note">
                                     <em>"{r.poznamka}"</em>
