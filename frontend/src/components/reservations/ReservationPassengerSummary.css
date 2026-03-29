@@ -1,11 +1,11 @@
 .reservation-passenger-summary {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .reservation-passenger-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -38,11 +38,11 @@
 .reservation-extra-count {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
   background: #edf1f5;
   color: #5c6773;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -51,8 +51,8 @@
   background: #f3f6f9;
   color: #607080;
   border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 12px;
+  padding: 2px 7px;
+  font-size: 11px;
   line-height: 1.2;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
@@ -69,12 +69,12 @@
 }
 
 .reservation-companions {
-  margin-top: 6px;
+  margin-top: 5px;
   margin-left: 10px;
   padding-left: 10px;
   border-left: 2px solid #e5e7eb;
   color: #6c757d;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 

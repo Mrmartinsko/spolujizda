@@ -36,9 +36,9 @@ const CreateRidePage = () => {
     <div className="page-shell create-ride-page">
       <section className="page-hero">
         <span className="page-hero__eyebrow">Nabídka jízdy</span>
-        <h1 className="page-hero__title">Sdílejte cestu, ne starosti s dopravou</h1>
+        <h1 className="page-hero__title">Nabídnout jízdu</h1>
         <p className="page-hero__text">
-          Přidejte trasu, čas a auto. Všechno ostatní už pak zvládnete pohodlně spravovat z přehledu jízd.
+          Vyplňte trasu, čas a auto. Správu rezervací pak vyřešíte v přehledu jízd.
         </p>
       </section>
 

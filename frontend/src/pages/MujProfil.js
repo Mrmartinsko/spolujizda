@@ -1,235 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import CarManager from '../components/cars/CarManager';
+import { useAuth } from '../context/AuthContext';
+import Alert from '../components/ui/Alert';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 import './MujProfil.css';
 
 const MujProfil = () => {
-    const { user, setUser } = useAuth();
-    const [editMode, setEditMode] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+  const { user, setUser } = useAuth();
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [hodRidic, setHodRidic] = useState({ statistiky: { celkem: 0, prumer: 0 } });
+  const [formData, setFormData] = useState({
+    jmeno: user?.profil?.jmeno || '',
+    bio: user?.profil?.bio || '',
+  });
 
-    const [hodRidic, setHodRidic] = useState({ statistiky: { celkem: 0, prumer: 0 } });
-    const [hodPasazer, setHodPasazer] = useState({ statistiky: { celkem: 0, prumer: 0 } });
-
-    const [formData, setFormData] = useState({
-        jmeno: user?.profil?.jmeno || '',
-        bio: user?.profil?.bio || ''
+  useEffect(() => {
+    setFormData({
+      jmeno: user?.profil?.jmeno || '',
+      bio: user?.profil?.bio || '',
     });
+  }, [user]);
 
-    useEffect(() => {
-        setFormData({
-            jmeno: user?.profil?.jmeno || '',
-            bio: user?.profil?.bio || ''
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        if (!user?.id) return;
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=ridic`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-    }, [user]);
-
-    useEffect(() => {
-        const fetchRatings = async () => {
-            try {
-                if (!user?.id) return;
-                const token = localStorage.getItem('token');
-
-                const [rRidic, rPasazer] = await Promise.all([
-                    axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=ridic`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=pasazer`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                ]);
-
-                setHodRidic(rRidic.data);
-                setHodPasazer(rPasazer.data);
-            } catch (e) {
-                console.error('Chyba při načítání hodnocení:', e);
-            }
-        };
-
-        fetchRatings();
-    }, [user?.id]);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setHodRidic(response.data);
+      } catch (requestError) {
+        console.error('Chyba při načítání hodnocení:', requestError);
+      }
     };
 
-    const handleEditClick = () => {
-        setFormData({
-            jmeno: user?.profil?.jmeno || '',
-            bio: user?.profil?.bio || ''
-        });
-        setEditMode(true);
-    };
+    fetchRatings();
+  }, [user?.id]);
 
-    const handleCancelEdit = () => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditClick = () => {
+    setFormData({
+      jmeno: user?.profil?.jmeno || '',
+      bio: user?.profil?.bio || '',
+    });
+    setEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setFormData({
+      jmeno: user?.profil?.jmeno || '',
+      bio: user?.profil?.bio || '',
+    });
+    setError('');
+    setSuccess('');
+  };
+
+  const handleSaveChanges = async () => {
+    const trimmedJmeno = (formData.jmeno || '').trim();
+    if (!trimmedJmeno) {
+      setError('Uživatelské jméno je povinné.');
+      return;
+    }
+    if (trimmedJmeno.length > 20) {
+      setError('Uživatelské jméno může mít maximálně 20 znaků.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        'http://localhost:5000/api/uzivatele/profil',
+        { ...formData, jmeno: trimmedJmeno },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.uzivatel) {
+        setUser(response.data.uzivatel);
         setEditMode(false);
-        setFormData({
-            jmeno: user?.profil?.jmeno || '',
-            bio: user?.profil?.bio || ''
-        });
-        setError('');
-        setSuccess('');
-    };
+        setSuccess('Profil byl upraven.');
+      }
+    } catch (saveError) {
+      console.error('Chyba při aktualizaci profilu:', saveError);
+      setError(saveError.response?.data?.error || 'Profil se nepodařilo uložit.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleSaveChanges = async () => {
-        const trimmedJmeno = (formData.jmeno || '').trim();
-        if (!trimmedJmeno) {
-            setError('Uživatelské jméno je povinné.');
-            return;
-        }
-        if (trimmedJmeno.length > 20) {
-            setError('Uživatelské jméno může mít maximálně 20 znaků.');
-            return;
-        }
+  const prumerRidic = hodRidic?.statistiky?.prumer || 0;
+  const celkemRidic = hodRidic?.statistiky?.celkem || 0;
 
-        setLoading(true);
-        setError('');
-        setSuccess('');
-        try {
-            const token = localStorage.getItem('token');
-            const payload = {
-                ...formData,
-                jmeno: trimmedJmeno
-            };
-
-            const response = await axios.put(
-                'http://localhost:5000/api/uzivatele/profil',
-                payload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            if (response.data.uzivatel) {
-                setUser(response.data.uzivatel);
-                setEditMode(false);
-                setSuccess('Profil byl úspěšně aktualizován.');
-            }
-        } catch (saveError) {
-            console.error('Chyba při aktualizaci profilu:', saveError);
-            setError(saveError.response?.data?.error || 'Chyba při aktualizaci profilu.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const prumerRidic = hodRidic?.statistiky?.prumer || 0;
-    const prumerPasazer = hodPasazer?.statistiky?.prumer || 0;
-    const celkemRidic = hodRidic?.statistiky?.celkem || 0;
-    const celkemPasazer = hodPasazer?.statistiky?.celkem || 0;
-
-    return (
-        <div className="muj-profil-page">
+  return (
+    <div className="page-shell muj-profil-page">
+      <Card className="muj-profil-card">
+        <div className="muj-profil-header">
+          <div>
             <h1 className="muj-profil-title">Můj profil</h1>
-            <div className="card muj-profil-card">
-                <h3>Základní informace</h3>
-                {error && <div className="error-message">{error}</div>}
-                {success && <div className="success-message">{success}</div>}
-                {user?.profil ? (
-                    <div>
-                        {editMode ? (
-                            <div>
-                                <div style={{ marginBottom: '15px' }}>
-                                    <label><strong>Uživatelské jméno:</strong></label>
-                                    <input
-                                        type="text"
-                                        name="jmeno"
-                                        value={formData.jmeno}
-                                        onChange={handleInputChange}
-                                        className="form-control"
-                                        style={{ marginTop: '5px' }}
-                                        maxLength={20}
-                                    />
-                                </div>
+            <p className="muj-profil-subtitle">Základní údaje, krátké bio a přehled řidičského hodnocení.</p>
+          </div>
+          {!editMode && (
+            <Button type="button" onClick={handleEditClick}>
+              Upravit profil
+            </Button>
+          )}
+        </div>
 
-                                <div style={{ marginBottom: '15px' }}>
-                                    <label><strong>Email:</strong></label>
-                                    <input
-                                        type="email"
-                                        value={user.email}
-                                        disabled
-                                        className="form-control"
-                                        style={{ marginTop: '5px', backgroundColor: '#f5f5f5' }}
-                                    />
-                                    <small style={{ color: '#666' }}>Email nelze změnit</small>
-                                </div>
+        {error && <Alert variant="error">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
-                                <div style={{ marginBottom: '15px' }}>
-                                    <label><strong>Bio:</strong></label>
-                                    <textarea
-                                        name="bio"
-                                        value={formData.bio}
-                                        onChange={handleInputChange}
-                                        className="form-control"
-                                        rows="3"
-                                        style={{ marginTop: '5px' }}
-                                        placeholder="Napište něco o sobě..."
-                                    />
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <p><strong>Uživatelské jméno:</strong> {user.profil.jmeno}</p>
-                                <p><strong>Email:</strong> {user.email}</p>
-                                <p><strong>Bio:</strong> {user.profil.bio || 'Není vyplněno'}</p>
+        {user?.profil ? (
+          <div className="muj-profil-grid">
+            <div className="muj-profil-section">
+              {editMode ? (
+                <>
+                  <div className="field-group">
+                    <label className="field-label" htmlFor="jmeno">
+                      Uživatelské jméno
+                    </label>
+                    <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleInputChange} maxLength={20} />
+                  </div>
 
-                                <p>
-                                    <strong>Hodnocení jako řidič:</strong>{' '}
-                                    {celkemRidic > 0 ? `★ ${prumerRidic.toFixed(1)} (${celkemRidic}×)` : 'Bez hodnocení'}
-                                </p>
-                                <p>
-                                    <strong>Hodnocení jako pasažér:</strong>{' '}
-                                    {celkemPasazer > 0 ? `★ ${prumerPasazer.toFixed(1)} (${celkemPasazer}×)` : 'Bez hodnocení'}
-                                </p>
+                  <div className="field-group">
+                    <label className="field-label" htmlFor="email">
+                      Email
+                    </label>
+                    <input className="ui-input" type="email" id="email" value={user.email} disabled readOnly />
+                  </div>
 
-                                <p><strong>Počet aut:</strong> {user.profil.pocet_aut || 0}</p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <p>Profil nenalezen</p>
-                )}
-
-                <div className="muj-profil-actions">
-                    {editMode ? (
-                        <>
-                            <button
-                                className="btn btn-success"
-                                style={{ marginRight: '10px' }}
-                                onClick={handleSaveChanges}
-                                disabled={loading}
-                            >
-                                {loading ? 'Ukládám...' : 'Uložit změny'}
-                            </button>
-                            <button
-                                className="btn btn-secondary"
-                                onClick={handleCancelEdit}
-                                disabled={loading}
-                            >
-                                Zrušit
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            className="btn btn-primary"
-                            style={{ marginRight: '10px' }}
-                            onClick={handleEditClick}
-                        >
-                            Upravit profil
-                        </button>
-                    )}
-                </div>
+                  <div className="field-group">
+                    <label className="field-label" htmlFor="bio">
+                      Bio
+                    </label>
+                    <textarea className="ui-input" id="bio" name="bio" value={formData.bio} onChange={handleInputChange} rows="4" placeholder="Napište krátce něco o sobě…" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="muj-profil-line">
+                    <strong>Uživatelské jméno</strong>
+                    <span>{user.profil.jmeno}</span>
+                  </div>
+                  <div className="muj-profil-line">
+                    <strong>Email</strong>
+                    <span>{user.email}</span>
+                  </div>
+                  <div className="muj-profil-line">
+                    <strong>Bio</strong>
+                    <span>{user.profil.bio || 'Zatím bez doplněného bio.'}</span>
+                  </div>
+                </>
+              )}
             </div>
 
-            <CarManager />
-        </div>
-    );
+            <div className="muj-profil-side">
+              <div className="muj-rating-box">
+                <h2>Hodnocení jako řidič</h2>
+                <div className={`muj-rating-box__value ${celkemRidic === 0 ? 'is-empty' : ''}`}>
+                  {celkemRidic > 0 ? `${prumerRidic.toFixed(1)} / 5` : 'Zatím bez hodnocení'}
+                </div>
+                <div className="muj-rating-box__meta">
+                  {celkemRidic > 0 ? `${celkemRidic} hodnocení` : 'Hodnocení se objeví po prvních dokončených jízdách.'}
+                </div>
+              </div>
+
+              <div className="muj-garage-box">
+                <div>
+                  <h2>Garáž</h2>
+                  <p>Správu aut jsme oddělili, aby profil zůstal přehledný a věcný.</p>
+                </div>
+                <Button as={Link} to="/auta" variant="secondary">
+                  Otevřít garáž
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p>Profil nebyl nalezen.</p>
+        )}
+
+        {editMode && (
+          <div className="muj-profil-actions">
+            <Button type="button" onClick={handleSaveChanges} disabled={loading}>
+              {loading ? 'Ukládám…' : 'Uložit změny'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleCancelEdit} disabled={loading}>
+              Zrušit
+            </Button>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 };
 
 export default MujProfil;

@@ -6,9 +6,9 @@ const VyhledatJizdu = () => {
     <div className="page-shell">
       <section className="page-hero page-hero--light">
         <span className="page-hero__eyebrow">Vyhledávání</span>
-        <h1 className="page-hero__title">Najděte spoj, který vám sedne časem i trasou</h1>
+        <h1 className="page-hero__title">Vyhledat jízdu</h1>
         <p className="page-hero__text">
-          Vyberte odkud, kam a kdy chcete jet. Výsledky jsou řazené tak, aby byly nejdůležitější informace vidět hned.
+          Vyberte odkud, kam a kdy chcete jet. Výsledky ukážou jen to nejdůležitější.
         </p>
       </section>
 

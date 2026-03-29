@@ -1,0 +1,187 @@
+.user-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 12px;
+  border-radius: 28px;
+  color: var(--text-default);
+  background:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.08), transparent 38%),
+    linear-gradient(180deg, rgba(245, 248, 253, 0.98) 0%, rgba(238, 243, 250, 0.96) 100%);
+}
+
+.user-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--text-default);
+  background: linear-gradient(180deg, rgba(251, 252, 255, 0.98) 0%, rgba(244, 247, 252, 0.96) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.07);
+}
+
+.user-profile-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 22px;
+  color: var(--text-default);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 253, 0.94) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.user-profile-heading {
+  min-width: 0;
+}
+
+.user-profile-card p,
+.user-profile-card h1,
+.user-profile-card h2,
+.user-profile-card h3,
+.user-profile-card span,
+.user-review-section,
+.user-review-section p,
+.user-review-section h2 {
+  color: inherit;
+}
+
+.user-profile-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.user-profile-header h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 1.45rem;
+}
+
+.user-profile-subtext {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.user-profile-bio {
+  margin: 0;
+  color: var(--text-default);
+  line-height: 1.65;
+}
+
+.user-profile-ratings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.user-rating-box {
+  padding: 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: var(--surface-main);
+}
+
+.user-rating-box h3 {
+  margin: 0 0 8px;
+  color: var(--text-strong);
+  font-size: 0.98rem;
+}
+
+.user-rating-box__value {
+  color: var(--text-strong);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.user-rating-box__meta {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.user-rating-box__value.is-empty {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.user-review-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.user-review-section h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 1.05rem;
+}
+
+.user-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-review-card {
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface-main);
+}
+
+.user-review-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-default);
+  font-weight: 700;
+}
+
+.user-review-card__date {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.user-review-card__text {
+  margin: 8px 0 0;
+  color: var(--text-default);
+  line-height: 1.55;
+}
+
+.user-review-empty {
+  padding: 18px;
+  border: 1px dashed var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface-main);
+  color: var(--text-muted);
+}
+
+.user-profile-loading,
+.user-profile-error {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-strong);
+}
+
+@media (max-width: 720px) {
+  .user-profile-header {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .user-profile-ratings {
+    grid-template-columns: 1fr;
+  }
+}
