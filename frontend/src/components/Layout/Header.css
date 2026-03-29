@@ -18,6 +18,8 @@
   align-items: center;
   gap: 14px;
   padding: 0 10px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .sidebar__brand-mark {
@@ -45,6 +47,10 @@
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.sidebar__brand:hover .sidebar__brand-mark {
+  transform: translateY(-1px);
 }
 
 .sidebar__nav {
@@ -271,7 +277,6 @@
 .notifCard__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 

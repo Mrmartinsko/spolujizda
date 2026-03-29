@@ -34,11 +34,19 @@
 }
 
 .form-row {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .form-row > * {
   flex: 1;
+}
+
+.checkbox-row {
+  margin: 6px 0 16px;
+}
+
+.form-actions {
+  margin-top: 6px;
 }
 
 @media (max-width: 760px) {

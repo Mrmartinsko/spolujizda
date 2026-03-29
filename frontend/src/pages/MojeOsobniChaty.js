@@ -1,160 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MessageCircleMore, Trash2 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import ConfirmModal from '../components/common/ConfirmModal';
+import PersonalChat from '../components/chat/PersonalChat';
+import Alert from '../components/ui/Alert';
+import api from '../services/api';
+import './MojeOsobniChaty.css';
+import { useAuth } from '../context/AuthContext';
+
+const resolveUsername = (participant) => {
+  if (!participant) return '';
+  return (
+    participant.username ||
+    participant.jmeno ||
+    participant.profil?.jmeno ||
+    participant.odesilatel?.username ||
+    participant.odesilatel?.jmeno ||
+    ''
+  );
+};
 
 const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(now.getDate() - 1);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  const time = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
-    const time = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return time;
+  if (isYesterday) return `Včera`;
+  return date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' });
+};
 
-    if (isToday) return `dnes ${time}`;
-    if (isYesterday) return `včera ${time}`;
-    return date.toLocaleDateString('cs-CZ') + ' ' + time;
+const sortChatsByLatest = (items) => {
+  return [...items].sort((a, b) => {
+    const aTime = a.posledni_zprava?.cas ? new Date(a.posledni_zprava.cas).getTime() : 0;
+    const bTime = b.posledni_zprava?.cas ? new Date(b.posledni_zprava.cas).getTime() : 0;
+    return bTime - aTime;
+  });
 };
 
 const MojeOsobniChaty = () => {
-    const { token, user } = useAuth();
-    const [chaty, setChaty] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [deleteModal, setDeleteModal] = useState({ open: false, chatId: null });
-    const navigate = useNavigate();
+  const { token, user } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchChaty = async () => {
-            try {
-                const response = await api.get('/chat/moje', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setChaty(response.data.osobni_chaty);
-            } catch (err) {
-                console.error(err);
-                setError('Nepodařilo se načíst osobní chaty');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchChaty();
-    }, [token]);
+  const [chaty, setChaty] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [listRefreshing, setListRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ open: false, chatId: null });
 
-    const handleOpenChat = (chat) => {
-        const druhyUzivatel = chat.ucastnici?.find(u => u.id !== user.id);
-        if (!druhyUzivatel) {
-            setError('Chyba: nelze otevřít chat, chybí uživatel');
-            return;
-        }
-        navigate(`/chat/${druhyUzivatel.id}`);
-    };
+  const fetchChaty = async ({ silent = false } = {}) => {
+    try {
+      if (silent) setListRefreshing(true);
+      else setLoading(true);
 
-    const executeDeleteChat = async (chatId) => {
-        try {
-            await api.delete(`/chat/osobni/${chatId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setChaty(prev => prev.filter(c => c.id !== chatId));
-            setError(null);
-        } catch (err) {
-            console.error(err);
-            setError('Nepodařilo se smazat chat');
-        }
-    };
+      const response = await api.get('/chat/moje', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const handleDeleteChat = (chatId, e) => {
-        e.stopPropagation(); // zabrání volání handleOpenChat při kliknutí na křížek
-        setDeleteModal({ open: true, chatId });
-    };
+      setChaty(sortChatsByLatest(response.data.osobni_chaty || []));
+      setError('');
+    } catch (requestError) {
+      console.error(requestError);
+      setError('Chaty se nepodařilo načíst.');
+    } finally {
+      setLoading(false);
+      setListRefreshing(false);
+    }
+  };
 
-    if (loading) return <p>Načítají se osobní chaty...</p>;
+  useEffect(() => {
+    if (!token) return;
+    fetchChaty();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
+  const selectedChat = useMemo(() => {
+    if (!id) return null;
     return (
-        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-            <h2>Moje osobní chaty</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {chaty.length === 0 ? (
-                <p>Zatím nemáte žádné osobní chaty.</p>
-            ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {chaty.map(chat => {
-                        const druhyUzivatel = chat.ucastnici.find(u => u.id !== user.id);
-                        const posledniZprava = chat.posledni_zprava;
-
-                        return (
-                            <li
-                                key={chat.id}
-                                style={{
-                                    border: '1px solid #ccc',
-                                    borderRadius: '5px',
-                                    padding: '10px',
-                                    marginBottom: '10px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}
-                                onClick={() => handleOpenChat(chat)}
-                            >
-                                <div>
-                                    <strong>{druhyUzivatel?.profil?.jmeno || druhyUzivatel?.email || "Neznámý"}</strong>
-                                    {posledniZprava && (
-                                        <p style={{ margin: '5px 0 0 0', color: '#555', fontSize: '0.9rem' }}>
-                                            {posledniZprava?.odesilatel?.jmeno
-                                                ? `${posledniZprava.odesilatel.jmeno}: ${
-                                                    posledniZprava.text.length > 30
-                                                        ? posledniZprava.text.substring(0, 30) + '...'
-                                                        : posledniZprava.text
-                                                }`
-                                                : `Neznámý: ${posledniZprava?.text || ""}`
-                                            }
-                                        </p>
-                                    )}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    {posledniZprava && (
-                                        <div style={{ fontSize: '0.8rem', color: '#888' }}>
-                                            {formatTime(posledniZprava.cas)}
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={(e) => handleDeleteChat(chat.id, e)}
-                                        style={{
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'red',
-                                            fontSize: '1.2rem',
-                                            cursor: 'pointer'
-                                        }}
-                                        title="Smazat chat"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
-            <ConfirmModal
-                isOpen={deleteModal.open}
-                title="Smazat chat"
-                message="Opravdu chcete smazat tento chat?"
-                confirmText="Smazat chat"
-                danger
-                onCancel={() => setDeleteModal({ open: false, chatId: null })}
-                onConfirm={() => {
-                    const chatId = deleteModal.chatId;
-                    setDeleteModal({ open: false, chatId: null });
-                    if (chatId) executeDeleteChat(chatId);
-                }}
-            />
-        </div>
+      chaty.find((chat) => {
+        const druhyUzivatel = chat.ucastnici?.find((u) => u.id !== user?.id);
+        return String(druhyUzivatel?.id) === String(id);
+      }) || null
     );
+  }, [chaty, id, user?.id]);
+
+  useEffect(() => {
+    if (id && !loading && !selectedChat && chaty.length > 0) {
+      fetchChaty({ silent: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loading, selectedChat, chaty.length]);
+
+  const executeDeleteChat = async (chatId) => {
+    try {
+      await api.delete(`/chat/osobni/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const deletedChat = chaty.find((chat) => chat.id === chatId);
+      const deletedParticipantId = deletedChat?.ucastnici?.find((u) => u.id !== user.id)?.id;
+
+      setChaty((prev) => prev.filter((c) => c.id !== chatId));
+      setError('');
+
+      if (id && String(deletedParticipantId) === String(id)) {
+        navigate('/moje-chaty', { replace: true });
+      }
+    } catch (requestError) {
+      console.error(requestError);
+      setError('Chat se nepodařilo smazat.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="chat-workspace-loading">
+        <div className="chat-workspace-loading__spinner" />
+        <p>Načítám chaty…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chat-workspace">
+      <aside className="chat-sidebar">
+        <div className="chat-sidebar__header">
+          <div>
+            <h1>Chaty</h1>
+            <p>Poslední konverzace máte vždy nahoře.</p>
+          </div>
+          {listRefreshing && <span className="chat-sidebar__refresh">Aktualizuji…</span>}
+        </div>
+
+        {error && <Alert variant="error">{error}</Alert>}
+
+        {chaty.length === 0 ? (
+          <div className="chat-sidebar__empty">
+            Zatím tu není žádná konverzace. Jakmile si s někým napíšete, objeví se právě tady.
+          </div>
+        ) : (
+          <div className="chat-sidebar__list">
+            {chaty.map((chat) => {
+              const druhyUzivatel = chat.ucastnici?.find((u) => u.id !== user.id);
+              const druhyUzivatelId = druhyUzivatel?.id;
+              const username = resolveUsername(druhyUzivatel) || `Uživatel #${druhyUzivatelId}`;
+              const posledniZprava = chat.posledni_zprava;
+              const previewText = posledniZprava?.text || 'Zatím bez zprávy';
+              const previewPrefix =
+                posledniZprava?.odesilatel?.id === user.id
+                  ? 'Vy: '
+                  : resolveUsername(posledniZprava?.odesilatel)
+                  ? `${resolveUsername(posledniZprava.odesilatel)}: `
+                  : '';
+              const isActive = id && String(druhyUzivatelId) === String(id);
+
+              return (
+                <div
+                  key={chat.id}
+                  className={`chat-list-item ${isActive ? 'is-active' : ''}`}
+                  onClick={() => navigate(`/chat/${druhyUzivatelId}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/chat/${druhyUzivatelId}`);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="chat-list-item__main">
+                    <h3 className="chat-list-item__name">{username}</h3>
+                    <p className="chat-list-item__preview">
+                      {previewPrefix}
+                      {previewText}
+                    </p>
+                  </div>
+
+                  <div className="chat-list-item__time">
+                    {posledniZprava ? formatTime(posledniZprava.cas) : ''}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="chat-list-item__delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteModal({ open: true, chatId: chat.id });
+                    }}
+                    title="Smazat chat"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </aside>
+
+      <section className="chat-panel">
+        {id ? (
+          <PersonalChat otherUserId={id} isInline />
+        ) : (
+          <div className="chat-panel__placeholder">
+            <div className="chat-panel__placeholder-icon">
+              <MessageCircleMore size={24} />
+            </div>
+            <h2>Vyberte konverzaci</h2>
+            <p>Vlevo otevřete chat a navážete tam, kde jste naposledy skončili.</p>
+          </div>
+        )}
+      </section>
+
+      <ConfirmModal
+        isOpen={deleteModal.open}
+        title="Smazat chat"
+        message="Opravdu chcete smazat tento chat?"
+        confirmText="Smazat chat"
+        danger
+        onCancel={() => setDeleteModal({ open: false, chatId: null })}
+        onConfirm={() => {
+          const chatId = deleteModal.chatId;
+          setDeleteModal({ open: false, chatId: null });
+          if (chatId) executeDeleteChat(chatId);
+        }}
+      />
+    </div>
+  );
 };
 
 export default MojeOsobniChaty;

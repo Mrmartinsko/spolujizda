@@ -72,9 +72,6 @@ const NotificationsDropdown = () => {
                   : 'Všechno máte přečtené.'}
               </p>
             </div>
-            <button type="button" className="notifShowAll" onClick={() => setActiveFilter('all')}>
-              Zobrazit vše
-            </button>
           </div>
 
           <div className="notifFilters">

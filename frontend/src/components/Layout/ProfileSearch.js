@@ -33,10 +33,10 @@ const ProfileSearch = () => {
     tRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const r = await searchUsers(query);
-        setResults(r);
-      } catch (e) {
-        console.error('Chyba při vyhledávání profilů:', e);
+        const found = await searchUsers(query);
+        setResults(found);
+      } catch (error) {
+        console.error('Chyba při vyhledávání profilů:', error);
         setResults([]);
       } finally {
         setLoading(false);
@@ -89,7 +89,7 @@ const ProfileSearch = () => {
       {open && (
         <div className="psDropdown">
           {!shouldSearch && <div className="psHint">Napište aspoň 2 znaky.</div>}
-          {shouldSearch && loading && <div className="psHint">Vyhledávám…</div>}
+          {shouldSearch && loading && <div className="psHint">Vyhledávám...</div>}
           {shouldSearch && !loading && results.length === 0 && (
             <div className="psHint">Nikdo takový nebyl nalezen.</div>
           )}
@@ -98,23 +98,19 @@ const ProfileSearch = () => {
             <Link key={profil.id} to={`/profil/${profil.id}`} className="psItem" onClick={closeAfterPick}>
               <div
                 className="psAvatar"
-                style={{
-                  backgroundImage: profil.fotka ? `url(${profil.fotka})` : 'none',
-                }}
+                style={profil.fotka ? { backgroundImage: `url(${profil.fotka})` } : undefined}
               >
                 {!profil.fotka && (profil.jmeno?.charAt(0)?.toUpperCase() || 'U')}
               </div>
 
               <div className="psInfo">
-                <div className="psName">{profil.jmeno}</div>
+                <div className="psName">{profil.jmeno || profil.username || 'Uživatel'}</div>
                 <div className="psMeta">
-                  {profil.hodnoceni_ridic && (
+                  {profil.hodnoceni_ridic ? (
                     <span>Řidič • {Number(profil.hodnoceni_ridic).toFixed(1)}</span>
+                  ) : (
+                    <span>Řidič</span>
                   )}
-                  {profil.hodnoceni_pasazer && (
-                    <span>Pasažér • {Number(profil.hodnoceni_pasazer).toFixed(1)}</span>
-                  )}
-                  {!profil.hodnoceni_ridic && !profil.hodnoceni_pasazer && <span>Nový uživatel</span>}
                 </div>
               </div>
             </Link>

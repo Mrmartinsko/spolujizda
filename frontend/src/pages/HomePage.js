@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Clock3, Route, ShieldCheck, Star } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Clock3, Route, ShieldCheck, Star, Waypoints } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import RideSearch from '../components/rides/RideSearch';
 import RideList from '../components/rides/RideList';
@@ -27,6 +27,8 @@ const HomePage = () => {
     ],
     [latestRides.length]
   );
+
+  const previewRides = useMemo(() => latestRides.slice(0, 3), [latestRides]);
 
   const fetchLatestRides = async () => {
     try {
@@ -81,9 +83,9 @@ const HomePage = () => {
       <section className="page-hero home-hero">
         <div className="home-hero__content">
           <span className="page-hero__eyebrow">Studentská spolujízda</span>
-          <h1 className="page-hero__title">Cesty mezi školou, kolejí a domovem bez zbytečného chaosu</h1>
+          <h1 className="page-hero__title">Přehled cest, rezervací a domluvy na jednom místě</h1>
           <p className="page-hero__text">
-            Vyhledejte volné místo, nabídněte vlastní trasu a mějte rezervace, chaty i hodnocení přehledně na jednom místě.
+            Vyhledejte volné místo, nabídněte vlastní trasu a mějte rezervace, chaty i hodnocení přehledně po ruce.
           </p>
         </div>
 
@@ -124,20 +126,58 @@ const HomePage = () => {
       <section className="page-section">
         <div className="section-heading">
           <div>
-            <h2>Nejbližší jízdy</h2>
-            <p className="home-section-text">Dominantní je trasa, čas a cena. Ostatní detaily necháváme až v rozbaleném přehledu.</p>
+            <h2>Rychlý vstup do jízd</h2>
+            <p className="home-section-text">Dashboard drží přehled stručný. Do detailnějšího seznamu se dostanete jedním kliknutím.</p>
           </div>
           <Badge variant="primary">{latestRides.length} aktuálních nabídek</Badge>
+        </div>
+
+        <div className="home-shortcuts">
+          <Card interactive className="home-shortcut-card">
+            <div className="home-shortcut-card__icon">
+              <Route size={18} />
+            </div>
+            <div className="home-shortcut-card__body">
+              <h3>Vyhledat vhodnou jízdu</h3>
+              <p>Projděte aktuální nabídky a otevřete si celý seznam jízd v samostatném přehledu.</p>
+            </div>
+            <Button as={Link} to="/vyhledat-jizdu" size="sm">
+              Otevřít přehled jízd
+              <ArrowRight size={16} />
+            </Button>
+          </Card>
+
+          <Card interactive className="home-shortcut-card">
+            <div className="home-shortcut-card__icon">
+              <Waypoints size={18} />
+            </div>
+            <div className="home-shortcut-card__body">
+              <h3>Správa mých jízd</h3>
+              <p>Zkontrolujte rezervace, změňte detaily cesty nebo navazující komunikaci s pasažéry.</p>
+            </div>
+            <Button as={Link} to="/moje-jizdy" variant="secondary" size="sm">
+              Přejít do mých jízd
+            </Button>
+          </Card>
+        </div>
+      </section>
+
+      <section className="page-section home-preview-section">
+        <div className="section-heading">
+          <div>
+            <h2>Krátký náhled nejbližších jízd</h2>
+            <p className="home-section-text">Jen pár nejbližších nabídek pro rychlou orientaci bez zahlcení celé stránky.</p>
+          </div>
         </div>
 
         {loadingRides ? (
           <Card className="home-message-card">Načítám dostupné jízdy…</Card>
         ) : error ? (
           <Alert variant="error">{error}</Alert>
-        ) : latestRides.length === 0 ? (
+        ) : previewRides.length === 0 ? (
           <Card className="home-message-card">Zatím tu nejsou žádné nové jízdy. Zkuste to později nebo nabídněte vlastní trasu.</Card>
         ) : (
-          <RideList rides={latestRides} onRideUpdate={fetchLatestRides} />
+          <RideList rides={previewRides} onRideUpdate={fetchLatestRides} />
         )}
       </section>
     </div>

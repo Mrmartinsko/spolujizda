@@ -1,9 +1,8 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   CarFront,
   CircleUserRound,
-  Home,
   MessageCircleMore,
   PlusCircle,
   Search,
@@ -13,7 +12,6 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-  { path: '/', label: 'Přehled', icon: Home },
   { path: '/nabidnout-jizdu', label: 'Nabídnout jízdu', icon: PlusCircle },
   { path: '/vyhledat-jizdu', label: 'Vyhledat jízdu', icon: Search },
   { path: '/moje-jizdy', label: 'Moje jízdy', icon: Waypoints },
@@ -30,13 +28,13 @@ const secondaryItems = [
 const Sidebar = () => {
   return (
     <aside className="sidebar">
-      <div className="sidebar__brand">
+      <Link to="/" className="sidebar__brand">
         <div className="sidebar__brand-mark">S</div>
         <div>
           <div className="sidebar__brand-title">Spolujízda</div>
           <div className="sidebar__brand-text">Studentské cesty po škole i domů</div>
         </div>
-      </div>
+      </Link>
 
       <nav className="sidebar__nav">
         {menuItems.map(({ path, label, icon: Icon }) => (

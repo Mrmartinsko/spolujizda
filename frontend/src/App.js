@@ -1,40 +1,30 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { NotificationProvider } from './context/NotificationContext';
-
-import Layout from './components/Layout/Layout';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ForgotPassword from './components/auth/ForgotPassword';
 import Login from './components/auth/Login';
+import PrivateRoute from './components/auth/PrivateRoute';
 import Register from './components/auth/Register';
 import ResetPassword from './components/auth/ResetPassword';
-import HomePage from './pages/HomePage';
-import CreateRidePage from './pages/CreateRidePage';
-import MyRidesPage from './pages/MyRidesPage';
-import MyReservationsPage from './pages/MyReservationsPage';
-import CarManager from './components/cars/CarManager';
-import ReservationManager from './components/reservations/ReservationManager';
-import PrivateRoute from './components/auth/PrivateRoute';
-import MujProfil from './pages/MujProfil';
-import Nastaveni from './pages/Nastaveni';
-import VyhledatJizdu from './pages/VyhledatJizdu';
-import ProfilUzivatele from './pages/ProfilUzivatele';
-import './styles/theme.css';
-import MojeOsobniChaty from './pages/MojeOsobniChaty';
-import PersonalChat from './components/chat/PersonalChat';
-import EditRide from './components/rides/EditRide';
-import OhodnotitPage from './pages/OhodnotitPage';
 import VerifyEmail from './components/auth/VerifyEmail';
 import VerifyEmailToken from './components/auth/VerifyEmailToken';
-
-
-
-// Wrapper pro PersonalChat, aby dostal id druhého uživatele z URL
-const PersonalChatWrapper = () => {
-  const { id } = useParams();
-  return <PersonalChat otherUserId={id} />;
-};
+import CarManager from './components/cars/CarManager';
+import Layout from './components/Layout/Layout';
+import ReservationManager from './components/reservations/ReservationManager';
+import EditRide from './components/rides/EditRide';
+import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
+import './styles/theme.css';
+import CreateRidePage from './pages/CreateRidePage';
+import HomePage from './pages/HomePage';
+import MojeOsobniChaty from './pages/MojeOsobniChaty';
+import MujProfil from './pages/MujProfil';
+import MyReservationsPage from './pages/MyReservationsPage';
+import MyRidesPage from './pages/MyRidesPage';
+import Nastaveni from './pages/Nastaveni';
+import OhodnotitPage from './pages/OhodnotitPage';
+import ProfilUzivatele from './pages/ProfilUzivatele';
+import VyhledatJizdu from './pages/VyhledatJizdu';
 
 function App() {
   return (
@@ -49,7 +39,7 @@ function App() {
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/verify-email/:token" element={<VerifyEmailToken />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
-              
+
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
 
@@ -98,7 +88,6 @@ function App() {
                   }
                 />
 
-                {/*  EDITACE JÍZDY */}
                 <Route
                   path="jizdy/:id/upravit"
                   element={
@@ -125,6 +114,7 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+
                 <Route
                   path="ohodnotit/:jizdaId/:cilovyId"
                   element={
@@ -133,6 +123,7 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+
                 <Route
                   path="nastaveni"
                   element={
@@ -164,7 +155,7 @@ function App() {
                   path="chat/:id"
                   element={
                     <PrivateRoute>
-                      <PersonalChatWrapper />
+                      <MojeOsobniChaty />
                     </PrivateRoute>
                   }
                 />

@@ -74,18 +74,15 @@ const Nastaveni = () => {
     <div className="page-shell">
       <section className="page-hero page-hero--light">
         <span className="page-hero__eyebrow">Nastavení účtu</span>
-        <h1 className="page-hero__title">Mějte své přihlášení pod kontrolou</h1>
-        <p className="page-hero__text">
-          V nastavení teď zůstává jen to podstatné: jazyk rozhraní a bezpečná změna hesla.
-        </p>
+        <h1 className="page-hero__title">Nastavení</h1>
+        <p className="page-hero__text">Jen to podstatné: jazyk rozhraní a změna hesla.</p>
       </section>
 
       <div className="grid-2">
         <Card>
           <div className="ui-card__header">
             <div>
-              <h2 className="ui-card__title">Obecné</h2>
-              <p className="ui-card__subtitle">Aplikace momentálně běží v jednoduchém českém rozhraní.</p>
+              <h2 className="ui-card__title">Jazyk</h2>
             </div>
           </div>
 
@@ -96,7 +93,6 @@ const Nastaveni = () => {
             <select id="jazyk" className="ui-input" value={language} disabled>
               <option value="cs">Čeština</option>
             </select>
-            <p className="field-hint">Další jazyky můžeme doplnit později bez změny současného flow.</p>
           </div>
         </Card>
 

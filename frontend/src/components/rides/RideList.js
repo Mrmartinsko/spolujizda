@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { MoreHorizontal } from 'lucide-react';
 import axios from 'axios';
-import './RideList.css';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../common/ConfirmModal';
 import ReservationPassengerSummary from '../reservations/ReservationPassengerSummary';
+import './RideList.css';
 
 const API = 'http://localhost:5000/api';
 
@@ -17,7 +18,7 @@ const emptyReservationModal = {
   poznamka: '',
 };
 
-const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
+const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode = 'default' }) => {
   const { token, user } = useAuth();
   const [showReservations, setShowReservations] = useState({});
   const [rezervace, setRezervace] = useState({});
@@ -26,6 +27,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
   const [reservationModal, setReservationModal] = useState(emptyReservationModal);
   const [deleteRideModal, setDeleteRideModal] = useState({ open: false, rideId: null });
   const [kickPassengerModal, setKickPassengerModal] = useState({ open: false, rideId: null, passengerId: null });
+  const [activePassengerMenu, setActivePassengerMenu] = useState(null);
   const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,6 +84,18 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     return d.toLocaleString('cs-CZ');
   };
 
+  const formatCompactDate = (dateString) => {
+    if (!dateString) return '--';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '--';
+    return d.toLocaleString('cs-CZ', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const hasNotDepartedYet = (ride) => {
     if (!ride?.cas_odjezdu) return false;
     const d = new Date(ride.cas_odjezdu);
@@ -112,6 +126,19 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     return [ride.odkud, ...stops, ride.kam].filter(Boolean).join(' -> ');
   };
 
+  const getRideStatusText = (status) => {
+    switch (status) {
+      case 'aktivni':
+        return 'Aktivn�';
+      case 'zrusena':
+        return 'Zru�en�';
+      case 'dokoncena':
+        return 'Dokon�en�';
+      default:
+        return status || 'Nezn�m� stav';
+    }
+  };
+
   const toggleExpanded = async (ride) => {
     const nextExpanded = !expanded[ride.id];
     setExpanded((prev) => ({ ...prev, [ride.id]: nextExpanded }));
@@ -125,17 +152,12 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
   const getPassengerId = (p) => p?.uzivatel_id ?? p?.id ?? null;
 
   const getPassengerDisplayName = (p) => {
-    if (!p) return 'Neznamy uzivatel';
+    if (!p) return 'Nezn�m� u�ivatel';
     const fullName = [p.jmeno, p.prijmeni].filter(Boolean).join(' ').trim();
-    return fullName || p.prezdivka || p.username || 'Neznamy uzivatel';
+    return fullName || p.prezdivka || p.username || 'Nezn�m� u�ivatel';
   };
 
-  const submitReservation = async (
-    jizdaId,
-    pocetMist = 1,
-    poznamka = '',
-    dalsiPasazeri = []
-  ) => {
+  const submitReservation = async (jizdaId, pocetMist = 1, poznamka = '', dalsiPasazeri = []) => {
     try {
       setError('');
       setSuccess('');
@@ -146,11 +168,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess('Rezervace byla odeslana.');
+      setSuccess('Rezervace byla odesl�na.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba pri rezervaci');
+      setError(err.response?.data?.error || 'Chyba p�i rezervaci');
     }
   };
 
@@ -199,18 +221,17 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
   const fetchReservations = async (jizdaId) => {
     try {
-      const response = await axios.get(
-        `${API}/rezervace/jizda/${jizdaId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get(`${API}/rezervace/jizda/${jizdaId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setRezervace((prev) => ({
         ...prev,
         [jizdaId]: response.data.rezervace,
       }));
     } catch (err) {
-      console.error('Chyba pri nacitani rezervaci:', err);
+      console.error('Chyba p�i na��t�n� rezervac�:', err);
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba pri nacitani rezervaci');
+      setError(err.response?.data?.error || 'Chyba p�i na��t�n� rezervac�');
     }
   };
 
@@ -245,12 +266,12 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess(`Rezervace byla ${action === 'prijmout' ? 'prijata' : 'odmitnuta'}`);
+      setSuccess(`Rezervace byla ${action === 'prijmout' ? 'p�ijata' : 'odm�tnuta'}`);
       await fetchReservations(jizdaId);
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || `Chyba pri ${action} rezervace`);
+      setError(err.response?.data?.error || 'Chyba p�i akci s rezervac�');
     }
   };
 
@@ -258,7 +279,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     const ride = (rides || []).find((r) => r.id === jizdaId);
     if (!canCancelRideByRule(ride)) {
       setSuccess('');
-      setError('Jizdu lze zrusit jen pokud je aktivni a pred odjezdem.');
+      setError('J�zdu lze zru�it jen pokud je aktivn� a p�ed odjezdem.');
       return;
     }
 
@@ -269,11 +290,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSuccess('Jizda byla zrusena');
+      setSuccess('J�zda byla zru�ena.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba pri ruseni jizdy');
+      setError(err.response?.data?.error || 'Chyba p�i ru�en� j�zdy');
     }
   };
 
@@ -281,7 +302,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     const ride = (rides || []).find((r) => r.id === jizdaId);
     if (!canCancelRideByRule(ride)) {
       setSuccess('');
-      setError('Jizdu lze zrusit jen pokud je aktivni a pred odjezdem.');
+      setError('J�zdu lze zru�it jen pokud je aktivn� a p�ed odjezdem.');
       return;
     }
     setDeleteRideModal({ open: true, rideId: jizdaId });
@@ -291,16 +312,15 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     try {
       setError('');
       setSuccess('');
-      await axios.delete(
-        `${API}/jizdy/${rideId}/pasazeri/${passengerId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`${API}/jizdy/${rideId}/pasazeri/${passengerId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      setSuccess('Pasazer byl vyhozen.');
+      setSuccess('Pasa��r byl odebr�n z j�zdy.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba pri vyhazovani pasazera');
+      setError(err.response?.data?.error || 'Chyba p�i odeb�r�n� pasa��ra');
     }
   };
 
@@ -308,10 +328,136 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
     setKickPassengerModal({ open: true, rideId, passengerId });
   };
 
+  const renderPassengerActions = (rideId, passengerId, canKickPassengersUi) => {
+    if (!passengerId) return null;
+
+    const isOpen =
+      activePassengerMenu?.rideId === rideId &&
+      activePassengerMenu?.passengerId === passengerId;
+
+    return (
+      <div className="passenger-menu">
+        <button
+          type="button"
+          className="passenger-menu__trigger"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActivePassengerMenu((prev) =>
+              prev?.rideId === rideId && prev?.passengerId === passengerId
+                ? null
+                : { rideId, passengerId }
+            );
+          }}
+          title="Akce pro pasa��ra"
+        >
+          <MoreHorizontal size={16} />
+        </button>
+
+        {isOpen && (
+          <div className="passenger-menu__dropdown" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="passenger-menu__item"
+              onClick={() => {
+                setActivePassengerMenu(null);
+                navigate(`/profil/${passengerId}`);
+              }}
+            >
+              Zobrazit profil
+            </button>
+            {canKickPassengersUi && (
+              <button
+                type="button"
+                className="passenger-menu__item passenger-menu__item--danger"
+                onClick={() => {
+                  setActivePassengerMenu(null);
+                  handleKickPassenger(rideId, passengerId);
+                }}
+              >
+                Vyhodit pasa��ra
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPassengerBlockContent = (ride, rezervaceJizdy, canKickPassengersUi, isDriver) => {
+    const prijateRezervaceJizdy = rezervaceJizdy.filter((r) => r.status === 'prijata');
+    const hasPassengers =
+      isDriver && rezervace[ride.id] !== undefined
+        ? prijateRezervaceJizdy.length > 0
+        : Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0;
+
+    if (!hasPassengers) {
+      return <span>��dn� pasa���i</span>;
+    }
+
+    return (
+      <div className="passengers-list" onClick={(e) => e.stopPropagation()}>
+        {isDriver && rezervace[ride.id] !== undefined
+          ? prijateRezervaceJizdy.map((rez) => {
+              const passengerId = rez.uzivatel?.id ?? rez.uzivatel_id;
+              const key = rez.id;
+              const name = getPassengerDisplayName(rez.uzivatel);
+              const isMe = user && passengerId === user.id;
+              const showKick = passengerId && passengerId !== user?.id;
+
+              return (
+                <div key={key} className="passenger-item reservation-entry">
+                  <div className="passenger-row">
+                    <div className="passenger-main">
+                      <ReservationPassengerSummary
+                        reservation={rez}
+                        primaryPassengerName={`${name}${isMe ? ' (ty)' : ''}`}
+                        primaryPassengerId={passengerId}
+                        onOpenProfile={(e) => {
+                          e?.stopPropagation?.();
+                          if (passengerId) navigate(`/profil/${passengerId}`);
+                        }}
+                      />
+                    </div>
+                    {showKick && renderPassengerActions(ride.id, passengerId, canKickPassengersUi)}
+                  </div>
+                </div>
+              );
+            })
+          : ride.pasazeri.map((p, idx) => {
+              const passengerId = getPassengerId(p);
+              const key = passengerId ?? `${ride.id}-${idx}`;
+              const name = getPassengerDisplayName(p);
+              const isMe = user && passengerId === user.id;
+              const showKick = isDriver && passengerId && passengerId !== user?.id;
+
+              return (
+                <div key={key} className="passenger-item">
+                  <div className="passenger-row">
+                    <button
+                      type="button"
+                      className={`passenger-pill ${isMe ? 'me' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (passengerId) navigate(`/profil/${passengerId}`);
+                      }}
+                      title="Otev��t profil"
+                    >
+                      {name}
+                      {isMe ? ' (ty)' : ''}
+                    </button>
+                    {showKick && renderPassengerActions(ride.id, passengerId, canKickPassengersUi)}
+                  </div>
+                </div>
+              );
+            })}
+      </div>
+    );
+  };
+
   if (!rides || rides.length === 0) {
     return (
       <div className="ride-list">
-        <p className="no-rides">Zadne jizdy nenalezeny</p>
+        <p className="no-rides">��dn� j�zdy nenalezeny.</p>
       </div>
     );
   }
@@ -325,7 +471,6 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         const isActive = ride.status === 'aktivni';
         const notDeparted = hasNotDepartedYet(ride);
         const isDriver = user && ride.ridic_id === user.id;
-
         const isPassenger =
           user &&
           Array.isArray(ride.pasazeri) &&
@@ -343,7 +488,6 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
         const canCancel = isDriver && isActive && notDeparted;
         const canManageReservations = isDriver && isActive && notDeparted;
         const rezervaceJizdy = rezervace[ride.id] || [];
-        const prijateRezervaceJizdy = rezervaceJizdy.filter((r) => r.status === 'prijata');
         const prijataMista = rezervaceJizdy
           .filter((r) => r.status === 'prijata')
           .reduce((sum, r) => sum + (Number(r.pocet_mist) || 1), 0);
@@ -352,24 +496,47 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
             ? Math.max(0, ride.pocet_mist - prijataMista)
             : Math.max(0, ride.volna_mista ?? 0);
 
-        const timeOkForKick = canKickByTime(ride);
-        const canKickPassengersUi = isDriver && isActive && timeOkForKick;
+        const canKickPassengersUi = isDriver && isActive && canKickByTime(ride);
+        const useManagementCompact = compactMode === 'management';
+        const autoText = ride.auto
+          ? ride.auto.smazane
+            ? 'Smazan� auto'
+            : `${ride.auto.znacka}${ride.auto.model ? ` ${ride.auto.model}` : ''}${ride.auto.spz ? ` (${ride.auto.spz})` : ''}`
+          : 'Neuvedeno';
+        const mezistaniceText =
+          ride.mezistanice && ride.mezistanice.length > 0
+            ? ride.mezistanice
+                .slice()
+                .sort((a, b) => a.poradi - b.poradi)
+                .map((m) => m.misto)
+                .join(' -> ')
+            : '��dn� mezistanice';
 
         return (
           <div
             key={ride.id}
             className={`ride-card ${isExpanded ? 'expanded' : ''} ${
               focusRideId === ride.id ? 'focused' : ''
-            }`}
+            } ${useManagementCompact ? 'ride-card--management' : ''}`}
           >
             <button
               type="button"
               className="ride-header ride-header-btn"
               onClick={() => toggleExpanded(ride)}
             >
-              <h3 className="ride-route">{getRideRouteText(ride)}</h3>
+              <div className="ride-header-main">
+                <div className="ride-route-row">
+                  <h3 className="ride-route">{getRideRouteText(ride)}</h3>
+                  <span className={`status ride-status-pill ${ride.status}`}>{getRideStatusText(ride.status)}</span>
+                </div>
+                <div className="ride-header-meta">
+                  <span>{formatCompactDate(ride.cas_odjezdu)}</span>
+                  <span>{ride.volna_mista} / {ride.pocet_mist} m�st</span>
+                  {ride.auto && <span>{autoText}</span>}
+                </div>
+              </div>
               <div className="ride-header-right">
-                <span className="ride-price">{ride.cena} Kc</span>
+                <span className="ride-price">{ride.cena} K�</span>
                 <span className={`chevron ${isExpanded ? 'open' : ''}`}>v</span>
               </div>
             </button>
@@ -377,181 +544,61 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
             {isExpanded && (
               <>
                 <div className="ride-details">
-                  <div className="ride-time">
-                    <strong>Odjezd:</strong> {formatDate(ride.cas_odjezdu)}
-                  </div>
-                  <div className="ride-time">
-                    <strong>Prijezd:</strong> {formatDate(ride.cas_prijezdu)}
-                  </div>
-
-                  <div className="ride-info">
-                    <strong>Volna mista:</strong> {ride.volna_mista} / {ride.pocet_mist}
-                  </div>
-
-                  <div className="ride-info">
-                    <strong>Ridic:</strong>{' '}
-                    <button
-                      type="button"
-                      className="driver-link"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/profil/${ride.ridic_id}`);
-                      }}
-                      title="Otevrit profil ridice"
-                    >
-                      {ride.ridic?.jmeno || 'Neznamy'}
-                    </button>
-                  </div>
-
-                  <div className="ride-info">
-                    <strong>Cekajicich:</strong> {ride.pocet_cekajicich_rezervaci ?? 0}
-                  </div>
-
-                  {ride.auto && (
-                    <div className="ride-info">
-                      <strong>Auto:</strong>{' '}
-                      {ride.auto.smazane ? (
-                        'Smazane auto'
-                      ) : (
-                        <>
-                          {ride.auto.znacka}
-                          {ride.auto.model && ` ${ride.auto.model}`}
-                          {ride.auto.spz && ` (${ride.auto.spz})`}
-                        </>
-                      )}
+                  <div className="ride-details-grid">
+                    <div className="ride-details-column">
+                      <div className="ride-detail-block">
+                        <strong>Odjezd</strong>
+                        <span>{formatDate(ride.cas_odjezdu)}</span>
+                      </div>
+                      <div className="ride-detail-block">
+                        <strong>Voln� m�sta</strong>
+                        <span>{ride.volna_mista} / {ride.pocet_mist}</span>
+                      </div>
+                      <div className="ride-detail-block">
+                        <strong>�ekaj�c�ch</strong>
+                        <span>{ride.pocet_cekajicich_rezervaci ?? 0}</span>
+                      </div>
+                      <div className="ride-detail-block">
+                        <strong>Mezizast�vky</strong>
+                        <span>{mezistaniceText}</span>
+                      </div>
                     </div>
-                  )}
 
-                  {ride.mezistanice && ride.mezistanice.length > 0 && (
-                    <div className="ride-info">
-                      <strong>Mezistanice:</strong>{' '}
-                      {ride.mezistanice
-                        .slice()
-                        .sort((a, b) => a.poradi - b.poradi)
-                        .map((m) => m.misto)
-                        .join(' -> ')}
+                    <div className="ride-details-column">
+                      <div className="ride-detail-block">
+                        <strong>P��jezd</strong>
+                        <span>{formatDate(ride.cas_prijezdu)}</span>
+                      </div>
+                      <div className="ride-detail-block">
+                        <strong>�idi�</strong>
+                        <button
+                          type="button"
+                          className="driver-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profil/${ride.ridic_id}`);
+                          }}
+                          title="Otev��t profil �idi�e"
+                        >
+                          {ride.ridic?.jmeno || 'Nezn�m�'}
+                        </button>
+                      </div>
+                      <div className="ride-detail-block">
+                        <strong>Auto</strong>
+                        <span>{autoText}</span>
+                      </div>
+                      <div className="ride-detail-block ride-detail-block--passengers">
+                        <strong>Pasa���i</strong>
+                        {canSeePassengers
+                          ? renderPassengerBlockContent(ride, rezervaceJizdy, canKickPassengersUi, isDriver)
+                          : <span>��dn� pasa���i</span>}
+                      </div>
                     </div>
-                  )}
-
-                  {canSeePassengers && (
-                    <div className="ride-info">
-                      <strong>Pasazeri:</strong>{' '}
-                      {(isDriver && rezervace[ride.id] !== undefined
-                        ? prijateRezervaceJizdy.length > 0
-                        : Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0) ? (
-                        <>
-                          <div className="passengers-list" onClick={(e) => e.stopPropagation()}>
-                            {isDriver && rezervace[ride.id] !== undefined
-                              ? prijateRezervaceJizdy.map((rez) => {
-                                  const passengerId = rez.uzivatel?.id ?? rez.uzivatel_id;
-                                  const key = rez.id;
-                                  const name = getPassengerDisplayName(rez.uzivatel);
-                                  const isMe = user && passengerId === user.id;
-                                  const showKick = passengerId && passengerId !== user?.id;
-                                  const kickDisabled = !canKickPassengersUi;
-
-                                  const kickTitle = !isActive
-                                    ? 'Pasazera lze vyhodit jen u aktivni jizdy.'
-                                    : !timeOkForKick
-                                    ? 'Pasazera lze vyhodit nejpozdeji 1 hodinu pred odjezdem.'
-                                    : 'Vyhodit z jizdy';
-
-                                  return (
-                                    <div key={key} className="passenger-item reservation-entry">
-                                      <ReservationPassengerSummary
-                                        reservation={rez}
-                                        primaryPassengerName={`${name}${isMe ? ' (ty)' : ''}`}
-                                        primaryPassengerId={passengerId}
-                                        onOpenProfile={(e) => {
-                                          e?.stopPropagation?.();
-                                          if (passengerId) navigate(`/profil/${passengerId}`);
-                                        }}
-                                      />
-
-                                      {showKick && (
-                                        <button
-                                          type="button"
-                                          className={`btn-kick ${kickDisabled ? 'disabled' : ''}`}
-                                          disabled={kickDisabled}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (kickDisabled) return;
-                                            handleKickPassenger(ride.id, passengerId);
-                                          }}
-                                          title={kickTitle}
-                                        >
-                                          Vyhodit
-                                        </button>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              : ride.pasazeri.map((p, idx) => {
-                                  const passengerId = getPassengerId(p);
-                                  const key = passengerId ?? `${ride.id}-${idx}`;
-                                  const name = getPassengerDisplayName(p);
-                                  const isMe = user && passengerId === user.id;
-                                  const showKick = isDriver && passengerId && passengerId !== user?.id;
-                                  const kickDisabled = !canKickPassengersUi;
-
-                                  const kickTitle = !isActive
-                                    ? 'Pasazera lze vyhodit jen u aktivni jizdy.'
-                                    : !timeOkForKick
-                                    ? 'Pasazera lze vyhodit nejpozdeji 1 hodinu pred odjezdem.'
-                                    : 'Vyhodit z jizdy';
-
-                                  return (
-                                    <div key={key} className="passenger-item">
-                                      <button
-                                        type="button"
-                                        className={`passenger-pill ${isMe ? 'me' : ''}`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (passengerId) navigate(`/profil/${passengerId}`);
-                                        }}
-                                        title="Otevrit profil"
-                                      >
-                                        {name}
-                                        {isMe ? ' (ty)' : ''}
-                                      </button>
-
-                                      {showKick && (
-                                        <button
-                                          type="button"
-                                          className={`btn-kick ${kickDisabled ? 'disabled' : ''}`}
-                                          disabled={kickDisabled}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (kickDisabled) return;
-                                            handleKickPassenger(ride.id, passengerId);
-                                          }}
-                                          title={kickTitle}
-                                        >
-                                          Vyhodit
-                                        </button>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                          </div>
-
-                          {isDriver && (!isActive || !timeOkForKick) && (
-                            <div className="kick-hint">
-                              {!isActive
-                                ? 'Vyhazovani pasazeru je mozne jen u aktivni jizdy.'
-                                : 'Vyhazovani pasazeru je mozne nejpozdeji 1 hodinu pred odjezdem.'}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <span className="muted">Zadni</span>
-                      )}
-                    </div>
-                  )}
+                  </div>
 
                   <div className="ride-status">
-                    <strong>Status:</strong>{' '}
-                    <span className={`status ${ride.status}`}>{ride.status}</span>
+                    <strong>Stav j�zdy:</strong>{' '}
+                    <span className={`status ${ride.status}`}>{getRideStatusText(ride.status)}</span>
                   </div>
                 </div>
 
@@ -566,7 +613,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
                     <>
                       {canManageReservations && (
                         <button className="btn-reservations" onClick={() => toggleReservations(ride)}>
-                          {showReservations[ride.id] ? 'Skryt rezervace' : 'Zobrazit rezervace'}
+                          {showReservations[ride.id] ? 'Skr�t rezervace' : 'Zobrazit rezervace'}
                           {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
                         </button>
                       )}
@@ -579,7 +626,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
                       {canCancel && (
                         <button className="btn-delete" onClick={() => handleDeleteRide(ride.id)}>
-                          Zrusit jizdu
+                          Zru�it j�zdu
                         </button>
                       )}
                     </>
@@ -588,7 +635,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
                 {canManageReservations && showReservations[ride.id] && (
                   <div className="reservations-section" onClick={(e) => e.stopPropagation()}>
-                    <h4>Rezervace na tuto jizdu:</h4>
+                    <h4>Rezervace na tuto j�zdu</h4>
 
                     {rezervaceJizdy.length > 0 ? (
                       <div className="reservations-list">
@@ -613,11 +660,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
                                 />
                                 <div className="reservation-status">{r.status}</div>
                                 <div className="reservation-note">
-                                  <strong>Mist:</strong> {r.pocet_mist ?? 1}
+                                  <strong>M�st:</strong> {r.pocet_mist ?? 1}
                                 </div>
                                 {r.status === 'cekajici' && Number.isInteger(r.poradi_cekajici) && (
                                   <div className="reservation-note">
-                                    <strong>Poradi:</strong> {r.poradi_cekajici}
+                                    <strong>Po�ad�:</strong> {r.poradi_cekajici}
                                   </div>
                                 )}
                                 {r.poznamka && (
@@ -633,22 +680,22 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
                                     className="btn-accept"
                                     disabled={!canAcceptThisReservation}
                                     onClick={() => handleReservationAction(r.id, 'prijmout', ride.id)}
-                                    title={!canAcceptThisReservation ? 'Jizda nema dost volnych mist' : 'Prijmout rezervaci'}
+                                    title={!canAcceptThisReservation ? 'J�zda nem� dost voln�ch m�st.' : 'P�ijmout rezervaci'}
                                   >
-                                    Prijmout
+                                    P�ijmout
                                   </button>
                                   <button
                                     className="btn-reject"
                                     onClick={() => handleReservationAction(r.id, 'odmitnout', ride.id)}
                                   >
-                                    Odmitnout
+                                    Odm�tnout
                                   </button>
                                 </div>
                               )}
 
                               {r.status === 'cekajici' && !canAcceptThisReservation && (
                                 <div className="reservation-note">
-                                  <em>Pro tuto rezervaci uz neni dost volnych mist.</em>
+                                  <em>Pro tuto rezervaci u� nen� dost voln�ch m�st.</em>
                                 </div>
                               )}
                             </div>
@@ -656,7 +703,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
                         })}
                       </div>
                     ) : (
-                      <div className="no-reservations">Zadne rezervace na tuto jizdu</div>
+                      <div className="no-reservations">Na tuto j�zdu zat�m nep�i�la ��dn� rezervace.</div>
                     )}
                   </div>
                 )}
@@ -671,10 +718,10 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
           <div className="app-modal-card" onClick={(e) => e.stopPropagation()}>
             <h3 className="app-modal-title">Potvrdit rezervaci</h3>
             <p className="app-modal-message">
-              Vyberte pocet mist a pripadne pridejte poznamku pro ridice. Rezervace se odesle az po potvrzeni.
+              Vyberte po�et m�st a p��padn� p�idejte pozn�mku pro �idi�e. Rezervace se ode�le a� po potvrzen�.
             </p>
 
-            <label className="app-modal-label">Pocet mist</label>
+            <label className="app-modal-label">Po�et m�st</label>
             <input
               type="number"
               className="reservation-modal-input"
@@ -686,7 +733,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
             {reservationModal.dalsi_pasazeri.map((jmeno, index) => (
               <div key={index} className="reservation-modal-passenger-group">
-                <label className="app-modal-label">Jmeno pasazera {index + 2}</label>
+                <label className="app-modal-label">Jm�no pasa��ra {index + 2}</label>
                 <input
                   type="text"
                   className="reservation-modal-input"
@@ -697,18 +744,18 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
               </div>
             ))}
 
-            <label className="app-modal-label">Poznamka</label>
+            <label className="app-modal-label">Pozn�mka</label>
             <textarea
               className="app-modal-textarea"
               value={reservationModal.poznamka}
               onChange={(e) => updateReservationModal('poznamka', e.target.value)}
-              placeholder="Napr. nastoupim na druhe zastavce"
+              placeholder="Nap�. nastoup�m na druh� zast�vce"
               rows={3}
             />
 
             <div className="app-modal-actions">
               <button type="button" className="app-btn app-btn-secondary" onClick={closeReservationModal}>
-                Zrusit
+                Zru�it
               </button>
               <button
                 type="button"
@@ -721,29 +768,24 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
                   if (!rideId) return;
                   if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
-                    setError('Pocet mist musi byt alespon 1.');
+                    setError('Po�et m�st mus� b�t alespo� 1.');
                     return;
                   }
                   if (pocetMist > maxMist) {
-                    setError('Pocet mist nesmi byt vyssi nez aktualne volna kapacita.');
+                    setError('Po�et m�st nesm� b�t vy��� ne� aktu�ln� voln� kapacita.');
                     return;
                   }
                   if (dalsiPasazeri.length !== Math.max(0, pocetMist - 1)) {
-                    setError('Pocet jmen doprovodu nesouhlasi s poctem mist.');
+                    setError('Po�et jmen doprovodu nesouhlas� s po�tem m�st.');
                     return;
                   }
                   if (dalsiPasazeri.some((name) => !name)) {
-                    setError('Vyplnte jmena vsech dalsich pasazeru.');
+                    setError('Vypl�te jm�na v�ech dal��ch pasa��r�.');
                     return;
                   }
 
                   closeReservationModal();
-                  submitReservation(
-                    rideId,
-                    pocetMist,
-                    reservationModal.poznamka.trim(),
-                    dalsiPasazeri
-                  );
+                  submitReservation(rideId, pocetMist, reservationModal.poznamka.trim(), dalsiPasazeri);
                 }}
               >
                 Potvrdit rezervaci
@@ -755,9 +797,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
       <ConfirmModal
         isOpen={deleteRideModal.open}
-        title="Zrusit jizdu"
-        message="Opravdu chcete zrusit tuto jizdu?"
-        confirmText="Zrusit jizdu"
+        title="Zru�it j�zdu"
+        message="Opravdu chcete zru�it tuto j�zdu?"
+        confirmText="Zru�it j�zdu"
         danger
         onCancel={() => setDeleteRideModal({ open: false, rideId: null })}
         onConfirm={() => {
@@ -769,9 +811,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1 }) => {
 
       <ConfirmModal
         isOpen={kickPassengerModal.open}
-        title="Vyhodit pasazera"
-        message="Opravdu vyhodit pasazera z jizdy?"
-        confirmText="Vyhodit"
+        title="Vyhodit pasa��ra"
+        message="Opravdu chcete odebrat pasa��ra z j�zdy?"
+        confirmText="Vyhodit pasa��ra"
         danger
         onCancel={() => setKickPassengerModal({ open: false, rideId: null, passengerId: null })}
         onConfirm={() => {
