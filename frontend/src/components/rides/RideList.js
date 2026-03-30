@@ -129,13 +129,13 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
   const getRideStatusText = (status) => {
     switch (status) {
       case 'aktivni':
-        return 'Aktivn�';
+        return 'Aktivní';
       case 'zrusena':
-        return 'Zru�en�';
+        return 'Zrušená';
       case 'dokoncena':
-        return 'Dokon�en�';
+        return 'Dokončená';
       default:
-        return status || 'Nezn�m� stav';
+        return status || 'Neznámý stav';
     }
   };
 
@@ -152,9 +152,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
   const getPassengerId = (p) => p?.uzivatel_id ?? p?.id ?? null;
 
   const getPassengerDisplayName = (p) => {
-    if (!p) return 'Nezn�m� u�ivatel';
+    if (!p) return 'Neznámý uživatel';
     const fullName = [p.jmeno, p.prijmeni].filter(Boolean).join(' ').trim();
-    return fullName || p.prezdivka || p.username || 'Nezn�m� u�ivatel';
+    return fullName || p.prezdivka || p.username || 'Neznámý uživatel';
   };
 
   const submitReservation = async (jizdaId, pocetMist = 1, poznamka = '', dalsiPasazeri = []) => {
@@ -168,11 +168,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess('Rezervace byla odesl�na.');
+      setSuccess('Rezervace byla odeslána.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba p�i rezervaci');
+      setError(err.response?.data?.error || 'Chyba při rezervaci');
     }
   };
 
@@ -229,9 +229,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         [jizdaId]: response.data.rezervace,
       }));
     } catch (err) {
-      console.error('Chyba p�i na��t�n� rezervac�:', err);
+      console.error('Chyba při načítání rezervací:', err);
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba p�i na��t�n� rezervac�');
+      setError(err.response?.data?.error || 'Chyba při načítání rezervací');
     }
   };
 
@@ -266,12 +266,12 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess(`Rezervace byla ${action === 'prijmout' ? 'p�ijata' : 'odm�tnuta'}`);
+      setSuccess(`Rezervace byla ${action === 'prijmout' ? 'přijata' : 'odmítnuta'}`);
       await fetchReservations(jizdaId);
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba p�i akci s rezervac�');
+      setError(err.response?.data?.error || 'Chyba při akci s rezervací');
     }
   };
 
@@ -279,7 +279,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
     const ride = (rides || []).find((r) => r.id === jizdaId);
     if (!canCancelRideByRule(ride)) {
       setSuccess('');
-      setError('J�zdu lze zru�it jen pokud je aktivn� a p�ed odjezdem.');
+      setError('Jízdu lze zrušit jen pokud je aktivní a před odjezdem.');
       return;
     }
 
@@ -290,11 +290,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSuccess('J�zda byla zru�ena.');
+      setSuccess('Jízda byla zrušena.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba p�i ru�en� j�zdy');
+      setError(err.response?.data?.error || 'Chyba při rušení jízdy');
     }
   };
 
@@ -302,7 +302,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
     const ride = (rides || []).find((r) => r.id === jizdaId);
     if (!canCancelRideByRule(ride)) {
       setSuccess('');
-      setError('J�zdu lze zru�it jen pokud je aktivn� a p�ed odjezdem.');
+      setError('Jízdu lze zrušit jen pokud je aktivní a před odjezdem.');
       return;
     }
     setDeleteRideModal({ open: true, rideId: jizdaId });
@@ -316,11 +316,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSuccess('Pasa��r byl odebr�n z j�zdy.');
+      setSuccess('Pasažér byl odebrán z jízdy.');
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
-      setError(err.response?.data?.error || 'Chyba p�i odeb�r�n� pasa��ra');
+      setError(err.response?.data?.error || 'Chyba při odebírání pasažéra');
     }
   };
 
@@ -348,7 +348,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                 : { rideId, passengerId }
             );
           }}
-          title="Akce pro pasa��ra"
+          title="Akce pro pasažéra"
         >
           <MoreHorizontal size={16} />
         </button>
@@ -374,7 +374,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                   handleKickPassenger(rideId, passengerId);
                 }}
               >
-                Vyhodit pasa��ra
+                Vyhodit pasažéra
               </button>
             )}
           </div>
@@ -391,7 +391,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         : Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0;
 
     if (!hasPassengers) {
-      return <span>��dn� pasa���i</span>;
+      return <span>Žádní pasažéři</span>;
     }
 
     return (
@@ -440,7 +440,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                         e.stopPropagation();
                         if (passengerId) navigate(`/profil/${passengerId}`);
                       }}
-                      title="Otev��t profil"
+                      title="Otevřít profil"
                     >
                       {name}
                       {isMe ? ' (ty)' : ''}
@@ -457,7 +457,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
   if (!rides || rides.length === 0) {
     return (
       <div className="ride-list">
-        <p className="no-rides">��dn� j�zdy nenalezeny.</p>
+        <p className="no-rides">Žádné jízdy nenalezeny.</p>
       </div>
     );
   }
@@ -500,7 +500,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
         const useManagementCompact = compactMode === 'management';
         const autoText = ride.auto
           ? ride.auto.smazane
-            ? 'Smazan� auto'
+            ? 'Smazané auto'
             : `${ride.auto.znacka}${ride.auto.model ? ` ${ride.auto.model}` : ''}${ride.auto.spz ? ` (${ride.auto.spz})` : ''}`
           : 'Neuvedeno';
         const mezistaniceText =
@@ -510,7 +510,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                 .sort((a, b) => a.poradi - b.poradi)
                 .map((m) => m.misto)
                 .join(' -> ')
-            : '��dn� mezistanice';
+            : 'Žádné mezistanice';
 
         return (
           <div
@@ -531,12 +531,12 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                 </div>
                 <div className="ride-header-meta">
                   <span>{formatCompactDate(ride.cas_odjezdu)}</span>
-                  <span>{ride.volna_mista} / {ride.pocet_mist} m�st</span>
+                  <span>{ride.volna_mista} / {ride.pocet_mist} míst</span>
                   {ride.auto && <span>{autoText}</span>}
                 </div>
               </div>
               <div className="ride-header-right">
-                <span className="ride-price">{ride.cena} K�</span>
+                <span className="ride-price">{ride.cena} Kč</span>
                 <span className={`chevron ${isExpanded ? 'open' : ''}`}>v</span>
               </div>
             </button>
@@ -551,26 +551,26 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                         <span>{formatDate(ride.cas_odjezdu)}</span>
                       </div>
                       <div className="ride-detail-block">
-                        <strong>Voln� m�sta</strong>
+                        <strong>Volná místa</strong>
                         <span>{ride.volna_mista} / {ride.pocet_mist}</span>
                       </div>
                       <div className="ride-detail-block">
-                        <strong>�ekaj�c�ch</strong>
+                        <strong>Čekajících</strong>
                         <span>{ride.pocet_cekajicich_rezervaci ?? 0}</span>
                       </div>
                       <div className="ride-detail-block">
-                        <strong>Mezizast�vky</strong>
+                        <strong>Mezizastávky</strong>
                         <span>{mezistaniceText}</span>
                       </div>
                     </div>
 
                     <div className="ride-details-column">
                       <div className="ride-detail-block">
-                        <strong>P��jezd</strong>
+                        <strong>Příjezd</strong>
                         <span>{formatDate(ride.cas_prijezdu)}</span>
                       </div>
                       <div className="ride-detail-block">
-                        <strong>�idi�</strong>
+                        <strong>Řidič</strong>
                         <button
                           type="button"
                           className="driver-link"
@@ -578,9 +578,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                             e.stopPropagation();
                             navigate(`/profil/${ride.ridic_id}`);
                           }}
-                          title="Otev��t profil �idi�e"
+                          title="Otevřít profil Řidiče"
                         >
-                          {ride.ridic?.jmeno || 'Nezn�m�'}
+                          {ride.ridic?.jmeno || 'Neznámý'}
                         </button>
                       </div>
                       <div className="ride-detail-block">
@@ -588,16 +588,16 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                         <span>{autoText}</span>
                       </div>
                       <div className="ride-detail-block ride-detail-block--passengers">
-                        <strong>Pasa���i</strong>
+                        <strong>Pasažéři</strong>
                         {canSeePassengers
                           ? renderPassengerBlockContent(ride, rezervaceJizdy, canKickPassengersUi, isDriver)
-                          : <span>��dn� pasa���i</span>}
+                          : <span>Žádní pasažéři</span>}
                       </div>
                     </div>
                   </div>
 
                   <div className="ride-status">
-                    <strong>Stav j�zdy:</strong>{' '}
+                    <strong>Stav jízdy:</strong>{' '}
                     <span className={`status ${ride.status}`}>{getRideStatusText(ride.status)}</span>
                   </div>
                 </div>
@@ -613,7 +613,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                     <>
                       {canManageReservations && (
                         <button className="btn-reservations" onClick={() => toggleReservations(ride)}>
-                          {showReservations[ride.id] ? 'Skr�t rezervace' : 'Zobrazit rezervace'}
+                          {showReservations[ride.id] ? 'Skrýt rezervace' : 'Zobrazit rezervace'}
                           {rezervace[ride.id] && ` (${rezervace[ride.id].length})`}
                         </button>
                       )}
@@ -626,7 +626,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
                       {canCancel && (
                         <button className="btn-delete" onClick={() => handleDeleteRide(ride.id)}>
-                          Zru�it j�zdu
+                          Zrušit jízdu
                         </button>
                       )}
                     </>
@@ -635,7 +635,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
                 {canManageReservations && showReservations[ride.id] && (
                   <div className="reservations-section" onClick={(e) => e.stopPropagation()}>
-                    <h4>Rezervace na tuto j�zdu</h4>
+                    <h4>Rezervace na tuto jízdu</h4>
 
                     {rezervaceJizdy.length > 0 ? (
                       <div className="reservations-list">
@@ -660,11 +660,11 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                                 />
                                 <div className="reservation-status">{r.status}</div>
                                 <div className="reservation-note">
-                                  <strong>M�st:</strong> {r.pocet_mist ?? 1}
+                                  <strong>Míst:</strong> {r.pocet_mist ?? 1}
                                 </div>
                                 {r.status === 'cekajici' && Number.isInteger(r.poradi_cekajici) && (
                                   <div className="reservation-note">
-                                    <strong>Po�ad�:</strong> {r.poradi_cekajici}
+                                    <strong>Pořadí:</strong> {r.poradi_cekajici}
                                   </div>
                                 )}
                                 {r.poznamka && (
@@ -680,22 +680,22 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                                     className="btn-accept"
                                     disabled={!canAcceptThisReservation}
                                     onClick={() => handleReservationAction(r.id, 'prijmout', ride.id)}
-                                    title={!canAcceptThisReservation ? 'J�zda nem� dost voln�ch m�st.' : 'P�ijmout rezervaci'}
+                                    title={!canAcceptThisReservation ? 'Jízda nemá dost volných míst.' : 'Přijmout rezervaci'}
                                   >
-                                    P�ijmout
+                                    Přijmout
                                   </button>
                                   <button
                                     className="btn-reject"
                                     onClick={() => handleReservationAction(r.id, 'odmitnout', ride.id)}
                                   >
-                                    Odm�tnout
+                                    Odmítnout
                                   </button>
                                 </div>
                               )}
 
                               {r.status === 'cekajici' && !canAcceptThisReservation && (
                                 <div className="reservation-note">
-                                  <em>Pro tuto rezervaci u� nen� dost voln�ch m�st.</em>
+                                  <em>Pro tuto rezervaci už není dost volných míst.</em>
                                 </div>
                               )}
                             </div>
@@ -703,7 +703,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
                         })}
                       </div>
                     ) : (
-                      <div className="no-reservations">Na tuto j�zdu zat�m nep�i�la ��dn� rezervace.</div>
+                      <div className="no-reservations">Na tuto jízdu zatím nepřišla žádná rezervace.</div>
                     )}
                   </div>
                 )}
@@ -718,10 +718,10 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
           <div className="app-modal-card" onClick={(e) => e.stopPropagation()}>
             <h3 className="app-modal-title">Potvrdit rezervaci</h3>
             <p className="app-modal-message">
-              Vyberte po�et m�st a p��padn� p�idejte pozn�mku pro �idi�e. Rezervace se ode�le a� po potvrzen�.
+              Vyberte počet míst a případně přidejte poznámku pro řidiče. Rezervace se odešle až po potvrzení.
             </p>
 
-            <label className="app-modal-label">Po�et m�st</label>
+            <label className="app-modal-label">Počet míst</label>
             <input
               type="number"
               className="reservation-modal-input"
@@ -733,7 +733,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
             {reservationModal.dalsi_pasazeri.map((jmeno, index) => (
               <div key={index} className="reservation-modal-passenger-group">
-                <label className="app-modal-label">Jm�no pasa��ra {index + 2}</label>
+                <label className="app-modal-label">Jméno pasažéra {index + 2}</label>
                 <input
                   type="text"
                   className="reservation-modal-input"
@@ -744,18 +744,18 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
               </div>
             ))}
 
-            <label className="app-modal-label">Pozn�mka</label>
+            <label className="app-modal-label">Poznámka</label>
             <textarea
               className="app-modal-textarea"
               value={reservationModal.poznamka}
               onChange={(e) => updateReservationModal('poznamka', e.target.value)}
-              placeholder="Nap�. nastoup�m na druh� zast�vce"
+              placeholder="Např. nastoupím na druhé zastávce"
               rows={3}
             />
 
             <div className="app-modal-actions">
               <button type="button" className="app-btn app-btn-secondary" onClick={closeReservationModal}>
-                Zru�it
+                Zrušit
               </button>
               <button
                 type="button"
@@ -768,19 +768,19 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
                   if (!rideId) return;
                   if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
-                    setError('Po�et m�st mus� b�t alespo� 1.');
+                    setError('Počet míst musí být alespoň 1.');
                     return;
                   }
                   if (pocetMist > maxMist) {
-                    setError('Po�et m�st nesm� b�t vy��� ne� aktu�ln� voln� kapacita.');
+                    setError('Počet míst nesmí být vyšší než aktuální volná kapacita.');
                     return;
                   }
                   if (dalsiPasazeri.length !== Math.max(0, pocetMist - 1)) {
-                    setError('Po�et jmen doprovodu nesouhlas� s po�tem m�st.');
+                    setError('Počet jmen doprovodu nesouhlasí s počtem míst.');
                     return;
                   }
                   if (dalsiPasazeri.some((name) => !name)) {
-                    setError('Vypl�te jm�na v�ech dal��ch pasa��r�.');
+                    setError('Vyplňte jména všech dalších pasažérů.');
                     return;
                   }
 
@@ -797,9 +797,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
       <ConfirmModal
         isOpen={deleteRideModal.open}
-        title="Zru�it j�zdu"
-        message="Opravdu chcete zru�it tuto j�zdu?"
-        confirmText="Zru�it j�zdu"
+        title="Zrušit jízdu"
+        message="Opravdu chcete zrušit tuto jízdu?"
+        confirmText="Zrušit jízdu"
         danger
         onCancel={() => setDeleteRideModal({ open: false, rideId: null })}
         onConfirm={() => {
@@ -811,9 +811,9 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
 
       <ConfirmModal
         isOpen={kickPassengerModal.open}
-        title="Vyhodit pasa��ra"
-        message="Opravdu chcete odebrat pasa��ra z j�zdy?"
-        confirmText="Vyhodit pasa��ra"
+        title="Vyhodit pasažéra"
+        message="Opravdu chcete odebrat pasažéra z jízdy?"
+        confirmText="Vyhodit pasažéra"
         danger
         onCancel={() => setKickPassengerModal({ open: false, rideId: null, passengerId: null })}
         onConfirm={() => {
