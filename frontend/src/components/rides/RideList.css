@@ -52,6 +52,15 @@
   appearance: none;
 }
 
+.ride-header-btn:focus,
+.ride-header-btn:focus-visible {
+  outline: none;
+}
+
+.ride-header-btn:focus-visible {
+  background: var(--surface-alt);
+}
+
 .ride-header-main {
   min-width: 0;
   display: flex;

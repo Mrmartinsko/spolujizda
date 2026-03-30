@@ -32,7 +32,7 @@ const Sidebar = () => {
         <div className="sidebar__brand-mark">S</div>
         <div>
           <div className="sidebar__brand-title">Spolujízda</div>
-          <div className="sidebar__brand-text">Studentské cesty po škole i domů</div>
+          <div className="sidebar__brand-text">Studentské cesty do školy i domů</div>
         </div>
       </Link>
 

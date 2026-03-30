@@ -185,7 +185,7 @@ const MujProfil = () => {
               <div className="muj-garage-box">
                 <div>
                   <h2>Garáž</h2>
-                  <p>Správu aut jsme oddělili, aby profil zůstal přehledný a věcný.</p>
+                  <p>Zde můžete spravovat vaše auta</p>
                 </div>
                 <Button as={Link} to="/auta" variant="secondary">
                   Otevřít garáž

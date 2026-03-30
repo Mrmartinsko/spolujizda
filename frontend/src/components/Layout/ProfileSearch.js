@@ -77,7 +77,7 @@ const ProfileSearch = () => {
           className="psInput"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Hledat spolužáka nebo řidiče"
+          placeholder="Hledat uživatele"
         />
         {q && (
           <button className="psClear" onClick={clear} aria-label="Smazat" type="button">
@@ -107,9 +107,9 @@ const ProfileSearch = () => {
                 <div className="psName">{profil.jmeno || profil.username || 'Uživatel'}</div>
                 <div className="psMeta">
                   {profil.hodnoceni_ridic ? (
-                    <span>Řidič • {Number(profil.hodnoceni_ridic).toFixed(1)}</span>
+                    <span>Uživatel • {Number(profil.hodnoceni_ridic).toFixed(1)}</span>
                   ) : (
-                    <span>Řidič</span>
+                    <span>Uživatel</span>
                   )}
                 </div>
               </div>

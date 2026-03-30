@@ -20,7 +20,7 @@ const TEXT = {
   unknownStatus: 'Neznámý stav',
   unknownUser: 'Neznámý uživatel',
   noPassengers: 'Žádní pasažéři',
-  loading: 'Načítám rezervace…',
+  loading: 'Načítám rezervace...',
   title: 'Moje rezervace',
   subtitle: 'Aktivní a čekající rezervace máte vždy nahoře, aby byly po ruce bez zbytečného hledání.',
   retry: 'Zkusit znovu',
@@ -51,11 +51,13 @@ const TEXT = {
   confirmCancelMessage: 'Opravdu chcete zrušit tuto rezervaci?',
 };
 
+const DASH = '—';
+
 const hasNotDepartedYetForSort = (ride) => {
   if (!ride?.cas_odjezdu) return false;
-  const d = new Date(ride.cas_odjezdu);
-  if (Number.isNaN(d.getTime())) return false;
-  return d > new Date();
+  const departure = new Date(ride.cas_odjezdu);
+  if (Number.isNaN(departure.getTime())) return false;
+  return departure > new Date();
 };
 
 const getReservationPriorityValue = (item, focusReservationId, focusRideId) => {
@@ -113,11 +115,11 @@ const MyReservationsPage = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/rezervace/moje', { headers });
       const raw = Array.isArray(response.data) ? response.data : response.data?.rezervace || [];
-      const moje = raw.filter((r) => !r.typ || r.typ === 'odeslana');
+      const moje = raw.filter((item) => !item.typ || item.typ === 'odeslana');
       setRezervace(moje);
-    } catch (err) {
+    } catch (requestError) {
       setError(TEXT.loadError);
-      console.error(err.response?.data || err.message);
+      console.error(requestError.response?.data || requestError.message);
     } finally {
       setLoading(false);
     }
@@ -125,14 +127,14 @@ const MyReservationsPage = () => {
 
   const hasNotDepartedYet = (ride) => {
     if (!ride?.cas_odjezdu) return false;
-    const d = new Date(ride.cas_odjezdu);
-    if (Number.isNaN(d.getTime())) return false;
-    return d > new Date();
+    const departure = new Date(ride.cas_odjezdu);
+    if (Number.isNaN(departure.getTime())) return false;
+    return departure > new Date();
   };
 
-  const canCancelReservationByRule = (rezervaceItem) => {
-    if (!rezervaceItem?.jizda) return false;
-    return rezervaceItem.jizda.status === 'aktivni' && hasNotDepartedYet(rezervaceItem.jizda);
+  const canCancelReservationByRule = (reservation) => {
+    if (!reservation?.jizda) return false;
+    return reservation.jizda.status === 'aktivni' && hasNotDepartedYet(reservation.jizda);
   };
 
   const getStatusColor = (status) => {
@@ -178,12 +180,12 @@ const MyReservationsPage = () => {
     }
   };
 
-  const getPassengerId = (p) => p?.uzivatel_id ?? p?.id ?? null;
+  const getPassengerId = (passenger) => passenger?.uzivatel_id ?? passenger?.id ?? null;
 
-  const getPassengerDisplayName = (p) => {
-    if (!p) return TEXT.unknownUser;
-    const fullName = [p.jmeno, p.prijmeni].filter(Boolean).join(' ').trim();
-    return fullName || p.prezdivka || p.username || TEXT.unknownUser;
+  const getPassengerDisplayName = (passenger) => {
+    if (!passenger) return TEXT.unknownUser;
+    const fullName = [passenger.jmeno, passenger.prijmeni].filter(Boolean).join(' ').trim();
+    return fullName || passenger.prezdivka || passenger.username || TEXT.unknownUser;
   };
 
   const canSeePassengers = (ride) => {
@@ -194,10 +196,10 @@ const MyReservationsPage = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '—';
-    const d = new Date(dateString);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString('cs-CZ', {
+    if (!dateString) return DASH;
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return DASH;
+    return date.toLocaleString('cs-CZ', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -207,10 +209,10 @@ const MyReservationsPage = () => {
   };
 
   const formatCompactDate = (dateString) => {
-    if (!dateString) return '—';
-    const d = new Date(dateString);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString('cs-CZ', {
+    if (!dateString) return DASH;
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return DASH;
+    return date.toLocaleString('cs-CZ', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
@@ -225,9 +227,9 @@ const MyReservationsPage = () => {
         getReservationPriorityValue(b, focusReservationId, focusRideId);
       if (priorityDiff !== 0) return priorityDiff;
 
-      const aDeparture = a.jizda?.cas_odjezdu ? new Date(a.jizda.cas_odjezdu).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDeparture = b.jizda?.cas_odjezdu ? new Date(b.jizda.cas_odjezdu).getTime() : Number.MAX_SAFE_INTEGER;
-      if (aDeparture !== bDeparture) return aDeparture - bDeparture;
+      const aDeparture = a.jizda?.cas_odjezdu ? new Date(a.jizda.cas_odjezdu).getTime() : 0;
+      const bDeparture = b.jizda?.cas_odjezdu ? new Date(b.jizda.cas_odjezdu).getTime() : 0;
+      if (aDeparture !== bDeparture) return bDeparture - aDeparture;
 
       return (b.id || 0) - (a.id || 0);
     });
@@ -242,13 +244,16 @@ const MyReservationsPage = () => {
     const initialExpanded = {};
     let matchedStatus = null;
 
-    sortedRezervace.forEach((r, index) => {
+    sortedRezervace.forEach((reservation, index) => {
       const isFocused =
-        (focusReservationId && r.id === focusReservationId) ||
-        (focusRideId && r.jizda_id === focusRideId);
-      initialExpanded[r.id] =
-        isFocused || (index === 0 && getReservationPriorityValue(r, focusReservationId, focusRideId) <= 3);
-      if (isFocused) matchedStatus = r.status;
+        (focusReservationId && reservation.id === focusReservationId) ||
+        (focusRideId && reservation.jizda_id === focusRideId);
+
+      initialExpanded[reservation.id] =
+        isFocused ||
+        (index === 0 && getReservationPriorityValue(reservation, focusReservationId, focusRideId) <= 3);
+
+      if (isFocused) matchedStatus = reservation.status;
     });
 
     setExpanded(initialExpanded);
@@ -258,7 +263,7 @@ const MyReservationsPage = () => {
   }, [focusReservationId, focusRideId, sortedRezervace]);
 
   const executeCancelReservation = async (rezervaceId) => {
-    const target = rezervace.find((r) => r.id === rezervaceId);
+    const target = rezervace.find((item) => item.id === rezervaceId);
     if (!canCancelReservationByRule(target)) {
       setSuccess('');
       setError(TEXT.cancelRuleError);
@@ -271,14 +276,14 @@ const MyReservationsPage = () => {
       await axios.delete(`http://localhost:5000/api/rezervace/${rezervaceId}/zrusit`, { headers });
       setSuccess(TEXT.cancelSuccess);
       fetchRezervace();
-    } catch (err) {
+    } catch (requestError) {
       setSuccess('');
-      setError(err.response?.data?.error || TEXT.cancelError);
+      setError(requestError.response?.data?.error || TEXT.cancelError);
     }
   };
 
   const handleCancelReservation = (rezervaceId) => {
-    const target = rezervace.find((r) => r.id === rezervaceId);
+    const target = rezervace.find((item) => item.id === rezervaceId);
     if (!canCancelReservationByRule(target)) {
       setSuccess('');
       setError(TEXT.cancelRuleError);
@@ -301,18 +306,18 @@ const MyReservationsPage = () => {
 
     return (
       <div className="passengers-list">
-        {passengers.map((p, idx) => {
-          const pid = getPassengerId(p);
-          const key = pid ?? `${ride.id}-${idx}`;
-          const name = getPassengerDisplayName(p);
-          const isMe = user && pid === user.id;
+        {passengers.map((passenger, index) => {
+          const passengerId = getPassengerId(passenger);
+          const key = passengerId ?? `${ride.id}-${index}`;
+          const name = getPassengerDisplayName(passenger);
+          const isMe = user && passengerId === user.id;
 
           return (
             <button
               key={key}
               type="button"
               className={`passenger-pill ${isMe ? 'me' : ''}`}
-              onClick={() => pid && navigate(`/profil/${pid}`)}
+              onClick={() => passengerId && navigate(`/profil/${passengerId}`)}
               title="Otevřít profil pasažéra"
             >
               {name}
@@ -324,17 +329,17 @@ const MyReservationsPage = () => {
     );
   };
 
-  const filteredRezervace = sortedRezervace.filter((r) => {
+  const filteredRezervace = sortedRezervace.filter((reservation) => {
     if (filter === 'all') return true;
-    return r.status === filter;
+    return reservation.status === filter;
   });
 
   const counts = {
     all: rezervace.length,
-    cekajici: rezervace.filter((r) => r.status === 'cekajici').length,
-    prijata: rezervace.filter((r) => r.status === 'prijata').length,
-    odmitnuta: rezervace.filter((r) => r.status === 'odmitnuta').length,
-    zrusena: rezervace.filter((r) => r.status === 'zrusena').length,
+    cekajici: rezervace.filter((item) => item.status === 'cekajici').length,
+    prijata: rezervace.filter((item) => item.status === 'prijata').length,
+    odmitnuta: rezervace.filter((item) => item.status === 'odmitnuta').length,
+    zrusena: rezervace.filter((item) => item.status === 'zrusena').length,
   };
 
   if (loading) {
@@ -388,31 +393,31 @@ const MyReservationsPage = () => {
               : `Nemáte žádné rezervace se stavem „${getStatusText(filter)}“.`}
           </div>
         ) : (
-          filteredRezervace.map((r) => {
-            const isExpanded = !!expanded[r.id];
-            const canCancelReservation = canCancelReservationByRule(r);
-            const mainPassengerId = r.uzivatel?.id;
-            const mainPassengerName = getPassengerDisplayName(r.uzivatel);
-            const autoText = r.jizda?.auto
-              ? r.jizda.auto.smazane
+          filteredRezervace.map((reservation) => {
+            const isExpanded = !!expanded[reservation.id];
+            const canCancelReservation = canCancelReservationByRule(reservation);
+            const mainPassengerId = reservation.uzivatel?.id;
+            const mainPassengerName = getPassengerDisplayName(reservation.uzivatel);
+            const autoText = reservation.jizda?.auto
+              ? reservation.jizda.auto.smazane
                 ? 'Smazané auto'
-                : `${r.jizda.auto.znacka}${r.jizda.auto.model ? ` ${r.jizda.auto.model}` : ''}${r.jizda.auto.spz ? ` (${r.jizda.auto.spz})` : ''}`
+                : `${reservation.jizda.auto.znacka}${reservation.jizda.auto.model ? ` ${reservation.jizda.auto.model}` : ''}${reservation.jizda.auto.spz ? ` (${reservation.jizda.auto.spz})` : ''}`
               : TEXT.notProvided;
             const mezistaniceText =
-              r.jizda?.mezistanice && r.jizda.mezistanice.length > 0
-                ? r.jizda.mezistanice
+              reservation.jizda?.mezistanice && reservation.jizda.mezistanice.length > 0
+                ? reservation.jizda.mezistanice
                     .slice()
                     .sort((a, b) => a.poradi - b.poradi)
-                    .map((m) => m.misto)
+                    .map((item) => item.misto)
                     .join(' -> ')
                 : TEXT.noWaypoints;
 
             return (
               <div
-                key={r.id}
+                key={reservation.id}
                 className={`reservation-card ${
-                  (focusReservationId && r.id === focusReservationId) ||
-                  (focusRideId && r.jizda_id === focusRideId)
+                  (focusReservationId && reservation.id === focusReservationId) ||
+                  (focusRideId && reservation.jizda_id === focusRideId)
                     ? 'focused'
                     : ''
                 }`}
@@ -420,21 +425,21 @@ const MyReservationsPage = () => {
                 <button
                   type="button"
                   className="reservation-header reservation-header-btn"
-                  onClick={() => toggleExpanded(r.id)}
+                  onClick={() => toggleExpanded(reservation.id)}
                 >
                   <div className="reservation-header-main">
                     <div className="route-info">
                       <h3>
-                        {r.jizda?.odkud || TEXT.unknownPlace} › {r.jizda?.kam || TEXT.unknownPlace}
+                        {reservation.jizda?.odkud || TEXT.unknownPlace} › {reservation.jizda?.kam || TEXT.unknownPlace}
                       </h3>
-                      <div className="reservation-header-meta">{formatCompactDate(r.jizda?.cas_odjezdu)}</div>
+                      <div className="reservation-header-meta">{formatCompactDate(reservation.jizda?.cas_odjezdu)}</div>
                     </div>
-                    <span className="price">{r.jizda?.cena ?? 0} Kč</span>
+                    <span className="price">{reservation.jizda?.cena ?? 0} Kč</span>
                   </div>
 
                   <div className="header-right">
-                    <div className="status-badge" style={{ backgroundColor: getStatusColor(r.status) }}>
-                      {getStatusText(r.status)}
+                    <div className="status-badge" style={{ backgroundColor: getStatusColor(reservation.status) }}>
+                      {getStatusText(reservation.status)}
                     </div>
                     <span className={`chevron ${isExpanded ? 'open' : ''}`}>v</span>
                   </div>
@@ -447,15 +452,15 @@ const MyReservationsPage = () => {
                         <div className="reservation-details-column">
                           <div className="reservation-detail-block">
                             <strong>{TEXT.departure}</strong>
-                            <span>{formatDate(r.jizda?.cas_odjezdu)}</span>
+                            <span>{formatDate(reservation.jizda?.cas_odjezdu)}</span>
                           </div>
                           <div className="reservation-detail-block">
                             <strong>{TEXT.freeSeats}</strong>
-                            <span>{r.jizda?.volna_mista ?? '—'} / {r.jizda?.pocet_mist ?? '—'}</span>
+                            <span>{reservation.jizda?.volna_mista ?? DASH} / {reservation.jizda?.pocet_mist ?? DASH}</span>
                           </div>
                           <div className="reservation-detail-block">
                             <strong>{TEXT.queuedCount}</strong>
-                            <span>{r.jizda?.pocet_cekajicich_rezervaci ?? 0}</span>
+                            <span>{reservation.jizda?.pocet_cekajicich_rezervaci ?? 0}</span>
                           </div>
                           <div className="reservation-detail-block">
                             <strong>{TEXT.waypoints}</strong>
@@ -466,18 +471,18 @@ const MyReservationsPage = () => {
                         <div className="reservation-details-column">
                           <div className="reservation-detail-block">
                             <strong>{TEXT.arrival}</strong>
-                            <span>{formatDate(r.jizda?.cas_prijezdu)}</span>
+                            <span>{formatDate(reservation.jizda?.cas_prijezdu)}</span>
                           </div>
                           <div className="reservation-detail-block">
                             <strong>{TEXT.driver}</strong>
-                            {r.jizda?.ridic?.id ? (
+                            {reservation.jizda?.ridic?.id ? (
                               <button
                                 type="button"
                                 className="driver-link"
-                                onClick={() => navigate(`/profil/${r.jizda.ridic.id}`)}
+                                onClick={() => navigate(`/profil/${reservation.jizda.ridic.id}`)}
                                 title="Otevřít profil řidiče"
                               >
-                                {r.jizda.ridic.jmeno || TEXT.driver}
+                                {reservation.jizda.ridic.jmeno || TEXT.driver}
                               </button>
                             ) : (
                               <span>{TEXT.unknown}</span>
@@ -489,7 +494,7 @@ const MyReservationsPage = () => {
                           </div>
                           <div className="reservation-detail-block reservation-detail-block--passengers">
                             <strong>{TEXT.passengers}</strong>
-                            {r.jizda ? renderPassengers(r.jizda) : <span>{TEXT.noPassengers}</span>}
+                            {reservation.jizda ? renderPassengers(reservation.jizda) : <span>{TEXT.noPassengers}</span>}
                           </div>
                         </div>
                       </div>
@@ -497,7 +502,7 @@ const MyReservationsPage = () => {
                       <div className="passengers-section">
                         <strong>{TEXT.reservationFor}</strong>
                         <ReservationPassengerSummary
-                          reservation={r}
+                          reservation={reservation}
                           primaryPassengerName={mainPassengerName}
                           primaryPassengerId={mainPassengerId}
                           onOpenProfile={() => {
@@ -508,53 +513,53 @@ const MyReservationsPage = () => {
 
                       <div className="ride-status-info">
                         <strong>{TEXT.rideStatus}</strong>{' '}
-                        <span className={`ride-status-badge ${r.jizda?.status || ''}`}>
-                          {getRideStatusText(r.jizda?.status)}
+                        <span className={`ride-status-badge ${reservation.jizda?.status || ''}`}>
+                          {getRideStatusText(reservation.jizda?.status)}
                         </span>
                       </div>
 
                       <div className="note-info">
-                        <strong>{TEXT.seatCount}</strong> {r.pocet_mist ?? 1}
+                        <strong>{TEXT.seatCount}</strong> {reservation.pocet_mist ?? 1}
                       </div>
 
-                      {r.status === 'cekajici' && Number.isInteger(r.poradi_cekajici) && (
+                      {reservation.status === 'cekajici' && Number.isInteger(reservation.poradi_cekajici) && (
                         <div className="queue-info">
-                          <strong>{TEXT.queuePosition}</strong> {r.poradi_cekajici}
+                          <strong>{TEXT.queuePosition}</strong> {reservation.poradi_cekajici}
                         </div>
                       )}
 
-                      {r.poznamka && (
+                      {reservation.poznamka && (
                         <div className="note-info">
-                          <strong>{TEXT.note}</strong> {r.poznamka}
+                          <strong>{TEXT.note}</strong> {reservation.poznamka}
                         </div>
                       )}
                     </div>
 
                     <div className="reservation-actions">
-                      {r.status === 'cekajici' && canCancelReservation && (
-                        <button className="btn-cancel" onClick={() => handleCancelReservation(r.id)}>
+                      {reservation.status === 'cekajici' && canCancelReservation && (
+                        <button className="btn-cancel" onClick={() => handleCancelReservation(reservation.id)}>
                           {TEXT.cancelReservation}
                         </button>
                       )}
 
-                      {r.status === 'prijata' && (
+                      {reservation.status === 'prijata' && (
                         <div className="accepted-info">
                           <span className="success-text">{TEXT.confirmed}</span>
                           {canCancelReservation && (
-                            <button className="btn-cancel" onClick={() => handleCancelReservation(r.id)}>
+                            <button className="btn-cancel" onClick={() => handleCancelReservation(reservation.id)}>
                               {TEXT.cancelReservation}
                             </button>
                           )}
                         </div>
                       )}
 
-                      {r.status === 'odmitnuta' && (
+                      {reservation.status === 'odmitnuta' && (
                         <div className="rejected-info">
                           <span className="error-text">{TEXT.wasRejected}</span>
                         </div>
                       )}
 
-                      {r.status === 'zrusena' && (
+                      {reservation.status === 'zrusena' && (
                         <div className="cancelled-info">
                           <span className="muted-text">{TEXT.wasCanceled}</span>
                         </div>

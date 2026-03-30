@@ -61,7 +61,15 @@ const MyRidesPage = () => {
   };
 
   const ridicJizdy = useMemo(
-    () => mojeJizdy.filter((j) => j.ridic_id === user?.id),
+    () =>
+      mojeJizdy
+        .filter((j) => j.ridic_id === user?.id)
+        .sort((a, b) => {
+          const aDeparture = a?.cas_odjezdu ? new Date(a.cas_odjezdu).getTime() : 0;
+          const bDeparture = b?.cas_odjezdu ? new Date(b.cas_odjezdu).getTime() : 0;
+          if (aDeparture !== bDeparture) return bDeparture - aDeparture;
+          return (b.id || 0) - (a.id || 0);
+        }),
     [mojeJizdy, user?.id]
   );
 

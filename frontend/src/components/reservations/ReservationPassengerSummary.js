@@ -11,8 +11,8 @@ const ReservationPassengerSummary = ({
   primaryPassengerName,
   primaryPassengerId,
   onOpenProfile,
-  profileTitle = 'Otevøít profil pasažéra',
-  detailsLabel = 'Spolucestující:',
+  profileTitle = 'OtevÅ™Ã­t profil pasaÅ¾Ã©ra',
+  detailsLabel = 'SpolucestujÃ­cÃ­:',
 }) => {
   const [expanded, setExpanded] = useState(false);
   const extraPassengerCount = getAdditionalPassengerCount(reservation);
@@ -43,9 +43,9 @@ const ReservationPassengerSummary = ({
             type="button"
             className={`reservation-passenger-toggle ${expanded ? 'open' : ''}`}
             onClick={() => setExpanded((prev) => !prev)}
-            title={expanded ? 'Skrýt spolucestující' : 'Zobrazit spolucestující'}
+            title={expanded ? 'SkrÃ½t spolucestujÃ­cÃ­' : 'Zobrazit spolucestujÃ­cÃ­'}
           >
-            {expanded ? 'Skrýt' : 'Zobrazit'}
+            {expanded ? 'SkrÃ½t' : 'Zobrazit'}
           </button>
         )}
       </div>
