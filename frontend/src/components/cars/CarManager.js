@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../utils/apiError';
 import Alert from '../ui/Alert';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
@@ -36,7 +37,7 @@ const CarManager = () => {
       setAuta(response.data);
       setError('');
     } catch (err) {
-      setError('Auta se nepodařilo načíst.');
+      setError(getApiErrorMessage(err, 'Auta se nepodarilo nacist.'));
     }
   };
 
@@ -55,16 +56,30 @@ const CarManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const normalizedFormData = {
+      ...formData,
+      znacka: (formData.znacka || '').trim(),
+      model: (formData.model || '').trim(),
+      barva: (formData.barva || '').trim(),
+      spz: (formData.spz || '').trim(),
+    };
+
+    if (!normalizedFormData.znacka || !normalizedFormData.model) {
+      setError('Znacka a model jsou povinne.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       if (editing) {
-        await axios.put(`http://localhost:5000/api/auta/${editing}`, formData, {
+        await axios.put(`http://localhost:5000/api/auta/${editing}`, normalizedFormData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        await axios.post('http://localhost:5000/api/auta/moje-nove', formData, {
+        await axios.post('http://localhost:5000/api/auta/moje-nove', normalizedFormData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -73,7 +88,7 @@ const CarManager = () => {
       setEditing(null);
       fetchAuta();
     } catch (err) {
-      setError(err.response?.data?.error || 'Auto se nepodařilo uložit.');
+      setError(getApiErrorMessage(err, 'Auto se nepodarilo ulozit.'));
     } finally {
       setLoading(false);
     }
@@ -88,6 +103,7 @@ const CarManager = () => {
       primarni: auto.primarni,
     });
     setEditing(auto.id);
+    setError('');
   };
 
   const executeDelete = async (autoId) => {
@@ -97,17 +113,20 @@ const CarManager = () => {
       });
       fetchAuta();
     } catch (err) {
-      const errorCode = err.response?.status;
-      const errorData = err.response?.data;
+      const errorMessage = err.response?.data?.error || '';
+      const hasActiveRidesConflict =
+        err.response?.status === 409 &&
+        typeof errorMessage === 'string' &&
+        errorMessage.toLowerCase().includes('aktivn');
 
-      if (errorCode === 409 && errorData?.error === 'AUTO_MA_AKTIVNI_JIZDY') {
+      if (hasActiveRidesConflict) {
         setShowReplaceCar({
           active: true,
           autoId,
-          aktivniJizdyCount: errorData?.pocet_aktivnich_jizd || 0,
+          aktivniJizdyCount: err.response?.data?.pocet_aktivnich_jizd || 0,
         });
       } else {
-        setError(errorData?.error || 'Auto se nepodařilo smazat.');
+        setError(getApiErrorMessage(err, 'Auto se nepodarilo smazat.'));
       }
     }
   };
@@ -115,15 +134,16 @@ const CarManager = () => {
   const cancelEdit = () => {
     setFormData(initialFormData);
     setEditing(null);
+    setError('');
   };
 
   return (
     <div className="page-shell car-manager">
       <section className="page-hero page-hero--light">
-        <span className="page-hero__eyebrow">Garáž</span>
-        <h1 className="page-hero__title">Správa aut na jednom místě</h1>
+        <span className="page-hero__eyebrow">Garaz</span>
+        <h1 className="page-hero__title">Sprava aut na jednom miste</h1>
         <p className="page-hero__text">
-          Vyberte si primární auto, upravte detaily nebo přidejte další vůz pro jiný typ cesty.
+          Vyberte si primarni auto, upravte detaily nebo pridejte dalsi vuz pro jiny typ cesty.
         </p>
       </section>
 
@@ -134,15 +154,15 @@ const CarManager = () => {
           <div className="ui-card__header">
             <div>
               <h2 className="ui-card__title">Moje auta</h2>
-              <p className="ui-card__subtitle">Každé auto může mít jinou roli. Primární bude předvyplněné při tvorbě jízdy.</p>
+              <p className="ui-card__subtitle">Primarni auto bude predvyplnene pri tvorbe jizdy.</p>
             </div>
-            <Badge variant="primary">{auta.length} vozů</Badge>
+            <Badge variant="primary">{auta.length} vozu</Badge>
           </div>
 
           {auta.length === 0 ? (
             <div className="empty-state">
-              <h3 className="empty-state__title">Zatím tu není žádné auto</h3>
-              <p className="empty-state__text">Přidejte první vůz a nabídka jízd bude připravená hned na další krok.</p>
+              <h3 className="empty-state__title">Zatim tu neni zadne auto</h3>
+              <p className="empty-state__text">Pridejte prvni vuz a nabidka jizd bude pripravena hned na dalsi krok.</p>
             </div>
           ) : (
             <div className="cars-grid">
@@ -151,9 +171,9 @@ const CarManager = () => {
                   <div className="car-header">
                     <div>
                       <h3>{auto.znacka} {auto.model}</h3>
-                      <p>{auto.barva || 'Barva neuvedena'}{auto.spz ? ` • ${auto.spz}` : ''}</p>
+                      <p>{auto.barva || 'Barva neuvedena'}{auto.spz ? ` - ${auto.spz}` : ''}</p>
                     </div>
-                    {auto.primarni && <Badge variant="success">Primární</Badge>}
+                    {auto.primarni && <Badge variant="success">Primarni</Badge>}
                   </div>
 
                   <div className="car-actions">
@@ -173,13 +193,13 @@ const CarManager = () => {
         <Card>
           <div className="ui-card__header">
             <div>
-              <h2 className="ui-card__title">{editing ? 'Upravit auto' : 'Přidat nové auto'}</h2>
-              <p className="ui-card__subtitle">Držíme jednoduchý formulář, aby bylo auto připravené během chvilky.</p>
+              <h2 className="ui-card__title">{editing ? 'Upravit auto' : 'Pridat nove auto'}</h2>
+              <p className="ui-card__subtitle">Drzime jednoduchy formular, aby bylo auto pripravene behem chvilky.</p>
             </div>
             {!editing && (
               <Badge variant="neutral">
                 <PlusCircle size={14} />
-                Nový záznam
+                Novy zaznam
               </Badge>
             )}
           </div>
@@ -188,16 +208,16 @@ const CarManager = () => {
             <div className="form-row">
               <div className="field-group">
                 <label className="field-label" htmlFor="znacka">
-                  Značka
+                  Znacka
                 </label>
-                <input id="znacka" className="ui-input" type="text" name="znacka" value={formData.znacka} onChange={handleChange} required />
+                <input id="znacka" className="ui-input" type="text" name="znacka" value={formData.znacka} onChange={handleChange} required maxLength={50} />
               </div>
 
               <div className="field-group">
                 <label className="field-label" htmlFor="model">
                   Model
                 </label>
-                <input id="model" className="ui-input" type="text" name="model" value={formData.model} onChange={handleChange} required />
+                <input id="model" className="ui-input" type="text" name="model" value={formData.model} onChange={handleChange} required maxLength={50} />
               </div>
             </div>
 
@@ -206,29 +226,29 @@ const CarManager = () => {
                 <label className="field-label" htmlFor="barva">
                   Barva
                 </label>
-                <input id="barva" className="ui-input" type="text" name="barva" value={formData.barva} onChange={handleChange} />
+                <input id="barva" className="ui-input" type="text" name="barva" value={formData.barva} onChange={handleChange} maxLength={50} />
               </div>
 
               <div className="field-group">
                 <label className="field-label" htmlFor="spz">
                   SPZ
                 </label>
-                <input id="spz" className="ui-input" type="text" name="spz" value={formData.spz} onChange={handleChange} placeholder="Např. 1A2 3456" />
+                <input id="spz" className="ui-input" type="text" name="spz" value={formData.spz} onChange={handleChange} maxLength={20} placeholder="Napriklad 1A2 3456" />
               </div>
             </div>
 
             <label className="checkbox-row">
               <input type="checkbox" name="primarni" checked={formData.primarni} onChange={handleChange} />
-              Nastavit jako primární auto
+              Nastavit jako primarni auto
             </label>
 
             <div className="form-actions">
               <Button type="submit" disabled={loading}>
-                {loading ? 'Ukládám…' : editing ? 'Uložit změny' : 'Přidat auto'}
+                {loading ? 'Ukladam...' : editing ? 'Ulozit zmeny' : 'Pridat auto'}
               </Button>
               {editing && (
-                <Button type="button" variant="secondary" onClick={cancelEdit}>
-                  Zrušit úpravy
+                <Button type="button" variant="secondary" onClick={cancelEdit} disabled={loading}>
+                  Zrusit upravy
                 </Button>
               )}
             </div>

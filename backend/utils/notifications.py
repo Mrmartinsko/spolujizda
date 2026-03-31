@@ -1,9 +1,10 @@
-from datetime import datetime
+import logging
 
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from models import db
 from models.oznameni import Oznameni
+from utils.datetime_utils import utc_now
 
 
 DEFAULT_CATEGORY_BY_TYPE = {
@@ -14,6 +15,8 @@ DEFAULT_CATEGORY_BY_TYPE = {
     "jizda_zmena": "jizdy",
     "hodnoceni_ceka": "hodnoceni",
 }
+
+logger = logging.getLogger(__name__)
 
 
 def get_notification_category(notification_type, explicit_category=None):
@@ -90,7 +93,7 @@ def vytvorit_oznameni(
             rezervace_id=rezervace_id,
             cilovy_uzivatel_id=cilovy_uzivatel_id,
             unikatni_klic=unikatni_klic,
-            datum=datetime.utcnow(),
+            datum=utc_now(),
             precteno=False,
         )
 
@@ -101,7 +104,7 @@ def vytvorit_oznameni(
 
         return nove_oznameni
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        print(f"Chyba pri vytvareni oznameni: {e}")
+        logger.exception("Chyba pri vytvareni oznameni")
         return None

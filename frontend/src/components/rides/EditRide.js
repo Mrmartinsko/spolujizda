@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getApiErrorMessage } from "../../utils/apiError";
 import SelectCarModal from "../cars/SelectCarModal";
 import LocationAutocompleteInput from "./LocationAutocompleteInput";
 import "./EditRide.css";
@@ -58,7 +59,7 @@ export default function EditRide() {
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || "").trim();
     if (!normalized) return `${fieldLabel} je povinne`;
-    if (normalized.length > 50) return `${fieldLabel} muze mit maximalne 50 znaku`;
+    if (normalized.length > 100) return `${fieldLabel} muze mit maximalne 100 znaku`;
     if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
       return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky`;
     }
@@ -109,7 +110,7 @@ export default function EditRide() {
         mezistanice: stops,
       });
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodarilo se nacist jizdu.");
+      setError(getApiErrorMessage(e, "Nepodarilo se nacist jizdu."));
     } finally {
       setLoading(false);
     }
@@ -136,39 +137,63 @@ export default function EditRide() {
       await fetchRide();
       setShowSelectCar(false);
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodarilo se zmenit auto.");
+      setError(getApiErrorMessage(e, "Nepodarilo se zmenit auto."));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError("");
 
+    const odkudError = validateLocationField(form.odkud, "Odkud");
+    if (odkudError) {
+      setError(odkudError);
+      return;
+    }
+
+    const kamError = validateLocationField(form.kam, "Kam");
+    if (kamError) {
+      setError(kamError);
+      return;
+    }
+
+    for (const stop of form.mezistanice.map((s) => s.text.trim()).filter(Boolean)) {
+      const stopError = validateLocationField(stop, "Mezistanice");
+      if (stopError) {
+        setError(stopError);
+        return;
+      }
+    }
+
+    const departureIso = toISO(form.datum_odjezdu, form.cas_odjezdu);
+    const arrivalIso = toISO(form.datum_prijezdu, form.cas_prijezdu);
+    const departureDate = departureIso ? new Date(departureIso) : null;
+    const arrivalDate = arrivalIso ? new Date(arrivalIso) : null;
+    const pocetMist = Number(form.pocet_mist);
+
+    if (!departureDate || Number.isNaN(departureDate.getTime())) {
+      setError("Zadej platny datum a cas odjezdu.");
+      return;
+    }
+
+    if (!arrivalDate || Number.isNaN(arrivalDate.getTime())) {
+      setError("Zadej platny datum a cas prijezdu.");
+      return;
+    }
+
+    if (arrivalDate <= departureDate) {
+      setError("Prijezd musi byt po odjezdu.");
+      return;
+    }
+
+    if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
+      setError("Pocet mist musi byt cele cislo vetsi nez 0.");
+      return;
+    }
+
+    setSaving(true);
+
     try {
-      const odkudError = validateLocationField(form.odkud, "Odkud");
-      if (odkudError) {
-        setError(odkudError);
-        setSaving(false);
-        return;
-      }
-
-      const kamError = validateLocationField(form.kam, "Kam");
-      if (kamError) {
-        setError(kamError);
-        setSaving(false);
-        return;
-      }
-
-      for (const stop of form.mezistanice.map((s) => s.text.trim()).filter(Boolean)) {
-        const stopError = validateLocationField(stop, "Mezistanice");
-        if (stopError) {
-          setError(stopError);
-          setSaving(false);
-          return;
-        }
-      }
-
       const payload = {
         odkud: form.odkud.trim(),
         odkud_place_id: form.odkud_place_id,
@@ -176,9 +201,9 @@ export default function EditRide() {
         kam: form.kam.trim(),
         kam_place_id: form.kam_place_id,
         kam_address: form.kam_address,
-        cas_odjezdu: toISO(form.datum_odjezdu, form.cas_odjezdu),
-        cas_prijezdu: toISO(form.datum_prijezdu, form.cas_prijezdu),
-        pocet_mist: Number(form.pocet_mist),
+        cas_odjezdu: departureIso,
+        cas_prijezdu: arrivalIso,
+        pocet_mist: pocetMist,
         mezistanice: form.mezistanice
           .map((s) => ({
             text: s.text.trim(),
@@ -191,7 +216,7 @@ export default function EditRide() {
       await axios.put(`${API}/jizdy/${id}`, payload, { headers });
       navigate("/moje-jizdy");
     } catch (e) {
-      setError(e.response?.data?.error || "Nepodarilo se ulozit zmeny.");
+      setError(getApiErrorMessage(e, "Nepodarilo se ulozit zmeny."));
     } finally {
       setSaving(false);
     }
@@ -304,7 +329,7 @@ export default function EditRide() {
           </div>
           <div className="edit-input">
             <label>Pocet mist</label>
-            <input value={form.pocet_mist} onChange={(e) => setField("pocet_mist", e.target.value)} />
+            <input type="number" min="1" value={form.pocet_mist} onChange={(e) => setField("pocet_mist", e.target.value)} />
           </div>
         </div>
 

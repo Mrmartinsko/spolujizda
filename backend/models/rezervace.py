@@ -1,8 +1,8 @@
-from datetime import datetime
 import json
 from typing import TYPE_CHECKING
 
 from models import db
+from utils.datetime_utils import utc_now
 
 if TYPE_CHECKING:
     from models.jizda import Jizda
@@ -18,7 +18,7 @@ class Rezervace(db.Model):
     pocet_mist = db.Column(db.Integer, nullable=False, default=1)
     dalsi_pasazeri = db.Column(db.Text, nullable=False, default="[]")
     poznamka = db.Column(db.Text)
-    vytvoreno = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    vytvoreno = db.Column(db.DateTime, nullable=False, default=utc_now)
     status = db.Column(
         db.String(20), default="cekajici"
     )  # cekajici, prijata, odmitnuta

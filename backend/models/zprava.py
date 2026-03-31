@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class Zprava(db.Model):
@@ -10,7 +9,7 @@ class Zprava(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey("chat.id"), nullable=False)
     odesilatel_id = db.Column(db.Integer, db.ForeignKey("uzivatel.id"), nullable=False)
     text = db.Column(db.Text, nullable=False)
-    cas = db.Column(db.DateTime, default=datetime.utcnow)
+    cas = db.Column(db.DateTime, default=utc_now)
 
     # Vztahy
     odesilatel = db.relationship("Uzivatel", backref="zpravy")

@@ -1,7 +1,10 @@
+import logging
 import os
 import smtplib
 from email.message import EmailMessage
 from html import escape
+
+logger = logging.getLogger(__name__)
 
 
 def _build_email_html(*, title, intro, button_label, button_url, footer_text):
@@ -44,10 +47,7 @@ def send_email(*, to_email, subject, text_content, html_content=None):
     from_email = os.getenv("SMTP_FROM", user)
 
     if not host or not user or not password or not from_email:
-        print("\n[DEV] SMTP neni nastavene, posilani emailu preskoceno.")
-        print(f"[DEV] Subject: {subject}")
-        print(f"[DEV] To: {to_email}")
-        print(f"[DEV] Content:\n{text_content}\n")
+        logger.info("SMTP neni nastavene, posilani emailu preskoceno pro %s", to_email)
         return
 
     msg = EmailMessage()
@@ -59,10 +59,13 @@ def send_email(*, to_email, subject, text_content, html_content=None):
     if html_content:
         msg.add_alternative(html_content, subtype="html")
 
-    with smtplib.SMTP(host, port) as server:
-        server.starttls()
-        server.login(user, password)
-        server.send_message(msg)
+    try:
+        with smtplib.SMTP(host, port) as server:
+            server.starttls()
+            server.login(user, password)
+            server.send_message(msg)
+    except OSError:
+        logger.exception("Nepodarilo se odeslat email na %s", to_email)
 
 
 def send_verification_email(to_email: str, verify_url: str):

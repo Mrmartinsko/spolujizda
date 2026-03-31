@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../utils/apiError';
 import Alert from '../ui/Alert';
 import Button from '../ui/Button';
 import './Auth.css';
@@ -27,11 +28,12 @@ const ForgotPassword = () => {
     try {
       const response = await forgotPassword(cleanEmail);
       setMessage(
-        response?.message ||
-          'Pokud účet existuje, poslali jsme email s odkazem pro obnovu hesla.'
+        response?.error ||
+          response?.message ||
+          'Pokud ĂşÄŤet existuje, poslali jsme email s odkazem pro obnovu hesla.'
       );
     } catch (err) {
-      setError(err.response?.data?.error || 'Žádost o obnovu hesla se nepovedla.');
+      setError(getApiErrorMessage(err, 'Zadost o obnovu hesla se nepovedla.'));
     } finally {
       setLoading(false);
     }
@@ -43,17 +45,17 @@ const ForgotPassword = () => {
         <div className="auth-card">
           <aside className="auth-aside">
             <div className="auth-brand">S</div>
-            <span className="auth-kicker">Obnova přístupu</span>
-            <h1>Vrátíme vás zpátky do účtu</h1>
+            <span className="auth-kicker">Obnova pĹ™Ă­stupu</span>
+            <h1>VrĂˇtĂ­me vĂˇs zpĂˇtky do ĂşÄŤtu</h1>
             <p>
-              Zadejte svůj email a pošleme vám bezpečný odkaz, přes který si nastavíte nové heslo.
+              Zadejte svĹŻj email a poĹˇleme vĂˇm bezpeÄŤnĂ˝ odkaz, pĹ™es kterĂ˝ si nastavĂ­te novĂ© heslo.
             </p>
           </aside>
 
           <section className="auth-form-panel">
             <div className="auth-header">
-              <h2>Zapomenuté heslo</h2>
-              <p>Po odeslání žádosti zkontrolujte schránku i spam. Odkaz má omezenou platnost.</p>
+              <h2>ZapomenutĂ© heslo</h2>
+              <p>Po odeslĂˇnĂ­ ĹľĂˇdosti zkontrolujte schrĂˇnku i spam. Odkaz mĂˇ omezenou platnost.</p>
             </div>
 
             {message && <Alert variant="success">{message}</Alert>}
@@ -68,15 +70,15 @@ const ForgotPassword = () => {
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? 'Odesílám odkaz…' : 'Poslat odkaz pro nové heslo'}
+                {loading ? 'OdesĂ­lĂˇm odkazâ€¦' : 'Poslat odkaz pro novĂ© heslo'}
               </Button>
             </form>
 
             <div className="auth-footer">
               <p>
-                Už si heslo pamatujete?
+                UĹľ si heslo pamatujete?
                 <Link to="/login" className="auth-link">
-                  Přihlásit se
+                  PĹ™ihlĂˇsit se
                 </Link>
               </p>
             </div>

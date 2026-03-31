@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CarFront, CirclePlus, GripVertical, MapPinned } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../utils/apiError';
 import Alert from '../ui/Alert';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -25,16 +26,29 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const normalizedCarData = {
+      znacka: (carData.znacka || '').trim(),
+      model: (carData.model || '').trim(),
+      barva: (carData.barva || '').trim(),
+      spz: (carData.spz || '').trim(),
+    };
+
+    if (!normalizedCarData.znacka || !normalizedCarData.model) {
+      setError('Znacka a model jsou povinne.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auta/moje-nove', carData, {
+      const response = await axios.post('http://localhost:5000/api/auta/moje-nove', normalizedCarData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       onCarCreated(response.data.auto);
     } catch (err) {
-      setError(err.response?.data?.error || 'Auto se nepodařilo vytvořit.');
+      setError(getApiErrorMessage(err, 'Auto se nepodarilo vytvorit.'));
     } finally {
       setLoading(false);
     }
@@ -44,8 +58,8 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
     <Card className="ride-form__car-card">
       <div className="ui-card__header">
         <div>
-          <h3 className="ui-card__title">Přidat auto</h3>
-          <p className="ui-card__subtitle">Bez auta se nabídka jízdy neobejde. Stačí doplnit základní údaje.</p>
+          <h3 className="ui-card__title">Pridat auto</h3>
+          <p className="ui-card__subtitle">Bez auta se nabidka jizdy neobejde. Staci doplnit zakladni udaje.</p>
         </div>
       </div>
 
@@ -54,38 +68,38 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
       <form onSubmit={handleSubmit} className="ride-form__grid ride-form__grid--two">
         <div className="field-group">
           <label className="field-label" htmlFor="znacka">
-            Značka
+            Znacka
           </label>
-          <input id="znacka" className="ui-input" type="text" name="znacka" value={carData.znacka} onChange={handleChange} required />
+          <input id="znacka" className="ui-input" type="text" name="znacka" value={carData.znacka} onChange={handleChange} required maxLength={50} />
         </div>
 
         <div className="field-group">
           <label className="field-label" htmlFor="model">
             Model
           </label>
-          <input id="model" className="ui-input" type="text" name="model" value={carData.model} onChange={handleChange} required />
+          <input id="model" className="ui-input" type="text" name="model" value={carData.model} onChange={handleChange} required maxLength={50} />
         </div>
 
         <div className="field-group">
           <label className="field-label" htmlFor="barva">
             Barva
           </label>
-          <input id="barva" className="ui-input" type="text" name="barva" value={carData.barva} onChange={handleChange} />
+          <input id="barva" className="ui-input" type="text" name="barva" value={carData.barva} onChange={handleChange} maxLength={50} />
         </div>
 
         <div className="field-group">
           <label className="field-label" htmlFor="spz">
             SPZ
           </label>
-          <input id="spz" className="ui-input" type="text" name="spz" value={carData.spz} onChange={handleChange} />
+          <input id="spz" className="ui-input" type="text" name="spz" value={carData.spz} onChange={handleChange} maxLength={20} />
         </div>
 
         <div className="ride-form__actions">
           <Button type="submit" disabled={loading}>
-            {loading ? 'Ukládám auto…' : 'Uložit auto'}
+            {loading ? 'Ukladam auto...' : 'Ulozit auto'}
           </Button>
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
-            Zpět
+            Zpet
           </Button>
         </div>
       </form>
@@ -131,10 +145,10 @@ const RideForm = ({ onRideCreated }) => {
 
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || '').trim();
-    if (!normalized) return `${fieldLabel} je povinné.`;
-    if (normalized.length > 50) return `${fieldLabel} může mít maximálně 50 znaků.`;
+    if (!normalized) return `${fieldLabel} je povinne.`;
+    if (normalized.length > 100) return `${fieldLabel} muze mit maximalne 100 znaku.`;
     if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
-      return `${fieldLabel} může obsahovat jen písmena, čísla, mezery a pomlčky.`;
+      return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky.`;
     }
     return null;
   };
@@ -158,7 +172,7 @@ const RideForm = ({ onRideCreated }) => {
           setNoCars(false);
         }
       } catch (err) {
-        console.error('Chyba při načítání aut:', err);
+        setError(getApiErrorMessage(err, 'Auta se nepodarilo nacist.'));
       }
     };
 
@@ -251,21 +265,25 @@ const RideForm = ({ onRideCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess('');
 
-    const odkudError = validateLocationField(formData.odkud, 'Odkud');
+    const odkud = formData.odkud.trim();
+    const kam = formData.kam.trim();
+    const departureDate = formData.casOdjezdu ? new Date(formData.casOdjezdu) : null;
+    const arrivalDate = formData.casPrijezdu ? new Date(formData.casPrijezdu) : null;
+    const cena = Number(formData.cena);
+    const pocetMist = Number(formData.pocetMist);
+
+    const odkudError = validateLocationField(odkud, 'Odkud');
     if (odkudError) {
       setError(odkudError);
-      setLoading(false);
       return;
     }
 
-    const kamError = validateLocationField(formData.kam, 'Kam');
+    const kamError = validateLocationField(kam, 'Kam');
     if (kamError) {
       setError(kamError);
-      setLoading(false);
       return;
     }
 
@@ -273,28 +291,64 @@ const RideForm = ({ onRideCreated }) => {
       const stopError = validateLocationField(stop.text, 'Mezistanice');
       if (stopError) {
         setError(stopError);
-        setLoading(false);
         return;
       }
     }
 
+    if (!formData.auto_id) {
+      setError('Vyberte auto pro jizdu.');
+      return;
+    }
+
+    if (!departureDate || Number.isNaN(departureDate.getTime())) {
+      setError('Zadejte platny cas odjezdu.');
+      return;
+    }
+
+    if (!arrivalDate || Number.isNaN(arrivalDate.getTime())) {
+      setError('Zadejte platny cas prijezdu.');
+      return;
+    }
+
+    if (departureDate <= new Date()) {
+      setError('Odjezd musi byt v budoucnu.');
+      return;
+    }
+
+    if (arrivalDate <= departureDate) {
+      setError('Prijezd musi byt po odjezdu.');
+      return;
+    }
+
+    if (Number.isNaN(cena) || cena < 0) {
+      setError('Cena musi byt kladne cislo nebo nula.');
+      return;
+    }
+
+    if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
+      setError('Pocet mist musi byt cele cislo vetsi nez 0.');
+      return;
+    }
+
+    setLoading(true);
+
     const payload = {
       auto_id: formData.auto_id,
-      odkud: formData.odkud,
+      odkud,
       odkud_place_id: formData.odkud_place_id,
       odkud_address: formData.odkud_address,
-      kam: formData.kam,
+      kam,
       kam_place_id: formData.kam_place_id,
       kam_address: formData.kam_address,
       mezistanice: mezistanice.map((stop) => ({
-        text: stop.text,
+        text: stop.text.trim(),
         place_id: stop.place_id,
         address: stop.address,
       })),
       cas_odjezdu: formData.casOdjezdu,
       cas_prijezdu: formData.casPrijezdu,
-      cena: formData.cena,
-      pocet_mist: formData.pocetMist,
+      cena,
+      pocet_mist: pocetMist,
     };
 
     if (payload.mezistanice.length === 0) {
@@ -308,9 +362,9 @@ const RideForm = ({ onRideCreated }) => {
 
       if (onRideCreated) onRideCreated(response.data);
       resetForm();
-      setSuccess('Jízda byla úspěšně přidána.');
+      setSuccess('Jizda byla uspesne pridana.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Jízdu se nepodařilo vytvořit.');
+      setError(getApiErrorMessage(err, 'Jizdu se nepodarilo vytvorit.'));
     } finally {
       setLoading(false);
     }
@@ -320,8 +374,8 @@ const RideForm = ({ onRideCreated }) => {
     <Card className="ride-form">
       <div className="ui-card__header ride-form__header">
         <div>
-          <h2 className="ui-card__title">Detaily jízdy</h2>
-          <p className="ui-card__subtitle">Vyplňte jen to podstatné. Nepodstatné interní detaily necháváme stranou.</p>
+          <h2 className="ui-card__title">Detaily jizdy</h2>
+          <p className="ui-card__subtitle">Vyplnte jen to podstatne. Nepodstatne interni detaily nechavame stranou.</p>
         </div>
       </div>
 
@@ -334,14 +388,14 @@ const RideForm = ({ onRideCreated }) => {
             <CarFront size={24} />
           </div>
           <div>
-            <h3 className="empty-state__title">Nejdřív potřebujete přidat auto</h3>
+            <h3 className="empty-state__title">Nejdriv potrebujete pridat auto</h3>
             <p className="empty-state__text">
-              Jakmile bude auto v garáži, půjde ho vybrat i pro nové jízdy. Stačí ho přidat jednou.
+              Jakmile bude auto v garazi, pujde ho vybrat i pro nove jizdy. Staci ho pridat jednou.
             </p>
           </div>
           <Button type="button" onClick={() => setCreatingCar(true)}>
             <CirclePlus size={16} />
-            Přidat auto
+            Pridat auto
           </Button>
         </div>
       )}
@@ -368,7 +422,7 @@ const RideForm = ({ onRideCreated }) => {
               value={formData.odkud}
               onChange={handleLocationChange}
               required
-              placeholder="Výchozí město"
+              placeholder="Vychozi mesto"
             />
 
             <LocationAutocompleteInput
@@ -377,15 +431,15 @@ const RideForm = ({ onRideCreated }) => {
               value={formData.kam}
               onChange={handleLocationChange}
               required
-              placeholder="Cílové město"
+              placeholder="Cilove mesto"
             />
           </div>
 
           <Card className="ride-form__subcard">
             <div className="ui-card__header">
               <div>
-                <h3 className="ui-card__title">Mezizastávky</h3>
-                <p className="ui-card__subtitle">Volitelné body na trase. Pomáhají cestujícím líp odhadnout, kde mohou nastoupit.</p>
+                <h3 className="ui-card__title">Mezizastavky</h3>
+                <p className="ui-card__subtitle">Volitelne body na trase. Pomahaji cestujicim lip odhadnout, kde mohou nastoupit.</p>
               </div>
             </div>
 
@@ -396,7 +450,7 @@ const RideForm = ({ onRideCreated }) => {
                 onChange={handleNovaMezistaniceChange}
                 hideLabel
                 wrapperClassName="mezistanice-autocomplete"
-                placeholder="Např. Jihlava"
+                placeholder="Napriklad Jihlava"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -405,7 +459,7 @@ const RideForm = ({ onRideCreated }) => {
                 }}
               />
               <Button type="button" variant="secondary" className="mezistanice-add" onClick={pridatMezistanici}>
-                Přidat zastávku
+                Pridat zastavku
               </Button>
             </div>
 
@@ -447,21 +501,21 @@ const RideForm = ({ onRideCreated }) => {
           <div className="ride-form__grid ride-form__grid--three">
             <div className="field-group">
               <label className="field-label" htmlFor="casOdjezdu">
-                Čas odjezdu
+                Cas odjezdu
               </label>
               <input id="casOdjezdu" className="ui-input" type="datetime-local" name="casOdjezdu" value={formData.casOdjezdu} onChange={handleChange} required />
             </div>
 
             <div className="field-group">
               <label className="field-label" htmlFor="casPrijezdu">
-                Čas příjezdu
+                Cas prijezdu
               </label>
               <input id="casPrijezdu" className="ui-input" type="datetime-local" name="casPrijezdu" value={formData.casPrijezdu} onChange={handleChange} required />
             </div>
 
             <div className="field-group">
               <label className="field-label" htmlFor="cena">
-                Cena za místo
+                Cena za misto
               </label>
               <input id="cena" className="ui-input" type="number" name="cena" value={formData.cena} onChange={handleChange} required min="0" step="10" />
             </div>
@@ -470,7 +524,7 @@ const RideForm = ({ onRideCreated }) => {
           <div className="ride-form__grid ride-form__grid--two">
             <div className="field-group">
               <label className="field-label" htmlFor="pocetMist">
-                Volná místa
+                Volna mista
               </label>
               <input id="pocetMist" className="ui-input" type="number" name="pocetMist" value={formData.pocetMist} onChange={handleChange} required min="1" max="8" />
             </div>
@@ -491,9 +545,9 @@ const RideForm = ({ onRideCreated }) => {
           </div>
 
           <div className="ride-form__footer">
-            <p className="field-hint">Po vytvoření jízdy se rezervace i změny budou dál spravovat z přehledu „Moje jízdy“.</p>
+            <p className="field-hint">Po vytvoreni jizdy se rezervace i zmeny budou dal spravovat z prehledu Moje jizdy.</p>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Vytvářím jízdu…' : 'Nabídnout jízdu'}
+              {loading ? 'Vytvarim jizdu...' : 'Nabidnout jizdu'}
             </Button>
           </div>
         </form>

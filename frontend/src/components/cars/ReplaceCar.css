@@ -1,104 +1,340 @@
 .replace-car-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
+    inset: 0;
+    background: rgba(15, 23, 42, 0.48);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    padding: 20px;
 }
 
 .modal-content {
-    background: #fff;
-    padding: 25px;
-    border-radius: 10px;
-    width: 400px;
-    max-width: 90%;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    width: min(950px, 100%);
+    max-height: min(92vh, 920px);
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+    padding: 24px;
+}
+
+.replace-car-header {
     text-align: center;
+    margin-bottom: 24px;
 }
 
-h2, h3 {
-    margin-bottom: 15px;
+.replace-car-header h2 {
+    margin: 0 0 10px;
+    color: #22314f;
+    font-size: 2rem;
+    line-height: 1.1;
 }
 
-.available-cars, .new-car-form {
-    margin-bottom: 20px;
+.modal-intro {
+    max-width: 590px;
+    margin: 0 auto;
+    color: #5f6f8e;
+    line-height: 1.55;
+    font-size: 1rem;
+}
+
+.replace-loading-state {
+    border: 1px solid #dbe6f3;
+    border-radius: 14px;
+    background: #f8fbff;
+    padding: 20px;
+    text-align: center;
+    color: #4d5f82;
+}
+
+.error-message {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #f5c2be;
+    background: #fff4f2;
+    color: #b42318;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.replace-options-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: stretch;
+}
+
+.replace-option-card {
+    border: 1px solid #dde6f3;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    padding: 18px;
+}
+
+.replace-option-card--danger {
+    border-color: #f1d1cc;
+    background: linear-gradient(180deg, #fffafa 0%, #fff4f2 100%);
+    box-shadow: 0 10px 30px rgba(185, 28, 28, 0.08);
 }
 
 .replace-option-section {
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     text-align: left;
+}
+
+.card-section-heading h3 {
+    margin: 0 0 8px;
+    color: #22314f;
+    font-size: 1.3rem;
+    line-height: 1.25;
+}
+
+.section-description {
+    margin: 0;
+    color: #62718f;
+    line-height: 1.55;
+}
+
+.card-subsection {
+    margin-top: 18px;
+}
+
+.subsection-label {
+    margin-bottom: 10px;
+    color: #324463;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.available-cars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .available-car {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #e4ebf5;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 12px 14px;
 }
 
 .available-car span {
+    color: #24324f;
     font-weight: 500;
+    line-height: 1.4;
 }
 
-.available-car button,
-.new-car-form button,
-.close-btn {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.2s;
+.empty-state-box {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #d8e4f3;
+    background: #f5f9ff;
+    color: #596b8c;
+    line-height: 1.45;
 }
 
-.available-car button:hover,
-.new-car-form button:hover,
-.close-btn:hover {
-    background: #0056b3;
+.replace-divider {
+    margin: 18px 0 0;
+    border-top: 1px solid #e7edf6;
+}
+
+.new-car-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .new-car-form input {
-    width: 80%;
-    padding: 6px 10px;
-    margin-bottom: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    width: 100%;
+    min-height: 46px;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    border: 1px solid #ced8e6;
+    border-radius: 12px;
+    background: #ffffff;
+    font: inherit;
+    color: #22314f;
 }
 
-hr {
-    margin: 20px 0;
+.new-car-form input:focus {
+    outline: none;
+    border-color: #4d8df5;
+    box-shadow: 0 0 0 4px rgba(77, 141, 245, 0.14);
+}
+
+.available-car button,
+.primary-action-btn,
+.danger-btn,
+.close-btn {
     border: none;
-    border-top: 1px solid #eee;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s, opacity 0.2s;
 }
 
-.error-message {
-    color: red;
-    margin-bottom: 10px;
+.available-car button,
+.primary-action-btn {
+    background: linear-gradient(135deg, #1d7df2 0%, #1066da 100%);
+    color: #ffffff;
+}
+
+.available-car button {
+    padding: 9px 14px;
+    white-space: nowrap;
+}
+
+.primary-action-btn {
+    width: 100%;
+    padding: 11px 16px;
+}
+
+.available-car button:hover,
+.primary-action-btn:hover,
+.close-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(16, 102, 218, 0.18);
 }
 
 .danger-section {
-    border: 1px solid #f1b0b7;
-    border-radius: 8px;
-    padding: 14px;
-    background: #fff5f5;
+    gap: 14px;
+}
+
+.danger-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(220, 38, 38, 0.1);
+    color: #b42318;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.danger-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .danger-text {
-    color: #8a1c1c;
-    margin-bottom: 12px;
+    margin: 0;
+    color: #812a35;
+    line-height: 1.55;
+}
+
+.danger-note {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #f0cbc5;
+    background: rgba(255, 255, 255, 0.72);
+    color: #7d2730;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.danger-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #5d2930;
+    line-height: 1.45;
+    font-size: 0.95rem;
+}
+
+.danger-confirm input {
+    margin-top: 2px;
+    accent-color: #c24141;
 }
 
 .danger-btn {
-    background: #c0392b;
+    margin-top: auto;
+    width: 100%;
+    padding: 11px 16px;
+    background: linear-gradient(135deg, #d65353 0%, #c83a3a 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(200, 58, 58, 0.18);
 }
 
-.danger-btn:hover {
-    background: #992d22;
+.danger-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(200, 58, 58, 0.22);
+}
+
+.available-car button:disabled,
+.primary-action-btn:disabled,
+.danger-btn:disabled,
+.close-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.replace-car-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e8eef7;
+}
+
+.close-btn {
+    padding: 10px 16px;
+}
+
+.close-btn--secondary {
+    background: #edf2f8;
+    color: #314360;
+}
+
+@media (max-width: 860px) {
+    .replace-car-modal {
+        padding: 14px;
+    }
+
+    .modal-content {
+        padding: 18px;
+    }
+
+    .replace-options-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .modal-content {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .replace-car-header h2 {
+        font-size: 1.7rem;
+    }
+
+    .replace-option-card {
+        padding: 16px;
+    }
+
+    .available-car {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .available-car button,
+    .close-btn {
+        width: 100%;
+    }
 }
