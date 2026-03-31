@@ -20,43 +20,60 @@ Spolujízda je full-stack webová aplikace umožňující uživatelům:
 - **Hodnotit** - systém hodnocení pro budování důvěry
 - **Spravovat** - kompletní správa jízd, rezervací a vozového parku
 
-## ✨ Funkce
+## ✨ Implemented Features
 
 ### 👤 Uživatelský účet
 - ✅ Registrace a přihlášení s JWT autentizací
-- ✅ Správa profilu (jméno, bio, profilová fotka)
+- ✅ Email verifikace při registraci
+- ✅ Resetování hesla přes email
+- ✅ Správa profilu (jméno, příjmení, bio)
 - ✅ Změna hesla
-- ✅ Správa vozového parku
-- ✅ Blokování uživatelů
-- ✅ Historie jízd
+- ✅ Veřejné profily s hodnocením
 
 ### 🚗 Správa jízd
-- ✅ Vytvoření nové jízdy s detaily (místo, čas, cena, počet míst)
+- ✅ Vytvoření nové jízdy s detaily (odkud, kam, čas, cena, počet míst)
+- ✅ Podpora mezistanic na trase (waypoints s pořadím)
 - ✅ Výběr vozidla z osobního vozového parku
-- ✅ Správa rezervací (přijetí/odmítnutí pasažérů)
-- ✅ Zrušení jízdy
-- ✅ Přehled mých jízd s filtrováním podle stavu
+- ✅ Editace a zrušení jízdy (jen vlastníka)
+- ✅ Filtry: aktivní, všechny, ukončené, zrušené
+- ✅ Import/export mezistanic
 
 ### 🔍 Vyhledávání
-- ✅ Pokročilé vyhledávání podle místa, data a dalších kritérií
-- ✅ Zobrazení detailů jízdy včetně informací o řidiči a vozidle
-- ✅ Rezervace místa s možností přidat poznámku
+- ✅ Pokročilé vyhledávání podle trasy (odkud, kam), data a počtu míst
+- ✅ Full/partial match vyhledávání přes geocoding
+- ✅ Detaily jízdy včetně informací o řidiči a vozidle
+- ✅ Rezervace místa s poznámkou a výběrem doprovodních pasažérů
 
 ### 💬 Komunikace
-- ✅ Skupinový chat pro každou jízdu
-- ✅ Přístup pouze pro účastníky jízdy (řidič + přijatí pasažéři)
-- ✅ Real-time aktualizace zpráv (polling)
+- ✅ Skupinový chat pro každou jízdu (přístup jen pro řidiče + přijaté pasažéry)
 - ✅ Osobní chat mezi uživateli
+- ✅ Aktualizace zpráv (polling každých 3 sekundy)
+- ✅ Historie zpráv s paginací
 
 ### ⭐ Hodnocení
-- ✅ Hodnocení ostatních účastníků po skončení jízdy
+- ✅ Hodnocení ostatních účastníků (1-5 hvězdičky)
+- ✅ Textový komentář k hodnocení
 - ✅ Oddělené hodnocení pro role řidiče a pasažéra
-- ✅ Zobrazení průměrného hodnocení na profilu
+- ✅ Pending ratings po ukončení jízdy
+- ✅ Veřejné zobrazení průměrného hodnocení na profilu
 
 ### 🚙 Správa vozidel
-- ✅ Přidávání, úprava a mazání vozidel
+- ✅ Přidávání, úprava a softmazání vozidel
 - ✅ Nastavení primárního vozidla
 - ✅ Validace SPZ podle českých standardů
+- ✅ Nahrazení vozidla v aktivních jízdách
+
+### 🚫 Blokování a bezpečnost
+- ✅ Jednosměrné blokování uživatelů
+- ✅ Kontrola blokace v komunikaci
+- ✅ JWT autentizace
+- ✅ Bcrypt hashování hesel
+- ✅ CORS konfigurace
+
+### 🔔 Oznámení
+- ✅ Kategorizované oznámení: zprávy, rezervace, jízdy, hodnocení
+- ✅ Označení přečteno/nepřečteno
+- ✅ Backend připravený pro email notifikace
 
 ## 🛠 Technologie
 
@@ -131,42 +148,77 @@ Frontend běží na: `http://localhost:3000`
 
 ### Autentizace
 ```
-POST /api/auth/register - Registrace nového uživatele
-POST /api/auth/login - Přihlášení uživatele
-GET /api/auth/me - Získání informací o aktuálním uživateli
-PUT /api/auth/change-password - Změna hesla
+POST   /api/auth/register                - Registrace s email verifikací
+POST   /api/auth/login                   - Přihlášení (vrátí JWT token)
+GET    /api/auth/verify-email/<token>    - Ověření emailu
+POST   /api/auth/resend-verification     - Znovu poslat verification email
+POST   /api/auth/forgot-password         - Zaslat reset token
+GET    /api/auth/reset-password/<token>  - Ověřit reset token
+POST   /api/auth/reset-password          - Nastavit nové heslo
+GET    /api/auth/me                      - Aktuální uživatel (vyžaduje JWT)
+POST   /api/auth/change-password         - Změna hesla
 ```
 
 ### Jízdy
 ```
-GET /api/jizdy/vyhledat - Vyhledání jízd s filtry
-GET /api/jizdy/moje - Moje jízdy (jako řidič i pasažér)
-POST /api/jizdy - Vytvoření nové jízdy
-PUT /api/jizdy/{id} - Úprava jízdy
-DELETE /api/jizdy/{id} - Zrušení jízdy
+GET    /api/jizdy                        - Listing jízd s filtrováním
+GET    /api/jizdy/vyhledat               - Pokročilé vyhledávání (odkud, kam, datum)
+GET    /api/jizdy/<id>                   - Detail konkrétní jízdy
+POST   /api/jizdy                        - Vytvoření nové jízdy
+PUT    /api/jizdy/<id>                   - Úprava jízdy (jen vlastník)
+DELETE /api/jizdy/<id>                   - Zrušení jízdy (jen vlastník)
 ```
 
 ### Rezervace
 ```
-GET /api/rezervace/moje - Moje rezervace (odeslané i přijaté)
-POST /api/rezervace - Vytvoření rezervace
-PUT /api/rezervace/{id}/prijmout - Přijetí rezervace
-PUT /api/rezervace/{id}/odmitnout - Odmítnutí rezervace
-DELETE /api/rezervace/{id} - Zrušení rezervace
+POST   /api/rezervace                    - Vytvoření rezervace
+GET    /api/rezervace/moje               - Moje rezervace
+POST   /api/rezervace/<id>/prijmout      - Přijetí rezervace (řidič)
+POST   /api/rezervace/<id>/odmitnout     - Odmítnutí rezervace (řidič)
+PUT    /api/rezervace/<id>/zrusit        - Zrušení rezervace (pasažér)
+DELETE /api/rezervace/<id>               - Smazání rezervace
 ```
 
-### Vozidla
+### Hodnocení
 ```
-GET /api/auta/moje - Moje vozidla
-POST /api/auta - Přidání vozidla
-PUT /api/auta/{id} - Úprava vozidla
-DELETE /api/auta/{id} - Smazání vozidla
+POST   /api/hodnoceni                    - Vytvoření hodnocení
+GET    /api/hodnoceni/pending            - Čekající hodnocení
+GET    /api/hodnoceni/uzivatel/<id>      - Hodnocení konkrétního uživatele
+GET    /api/hodnoceni/moje               - Daná a přijatá hodnocení
+PUT    /api/hodnoceni/<id>               - Editace hodnocení
+DELETE /api/hodnoceni/<id>               - Smazání hodnocení
 ```
 
 ### Chat
 ```
-GET /api/chat/jizda/{id} - Získání zpráv chatu jízdy
-POST /api/chat/jizda/{id}/zprava - Odeslání zprávy do chatu jízdy
+GET    /api/chat/jizda/<id>              - Zprávy v chatu jízdy
+GET    /api/chat/osobni/<id>             - Zprávy v osobním chatu
+GET    /api/chat/moje                    - Seznam mých osobních chatů
+POST   /api/chat/<id>/zpravy             - Poslání zprávy
+GET    /api/chat/<id>/zpravy             - Načtení zpráv (s paginací)
+```
+
+### Vozidla
+```
+GET    /api/auta/moje                    - Moje vozidla
+POST   /api/auta/moje-nove               - Přidání vozidla
+PUT    /api/auta/<id>                    - Úprava vozidla
+DELETE /api/auta/<id>                    - Smazání vozidla (soft-delete)
+POST   /api/auta/replace/<id>            - Nahrazení vozidla v jízdách
+```
+
+### Ostatní
+```
+GET    /api/uzivatele/profil             - Můj profil
+PUT    /api/uzivatele/profil             - Úprava profilu
+GET    /api/uzivatele/<id>               - Veřejný profil uživatele
+GET    /api/uzivatele/hledat             - Hledání uživatelů
+GET    /api/blokace                      - Seznam blokovaných uživatelů
+POST   /api/blokace/<id>                 - Blokování uživatele
+DELETE /api/blokace/<id>                 - Odblokování uživatele
+GET    /api/oznameni                     - Moje oznámení
+POST   /api/oznameni/<id>/precist        - Označit oznámení jako přečtené
+GET    /api/mesta                        - Vyhledávání měst (geocoding)
 ```
 
 ## 🗄 Struktura databáze
@@ -189,20 +241,27 @@ Detailní diagramy najdete v složce `docs/`:
 
 ## 🔐 Bezpečnost
 
-- JWT tokeny pro autentizaci
-- Bcrypt hashování hesel
-- Validace vstupních dat
-- CORS konfigurace
-- Autorizace na úrovni endpointů
+- ✅ JWT tokeny pro autentizaci
+- ✅ Bcrypt hashování hesel
+- ✅ Validace vstupních dat
+- ✅ CORS konfigurace
+- ✅ Autorizace na úrovni endpointů
+- ✅ Email verifikace
 
-## 🎨 Design
+## ❌ Nezdůchodené/Chybějící funkce
 
-Aplikace využívá moderní design s:
-- Responzivní layout pro všechna zařízení
-- Gradientní pozadí a moderní UI komponenty
-- Intuitivní navigace a UX
-- Konzistentní barevná paleta
-- Smooth animace a přechody
+- ⚠️ **Real-time chat** - Jen polling (3 sek), WebSocket není implementován
+- ❌ **Platby/Monetizace** - Žádný payment gateway (Stripe, PayPal)
+- ❌ **Admin panel** - Žádný inspekční/správcovský interface
+- ❌ **Interaktivní mapy** - Jen textové vyhledávání, bez vizuální mapy tras
+- ❌ **SMS notifikace** - Jen email (a to není vidět v UI)
+- ❌ **Dva faktor ověřování** - Jen email verifikace
+- ❌ **Sociální přihlášení** - Jen Email/heslo
+- ❌ **Video/Voice chat** - Jen text chat
+- ❌ **Mobilní app** - Jen web
+- ❌ **Upload profilové fotky** - UI chybí (backend je připravený)
+- ❌ **Opakující se jízdy** - Jen one-time jízdy
+- ❌ **Recenze vozidla** - Jen hodnocení uživatelů
 
 ## 📱 Mobilní podpora
 
@@ -210,16 +269,6 @@ Frontend je plně responzivní a optimalizovaný pro:
 - Mobilní telefony (320px+)
 - Tablety (768px+)
 - Desktop (1024px+)
-
-## 🔄 Budoucí vylepšení
-
-- 🔄 WebSocket pro real-time chat
-- 📧 Email notifikace
-- 🗺 Integrace s mapami
-- 📊 Rozšířené analytics
-- 🌍 Lokalizace do více jazyků
-- 🔔 Push notifikace
-- 💳 Platební systém
 
 ## 🤝 Přispívání
 
@@ -235,128 +284,8 @@ Tento projekt je licencován pod MIT licencí - viz [LICENSE](LICENSE) soubor pr
 
 ## 👥 Tým
 
-- **Vývojář**: [Vaše jméno]
-- **Kontakt**: your.email@example.com
+- **Vývojář**: Martin Svoboda
 
 ---
 
-*Vytvořeno s ❤️ pro komunitu student a všechny, kdo chtějí sdílet cestu*
-Platforma pro sdílenou dopravu autem pro studenty (řidiči a pasažéři) do školy, kteří si mohou vytvářet jízdy, rezervovat si místo, komunikovat v chatu a hodnotit se navzájem. 
-
-## 🚀 Rychlé spuštění
-
-### Automatické spuštění (doporučeno)
-
-**Windows:**
-```cmd
-# Double-click na start.bat
-# nebo v PowerShell:
-.\start.ps1
-```
-
-**Linux/macOS:**
-```bash
-./start.sh
-```
-
-### Manuální spuštění
-
-Podrobný návod najdete v [SETUP.md](SETUP.md)
-
-### Backend (Flask)
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-python app.py
-```
-
-### Frontend (React)
-```bash
-cd frontend
-npm install
-npm start
-```
-
-Aplikace běží na http://localhost:3000
-
-## 🏗️ Architektura
-
-### Backend
-- **Flask** - Python web framework
-- **SQLAlchemy** - ORM pro databázi
-- **JWT** - Autentizace
-- **SQLite** - Databáze (vývoj)
-- **Flask-SocketIO** - WebSocket pro chat
-
-### Frontend
-- **React** - JavaScript framework
-- **React Router** - Routing
-- **Axios** - HTTP klient
-- **Context API** - State management
-
-## 📊 Databázový model
-
-Viz [docs/databaseDiagram.md](docs/databaseDiagram.md) pro PlantUML diagram
-
-## Frontend návrh
-### Sidebar (to, co je vidět na všech stránkách)
-- vlevo nahoře logo, které uživatele dostane na domovskou stránku
-- pod tím: Nabídnout jízdu, Vyhledat jízdu, Moje jízdy, Chat, JízdaChat
-- vpravo nahoře: vyhledat profil (lupa), oznámení (zvoneček), profil (fotka)
-    - profil rozbalí Můj profil, Nastavení, Odhlásit se
-
-### Domovská stránka
-- možnost vyhledat jízdu
-- pod tím nějaké info / fotka / ať to vypadá dobře
-
-### Nabídnout jízdu
-- odkud, kam, datum, čas odjezdu, čas příjezdu, počet míst, cena, poznámka, auto, možnost zadat více jízd najednou
-
-### Vyhledat jízdu
-- možnost vyhledat jízdu (stejné jako na domovské stránce) - odkud, kam, datum, počet pasažérů
-- pod tím v budoucnu např. navrhované jízdy nebo tak něco :D
-
-### Chat
-- nahoře najít profil (jako na ig)
-- pod tím prostě historie zpráv (jako v každé aplikaci, nejnovější nahoře)
-- kliknutí na chat -> chat se ukáže (vpravo, vlevo je stále bar všech chatů), je možnost psát, normální chat
-
-### JízdaChat
-- výběr aktuální jízdy / staré jízdy
-- pak stejně jako normální chat
-- vyhledat podle datumu / řidiče / spolucestujících
-
-### Moje jízdy
-- výběr aktuální / staré jízdy
-- zobrazují se moje zarezervované jízdy pod sebou (i ukázaný status - přijato, čeká na potvrzení, zamítnuto)
-- na každou jízdu se dá kliknout a ukážou se podrobnosti, odkaz na chat. Celé info je pouze rozbalené, není to jiná stránka
-
-### Můj profil
-- údaje o sobě, fotka, atd.
-- hodnocení jako řidič, jako spolucestující (počet hvězdiček, po kliknutí odkaz na Hodnocení)
-- možnost upravit profil, historie jízd
-
-### Cizí profil
-- stejný jako Můj profil, ale není vidět historie jízd a upravit profil
-- možnost zablokovat, poslat zprávu 
-
-### Hodnocení
-- nahoře možnost vybrat hodnocení jako řidič / pasažér
-- jsou vidět všechna hodnocení (počet hvězdiček i text). Zobrazuje se od nejnovějšího, nicméně nahoře jsou ta hodnocení, která mají text, hodnocení bez textu jsou až pod nimi
-- jsou tam statistiky (počet hodnocení, průměr...)
-
-### Nastavení
-- prostě nastavení (dark mode atd.)
-
-### Co když se někdo připojí bez loginu
-- uvidí vše stejně, ale kliknout může jen na vyhledat jízdu, a Nastavení vše ostatní jej hodí na login
-- po kliknutí na profil se zobrazí Přihlásit, Registrovat
-
-### Login
-- klasický login - email, heslo, zapomenuté heslo, Nemáš účet?, pokračovat jako host
-
-### Regitrace
-- klasická registrace - jméno, prijimeni, mail, datum narozeni, fotka, atd. Neco povinne, neco ne. Heslo.
-- registrace pujde pres mail - nutnost overit
+*Vytvořeno s ❤️ pro všechny, kdo chtějí sdílet cestu*
