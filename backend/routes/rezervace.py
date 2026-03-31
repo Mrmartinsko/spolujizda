@@ -6,6 +6,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from models import db
 from models.jizda import Jizda
 from models.rezervace import Rezervace
+from utils.api import error_response, get_json_data, get_str_field, parse_positive_int
+from utils.datetime_utils import utc_now
 from utils.notifications import vytvorit_oznameni
 from utils.pending_ratings import sync_pending_ratings_for_user
 from utils.reservations import annotate_waiting_queue_positions
@@ -61,23 +63,25 @@ def _get_user_display_name(uzivatel):
 @jwt_required()
 def create_rezervace():
     uzivatel_id = int(get_jwt_identity())
-    data = request.get_json() or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
     if "jizda_id" not in data:
-        return jsonify({"error": "ID jizdy je povinne"}), 400
+        return error_response("ID jizdy je povinne")
 
-    jizda_id = data["jizda_id"]
-    pocet_mist = data.get("pocet_mist", 1)
+    jizda_id, ride_error = parse_positive_int(data.get("jizda_id"), "jizda_id")
+    if ride_error:
+        return error_response(ride_error)
+
+    pocet_mist, seats_error = parse_positive_int(data.get("pocet_mist", 1), "pocet_mist")
+    if seats_error:
+        return error_response(seats_error)
+
     dalsi_pasazeri = data.get("dalsi_pasazeri", [])
-    poznamka = data.get("poznamka", "")
-
-    try:
-        pocet_mist = int(pocet_mist)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Pocet mist musi byt cele cislo"}), 400
-
-    if pocet_mist <= 0:
-        return jsonify({"error": "Pocet mist musi byt alespon 1"}), 400
+    poznamka, note_error = get_str_field(data, "poznamka")
+    if note_error:
+        return error_response(note_error)
 
     dalsi_pasazeri, chyba_dalsich_pasazeru = _validate_dalsi_pasazeri(
         dalsi_pasazeri, pocet_mist
@@ -94,13 +98,16 @@ def create_rezervace():
             }
         ), 403
 
-    jizda = Jizda.query.get(jizda_id)
+    jizda = db.session.get(Jizda, jizda_id)
     if not jizda:
-        return jsonify({"error": "Jizda nenalezena"}), 404
+        return error_response("Jizda nenalezena", 404)
+
+    if jizda.status in {"zrusena", "dokoncena"}:
+        return error_response("Rezervaci lze vytvorit jen pro aktivni jizdu")
 
     muze, zprava = jizda.muze_rezervovat(uzivatel_id, pocet_mist)
     if not muze:
-        return jsonify({"error": zprava}), 400
+        return error_response(zprava)
 
     existujici = (
         Rezervace.query.filter_by(uzivatel_id=uzivatel_id, jizda_id=jizda_id)
@@ -161,15 +168,23 @@ def prijmout_rezervaci(rezervace_id):
     jizda = Jizda.query.filter_by(id=rezervace.jizda_id).with_for_update().first()
 
     if rezervace.jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemate opravneni prijmout tuto rezervaci"}), 403
+        return error_response("Nemate opravneni prijmout tuto rezervaci", 403)
 
     if rezervace.status != "cekajici":
-        return jsonify({"error": "Rezervace jiz byla zpracovana"}), 400
+        return error_response("Rezervace jiz byla zpracovana")
 
     try:
-        if not jizda or not jizda.ma_dostatek_volnych_mist(rezervace.pocet_mist):
+        if not jizda:
             db.session.rollback()
-            return jsonify({"error": "Jizda je plne obsazena"}), 400
+            return error_response("Jizda nenalezena", 404)
+
+        if jizda.status in {"zrusena", "dokoncena"}:
+            db.session.rollback()
+            return error_response("Rezervaci lze prijmout jen u aktivni jizdy")
+
+        if not jizda.ma_dostatek_volnych_mist(rezervace.pocet_mist):
+            db.session.rollback()
+            return error_response("Jizda je plne obsazena")
 
         rezervace.prijmout()
         vytvorit_oznameni(
@@ -201,10 +216,13 @@ def odmitnout_rezervaci(rezervace_id):
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
     if rezervace.jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemate opravneni odmitnout tuto rezervaci"}), 403
+        return error_response("Nemate opravneni odmitnout tuto rezervaci", 403)
 
     if rezervace.status != "cekajici":
-        return jsonify({"error": "Rezervace jiz byla zpracovana"}), 400
+        return error_response("Rezervace jiz byla zpracovana")
+
+    if rezervace.jizda.status in {"zrusena", "dokoncena"}:
+        return error_response("Rezervaci lze odmitnout jen u aktivni jizdy")
 
     try:
         rezervace.odmitnout()
@@ -237,15 +255,15 @@ def zrusit_rezervaci(rezervace_id):
     rez = Rezervace.query.get_or_404(rezervace_id)
 
     if rez.uzivatel_id != user_id:
-        return jsonify({"error": "Nemas opravneni rusit tuto rezervaci."}), 403
+        return error_response("Nemas opravneni rusit tuto rezervaci.", 403)
 
     jizda = rez.jizda
     if jizda.status != "aktivni":
-        return jsonify({"error": "Jizda neni aktivni, nelze ji opustit."}), 400
+        return error_response("Jizda neni aktivni, nelze ji opustit.")
 
-    now = datetime.now()
+    now = utc_now()
     if now > (jizda.cas_odjezdu - timedelta(hours=1)):
-        return jsonify({"error": "Jizdu lze opustit nejpozdeji 1 hodinu pred odjezdem."}), 400
+        return error_response("Jizdu lze opustit nejpozdeji 1 hodinu pred odjezdem.")
 
     rez.status = "zrusena"
     pasazer = next((u for u in jizda.pasazeri if u.id == user_id), None)

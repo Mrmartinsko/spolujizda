@@ -5,6 +5,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import PersonalChat from '../components/chat/PersonalChat';
 import Alert from '../components/ui/Alert';
 import api from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import './MojeOsobniChaty.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,7 +32,7 @@ const formatTime = (dateString) => {
   const time = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
   if (isToday) return time;
-  if (isYesterday) return `Včera`;
+  if (isYesterday) return 'Vcera';
   return date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' });
 };
 
@@ -66,8 +67,7 @@ const MojeOsobniChaty = () => {
       setChaty(sortChatsByLatest(response.data.osobni_chaty || []));
       setError('');
     } catch (requestError) {
-      console.error(requestError);
-      setError('Chaty se nepodařilo načíst.');
+      setError(getApiErrorMessage(requestError, 'Chaty se nepodarilo nacist.'));
     } finally {
       setLoading(false);
       setListRefreshing(false);
@@ -113,8 +113,7 @@ const MojeOsobniChaty = () => {
         navigate('/moje-chaty', { replace: true });
       }
     } catch (requestError) {
-      console.error(requestError);
-      setError('Chat se nepodařilo smazat.');
+      setError(getApiErrorMessage(requestError, 'Chat se nepodarilo smazat.'));
     }
   };
 
@@ -122,7 +121,7 @@ const MojeOsobniChaty = () => {
     return (
       <div className="chat-workspace-loading">
         <div className="chat-workspace-loading__spinner" />
-        <p>Načítám chaty…</p>
+        <p>Nacitam chaty...</p>
       </div>
     );
   }
@@ -133,25 +132,25 @@ const MojeOsobniChaty = () => {
         <div className="chat-sidebar__header">
           <div>
             <h1>Chaty</h1>
-            <p>Poslední konverzace máte vždy nahoře.</p>
+            <p>Posledni konverzace mate vzdy nahore.</p>
           </div>
-          {listRefreshing && <span className="chat-sidebar__refresh">Aktualizuji…</span>}
+          {listRefreshing && <span className="chat-sidebar__refresh">Aktualizuji...</span>}
         </div>
 
         {error && <Alert variant="error">{error}</Alert>}
 
         {chaty.length === 0 ? (
           <div className="chat-sidebar__empty">
-            Zatím tu není žádná konverzace. Jakmile si s někým napíšete, objeví se právě tady.
+            Zatim tu neni zadna konverzace. Jakmile si s nekym napisete, objevi se prave tady.
           </div>
         ) : (
           <div className="chat-sidebar__list">
             {chaty.map((chat) => {
               const druhyUzivatel = chat.ucastnici?.find((u) => u.id !== user.id);
               const druhyUzivatelId = druhyUzivatel?.id;
-              const username = resolveUsername(druhyUzivatel) || `Uživatel #${druhyUzivatelId}`;
+              const username = resolveUsername(druhyUzivatel) || `Uzivatel #${druhyUzivatelId}`;
               const posledniZprava = chat.posledni_zprava;
-              const previewText = posledniZprava?.text || 'Zatím bez zprávy';
+              const previewText = posledniZprava?.text || 'Zatim bez zpravy';
               const previewPrefix =
                 posledniZprava?.odesilatel?.id === user.id
                   ? 'Vy: '
@@ -213,7 +212,7 @@ const MojeOsobniChaty = () => {
               <MessageCircleMore size={24} />
             </div>
             <h2>Vyberte konverzaci</h2>
-            <p>Vlevo otevřete chat a navážete tam, kde jste naposledy skončili.</p>
+            <p>Vlevo otevrete chat a navazete tam, kde jste naposledy skoncili.</p>
           </div>
         )}
       </section>

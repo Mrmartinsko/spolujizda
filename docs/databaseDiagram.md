@@ -1,35 +1,39 @@
 ```plantuml
-
 @startuml
+
+' Databazovy diagram podle aktualnich SQLAlchemy modelu.
+' Blokace je zamerne vynechana.
 
 entity Uzivatel {
     +id: int
     +email: string
     +heslo: string
+    +email_verified: bool
+    +email_verified_at: datetime
+    +email_verification_token: string
+    +email_verification_expires_at: datetime
+    +password_reset_token: string
+    +password_reset_expires_at: datetime
+}
+
+entity Profil {
+    +id: int
+    +uzivatel_id: int
     +jmeno: string
-    +bio: string
+    +bio: text
     +fotka: string
 }
 
 entity Auto {
     +id: int
-    +uzivatel_id: int
+    +profil_id: int
     +znacka: string
     +model: string
     +barva: string
     +spz: string
     +primarni: bool
     +docasne: bool
-}
-
-entity Hodnoceni {
-    +id: int
-    +autor_id: int
-    +cilovy_uzivatel_id: int
-    +role: string  ' "ridic" nebo "pasazer" '
-    +znamka: int
-    +komentar: string
-    +datum: datetime
+    +smazane: bool
 }
 
 entity Jizda {
@@ -37,12 +41,25 @@ entity Jizda {
     +ridic_id: int
     +auto_id: int
     +odkud: string
+    +odkud_place_id: string
+    +odkud_address: string
     +kam: string
-    +casOdjezdu: datetime
-    +casPrijezdu: datetime
+    +kam_place_id: string
+    +kam_address: string
+    +cas_odjezdu: datetime
+    +cas_prijezdu: datetime
     +cena: float
-    +pocetMist: int
+    +pocet_mist: int
     +status: string
+}
+
+entity Mezistanice {
+    +id: int
+    +jizda_id: int
+    +misto: string
+    +misto_place_id: string
+    +misto_address: string
+    +poradi: int
 }
 
 entity Pasazeri {
@@ -54,7 +71,10 @@ entity Rezervace {
     +id: int
     +uzivatel_id: int
     +jizda_id: int
-    +poznamka: string
+    +pocet_mist: int
+    +dalsi_pasazeri: text
+    +poznamka: text
+    +vytvoreno: datetime
     +status: string
 }
 
@@ -72,34 +92,66 @@ entity Zprava {
     +id: int
     +chat_id: int
     +odesilatel_id: int
-    +text: string
+    +text: text
     +cas: datetime
 }
 
-entity Blokace {
-    +blokujici_id: int
-    +blokovany_id: int
+entity Hodnoceni {
+    +id: int
+    +jizda_id: int
+    +autor_id: int
+    +cilovy_uzivatel_id: int
+    +role: string
+    +znamka: int
+    +komentar: text
+    +datum: datetime
 }
 
-Uzivatel ||--o{ Auto : vlastni
-Uzivatel ||--o{ Hodnoceni : napsal
-Uzivatel ||--o{ Hodnoceni : obdrzel
-Uzivatel ||--o{ Rezervace
-Uzivatel ||--o{ Jizda : jako ridic
-Uzivatel ||--o{ Pasazeri : jako pasazer
-Uzivatel ||--o{ Zprava : poslal
+entity Oznameni {
+    +id: int
+    +prijemce_id: int
+    +odesilatel_id: int
+    +cilovy_uzivatel_id: int
+    +jizda_id: int
+    +rezervace_id: int
+    +zprava: string
+    +typ: string
+    +kategorie: string
+    +target_path: string
+    +unikatni_klic: string
+    +datum: datetime
+    +precteno: bool
+}
+
+Uzivatel ||--|| Profil
+Profil ||--o{ Auto
+
+Uzivatel ||--o{ Jizda : ridic_id
+Auto o|--o{ Jizda : auto_id
+Jizda ||--o{ Mezistanice
+
+Uzivatel ||--o{ Rezervace : uzivatel_id
+Jizda ||--o{ Rezervace : jizda_id
+
+Uzivatel ||--o{ Pasazeri : pasazer_id
+Jizda ||--o{ Pasazeri : jizda_id
+
+Jizda ||--o| Chat : jizda_id
+Chat ||--o{ Zprava
+Uzivatel ||--o{ Zprava : odesilatel_id
+
+Chat ||--o{ UcastniciChatu
 Uzivatel ||--o{ UcastniciChatu
 
-Jizda ||--o{ Rezervace
-Jizda ||--o{ Pasazeri
-Jizda ||--o{ Chat
+Uzivatel ||--o{ Hodnoceni : autor_id
+Uzivatel ||--o{ Hodnoceni : cilovy_uzivatel_id
+Jizda ||--o{ Hodnoceni : jizda_id
 
-Chat ||--o{ Zprava
-Chat ||--o{ UcastniciChatu
-
-Uzivatel ||--o{ Blokace : blokuje
-Uzivatel ||--o{ Blokace : je blokovan
+Uzivatel ||--o{ Oznameni : prijemce_id
+Uzivatel |o--o{ Oznameni : odesilatel_id
+Uzivatel |o--o{ Oznameni : cilovy_uzivatel_id
+Jizda |o--o{ Oznameni : jizda_id
+Rezervace |o--o{ Oznameni : rezervace_id
 
 @enduml
-
 ```

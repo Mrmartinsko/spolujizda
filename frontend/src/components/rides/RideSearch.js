@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import axios from 'axios';
+import { getApiErrorMessage } from '../../utils/apiError';
 import LocationAutocompleteInput from './LocationAutocompleteInput';
 import RideList from './RideList';
 import Alert from '../ui/Alert';
@@ -42,8 +43,19 @@ const RideSearch = ({ onSearchResults }) => {
   };
 
   const runSearch = async () => {
-    if (!searchData.odkud || !searchData.kam || !searchData.datum) {
-      setError('Vyplňte odkud, kam a datum odjezdu.');
+    const odkud = (searchData.odkud || '').trim();
+    const kam = (searchData.kam || '').trim();
+    const pocetPasazeru = Number(searchData.pocet_pasazeru);
+
+    if (!odkud || !kam || !searchData.datum) {
+      setError('Vyplnte odkud, kam a datum odjezdu.');
+      setHasSearched(true);
+      setSearchResults([]);
+      return;
+    }
+
+    if (!Number.isInteger(pocetPasazeru) || pocetPasazeru <= 0) {
+      setError('Zadejte platny pocet mist.');
       setHasSearched(true);
       setSearchResults([]);
       return;
@@ -56,12 +68,12 @@ const RideSearch = ({ onSearchResults }) => {
     try {
       const response = await axios.get('http://localhost:5000/api/jizdy/vyhledat', {
         params: {
-          odkud: searchData.odkud,
+          odkud,
           odkud_place_id: searchData.odkud_place_id,
-          kam: searchData.kam,
+          kam,
           kam_place_id: searchData.kam_place_id,
           datum: searchData.datum,
-          pocet_pasazeru: searchData.pocet_pasazeru,
+          pocet_pasazeru: pocetPasazeru,
         },
       });
 
@@ -77,7 +89,7 @@ const RideSearch = ({ onSearchResults }) => {
       setSearchResults(aktualniJizdy);
       if (onSearchResults) onSearchResults(aktualniJizdy);
     } catch (err) {
-      setError(err.response?.data?.error || 'Vyhledávání jízd se nepovedlo.');
+      setError(getApiErrorMessage(err, 'Vyhledavani jizd se nepovedlo.'));
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -94,8 +106,8 @@ const RideSearch = ({ onSearchResults }) => {
       <Card className="ride-search__card">
         <div className="ui-card__header">
           <div>
-            <h2 className="ui-card__title">Najít vhodnou jízdu</h2>
-            <p className="ui-card__subtitle">Vyberte trasu, datum a počet míst. O zbytek se postará aplikace.</p>
+            <h2 className="ui-card__title">Najit vhodnou jizdu</h2>
+            <p className="ui-card__subtitle">Vyberte trasu, datum a pocet mist. O zbytek se postara aplikace.</p>
           </div>
         </div>
 
@@ -108,7 +120,7 @@ const RideSearch = ({ onSearchResults }) => {
               name="odkud"
               value={searchData.odkud}
               onChange={handleLocationChange}
-              placeholder="Např. Brno"
+              placeholder="Napriklad Brno"
             />
 
             <LocationAutocompleteInput
@@ -116,7 +128,7 @@ const RideSearch = ({ onSearchResults }) => {
               name="kam"
               value={searchData.kam}
               onChange={handleLocationChange}
-              placeholder="Např. Praha"
+              placeholder="Napriklad Praha"
             />
 
             <div className="field-group">
@@ -128,7 +140,7 @@ const RideSearch = ({ onSearchResults }) => {
 
             <div className="field-group">
               <label className="field-label" htmlFor="pocet_pasazeru">
-                Počet míst
+                Pocet mist
               </label>
               <input
                 id="pocet_pasazeru"
@@ -144,7 +156,7 @@ const RideSearch = ({ onSearchResults }) => {
 
             <Button type="submit" className="ride-search__submit" disabled={loading}>
               <Search size={16} />
-              {loading ? 'Hledám…' : 'Vyhledat'}
+              {loading ? 'Hledam...' : 'Vyhledat'}
             </Button>
           </div>
         </form>
@@ -154,13 +166,13 @@ const RideSearch = ({ onSearchResults }) => {
         <div className="results-section">
           <div className="section-heading">
             <div>
-              <h2>Výsledky vyhledávání</h2>
-              <p className="ride-search__results-copy">{searchResults.length} odpovídajících jízd</p>
+              <h2>Vysledky vyhledavani</h2>
+              <p className="ride-search__results-copy">{searchResults.length} odpovidajicich jizd</p>
             </div>
           </div>
 
           {loading ? (
-            <Card className="no-results">Načítám výsledky…</Card>
+            <Card className="no-results">Nacitam vysledky...</Card>
           ) : searchResults.length > 0 ? (
             <RideList
               rides={searchResults}
@@ -169,7 +181,7 @@ const RideSearch = ({ onSearchResults }) => {
             />
           ) : (
             <Card className="no-results">
-              Žádná vhodná jízda se teď nenašla. Zkuste jiný čas, trasu nebo nabídněte vlastní spoj.
+              Zadna vhodna jizda se ted nenasla. Zkuste jiny cas, trasu nebo nabidnete vlastni spoj.
             </Card>
           )}
         </div>

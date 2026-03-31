@@ -1,5 +1,5 @@
-from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 class Oznameni(db.Model):
     __tablename__ = 'oznameni'
@@ -15,7 +15,7 @@ class Oznameni(db.Model):
     rezervace_id = db.Column(db.Integer, db.ForeignKey('rezervace.id'))
     cilovy_uzivatel_id = db.Column(db.Integer, db.ForeignKey('uzivatel.id'))
     unikatni_klic = db.Column(db.String(120), unique=True, nullable=True, index=True)
-    datum = db.Column(db.DateTime, default=datetime.utcnow)
+    datum = db.Column(db.DateTime, default=utc_now)
     precteno = db.Column(db.Boolean, default=False)
 
     prijemce = db.relationship("Uzivatel", foreign_keys=[prijemce_id], backref="prijata_oznameni")

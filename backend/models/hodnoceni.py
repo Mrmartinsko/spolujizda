@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class Hodnoceni(db.Model):
@@ -18,7 +17,7 @@ class Hodnoceni(db.Model):
     role = db.Column(db.String(10), nullable=False)  # 'ridic' nebo 'pasazer'
     znamka = db.Column(db.Integer, nullable=False)  # 1-5
     komentar = db.Column(db.Text)
-    datum = db.Column(db.DateTime, default=datetime.utcnow)
+    datum = db.Column(db.DateTime, default=utc_now)
 
     __table_args__ = (
         db.UniqueConstraint(

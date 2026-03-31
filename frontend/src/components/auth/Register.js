@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../utils/apiError';
 import Alert from '../ui/Alert';
 import Button from '../ui/Button';
 import './Auth.css';
@@ -30,34 +31,34 @@ const Register = () => {
     setError('');
 
     const jmeno = (formData.jmeno || '').trim();
-    const email = (formData.email || '').trim();
+    const email = (formData.email || '').trim().toLowerCase();
     const telefon = (formData.telefon || '').trim();
     const password = formData.password || '';
     const confirmPassword = formData.confirmPassword || '';
     const phoneRegex = /^(?:\+\d{1,3}[\s-]?)?(?:\d{3}[\s-]?){2}\d{3}$/;
 
     if (!jmeno || !email || !telefon || !password || !confirmPassword) {
-      setError('Vyplňte všechna pole.');
+      setError('VyplĹte vĹˇechna pole.');
       return;
     }
 
-    if (jmeno.length > 20) {
-      setError('Jméno může mít maximálně 20 znaků.');
+    if (jmeno.length > 50) {
+      setError('Jmeno muze mit maximalne 50 znaku.');
       return;
     }
 
     if (!phoneRegex.test(telefon)) {
-      setError('Telefon zadejte třeba ve formátu +420 123 456 789.');
+      setError('Telefon zadejte treba ve formatu +420 123 456 789.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Hesla se neshodují.');
+      setError('Hesla se neshoduji.');
       return;
     }
 
     if (password.length < 6) {
-      setError('Heslo musí mít alespoň 6 znaků.');
+      setError('Heslo musi mit alespon 6 znaku.');
       return;
     }
 
@@ -73,8 +74,7 @@ const Register = () => {
 
       navigate('/verify-email', { state: { email } });
     } catch (err) {
-      const data = err.response?.data;
-      setError(data?.error || 'Registrace se nepovedla.');
+      setError(getApiErrorMessage(err, 'Registrace se nepovedla.'));
     } finally {
       setLoading(false);
     }
@@ -86,22 +86,22 @@ const Register = () => {
         <div className="auth-card">
           <aside className="auth-aside">
             <div className="auth-brand">S</div>
-            <span className="auth-kicker">Nový účet</span>
-            <h1>Připojte se ke školní komunitě na cestách</h1>
+            <span className="auth-kicker">NovĂ˝ ĂşÄŤet</span>
+            <h1>PĹ™ipojte se ke ĹˇkolnĂ­ komunitÄ› na cestĂˇch</h1>
             <p>
-              Po registraci budete moct rovnou nabízet jízdy, rezervovat místa a psát ostatním bez zbytečných kroků navíc.
+              Po registraci budete moct rovnou nabĂ­zet jĂ­zdy, rezervovat mĂ­sta a psĂˇt ostatnĂ­m bez zbyteÄŤnĂ˝ch krokĹŻ navĂ­c.
             </p>
             <div className="auth-points">
-              <div className="auth-point">Ověřený email pro bezpečnější domluvu.</div>
-              <div className="auth-point">Jednotný přehled jízd, aut i rezervací.</div>
-              <div className="auth-point">Jednoduché hodnocení po dokončení cesty.</div>
+              <div className="auth-point">OvÄ›Ĺ™enĂ˝ email pro bezpeÄŤnÄ›jĹˇĂ­ domluvu.</div>
+              <div className="auth-point">JednotnĂ˝ pĹ™ehled jĂ­zd, aut i rezervacĂ­.</div>
+              <div className="auth-point">JednoduchĂ© hodnocenĂ­ po dokonÄŤenĂ­ cesty.</div>
             </div>
           </aside>
 
           <section className="auth-form-panel">
             <div className="auth-header">
               <h2>Registrace</h2>
-              <p>Stačí pár údajů a účet bude připravený během chvilky.</p>
+              <p>StaÄŤĂ­ pĂˇr ĂşdajĹŻ a ĂşÄŤet bude pĹ™ipravenĂ˝ bÄ›hem chvilky.</p>
             </div>
 
             {error && <Alert variant="error">{error}</Alert>}
@@ -109,9 +109,9 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="field-group">
                 <label className="field-label" htmlFor="jmeno">
-                  Uživatelské jméno
+                  UĹľivatelskĂ© jmĂ©no
                 </label>
-                <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleChange} required maxLength={20} placeholder="Např. Jana Nováková" />
+                <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleChange} required maxLength={50} placeholder="NapĹ™. Jana NovĂˇkovĂˇ" />
               </div>
 
               <div className="field-group">
@@ -132,26 +132,26 @@ const Register = () => {
                 <label className="field-label" htmlFor="password">
                   Heslo
                 </label>
-                <input className="ui-input" type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Minimálně 6 znaků" />
+                <input className="ui-input" type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="MinimĂˇlnÄ› 6 znakĹŻ" />
               </div>
 
               <div className="field-group">
                 <label className="field-label" htmlFor="confirmPassword">
-                  Potvrzení hesla
+                  PotvrzenĂ­ hesla
                 </label>
                 <input className="ui-input" type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Zadejte heslo znovu" />
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? 'Vytvářím účet…' : 'Vytvořit účet'}
+                {loading ? 'VytvĂˇĹ™Ă­m ĂşÄŤetâ€¦' : 'VytvoĹ™it ĂşÄŤet'}
               </Button>
             </form>
 
             <div className="auth-footer">
               <p>
-                Už účet máte?
+                UĹľ ĂşÄŤet mĂˇte?
                 <Link to="/login" className="auth-link">
-                  Přihlaste se
+                  PĹ™ihlaste se
                 </Link>
               </p>
             </div>

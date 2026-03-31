@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from logging import getLogger
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
@@ -8,12 +8,15 @@ from models import db
 from models.profil import Profil
 from models.uzivatel import Uzivatel
 from utils.auth_tokens import generate_token_with_expiration
+from utils.api import error_response, get_json_data, get_str_field
+from utils.datetime_utils import utc_now
 from utils.email_verification import generate_email_verification
 from utils.mailer import send_password_reset_email, send_verification_email
 from utils.validators import validate_email, validate_password, validate_phone
 
 
 auth_bp = Blueprint("auth", __name__)
+logger = getLogger(__name__)
 
 
 def _get_frontend_url():
@@ -22,44 +25,48 @@ def _get_frontend_url():
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    data = request.get_json(silent=True) or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if (
-        not data
-        or not data.get("email")
-        or not data.get("password")
-        or not data.get("jmeno")
-        or not data.get("telefon")
-    ):
-        return jsonify({"error": "Email, heslo, uzivatelske jmeno a telefon jsou povinne"}), 400
+    email, email_error = get_str_field(data, "email", required=True)
+    if email_error:
+        return error_response(email_error)
 
-    email = data["email"].lower().strip()
-    heslo = data["password"]
-    jmeno = data["jmeno"].strip()
-    telefon = data["telefon"].strip()
-    bio = data.get("bio", "")
+    heslo, password_error = get_str_field(data, "password", required=True)
+    if password_error:
+        return error_response(password_error)
+
+    jmeno, name_error = get_str_field(data, "jmeno", required=True, max_length=50)
+    if name_error:
+        return error_response(name_error)
+
+    telefon, phone_error = get_str_field(data, "telefon", required=True)
+    if phone_error:
+        return error_response(phone_error)
+
+    bio, bio_error = get_str_field(data, "bio", max_length=500)
+    if bio_error:
+        return error_response(bio_error)
+
+    email = email.lower()
+    bio = bio or ""
 
     if not validate_email(email):
-        return jsonify({"error": "Neplatny format emailu"}), 400
+        return error_response("Neplatny format emailu")
 
     if not validate_password(heslo):
-        return jsonify({"error": "Heslo musi mit alespon 6 znaku"}), 400
+        return error_response("Heslo musi mit alespon 6 znaku")
 
     if not validate_phone(telefon):
-        return jsonify({"error": "Telefon musi byt ve formatu napr. +420 123 456 789"}), 400
-
-    if not jmeno:
-        return jsonify({"error": "Uzivatelske jmeno je povinne"}), 400
-
-    if len(jmeno) > 20:
-        return jsonify({"error": "Uzivatelske jmeno muze mit maximalne 20 znaku."}), 400
+        return error_response("Telefon musi byt ve formatu napr. +420 123 456 789")
 
     if Uzivatel.query.filter_by(email=email).first():
-        return jsonify({"error": "Uzivatel s timto emailem jiz existuje"}), 400
+        return error_response("Uzivatel s timto emailem jiz existuje")
 
     existing_profile = Profil.query.filter(db.func.lower(Profil.jmeno) == jmeno.lower()).first()
     if existing_profile:
-        return jsonify({"error": "Toto uzivatelske jmeno je jiz obsazene."}), 400
+        return error_response("Toto uzivatelske jmeno je jiz obsazene.")
 
     try:
         uzivatel = Uzivatel(email=email, heslo=heslo)
@@ -78,7 +85,6 @@ def register():
         db.session.commit()
 
         verify_url = f"{_get_frontend_url()}/verify-email/{token}"
-        print(f"VERIFY LINK: {verify_url}")
         send_verification_email(email, verify_url)
 
         return jsonify(
@@ -89,21 +95,27 @@ def register():
             }
         ), 201
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        print(f"Chyba pri registraci: {e}")
-        return jsonify({"error": f"Chyba pri registraci: {str(e)}"}), 500
+        logger.exception("Chyba pri registraci")
+        return error_response("Chyba pri registraci", 500)
 
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    data = request.get_json(silent=True) or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if not data.get("email") or not data.get("password"):
-        return jsonify({"error": "Email a heslo jsou povinne"}), 400
+    email, email_error = get_str_field(data, "email", required=True)
+    if email_error:
+        return error_response(email_error)
 
-    email = data["email"].lower().strip()
-    heslo = data["password"]
+    heslo, password_error = get_str_field(data, "password", required=True)
+    if password_error:
+        return error_response(password_error)
+
+    email = email.lower()
 
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
@@ -132,11 +144,14 @@ def login():
 
 @auth_bp.route("/resend-verification", methods=["POST"])
 def resend_verification():
-    data = request.get_json(silent=True) or {}
-    email = (data.get("email") or "").lower().strip()
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if not email:
-        return jsonify({"error": "Email je povinny"}), 400
+    email, email_error = get_str_field(data, "email", required=True)
+    if email_error:
+        return error_response(email_error)
+    email = email.lower()
 
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
@@ -150,7 +165,7 @@ def resend_verification():
         if (
             uzivatel.email_verification_token
             and uzivatel.email_verification_expires_at
-            and uzivatel.email_verification_expires_at > datetime.utcnow()
+            and uzivatel.email_verification_expires_at > utc_now()
         ):
             token = uzivatel.email_verification_token
         else:
@@ -160,7 +175,6 @@ def resend_verification():
             db.session.commit()
 
         verify_url = f"{_get_frontend_url()}/verify-email/{token}"
-        print(f"VERIFY LINK (RESEND): {verify_url}")
         send_verification_email(email, verify_url)
 
         return jsonify({"message": "Pokud ucet existuje, overovaci email byl odeslan"}), 200
@@ -184,13 +198,13 @@ def verify_email(token):
 
     if (
         not uzivatel.email_verification_expires_at
-        or uzivatel.email_verification_expires_at < datetime.utcnow()
+        or uzivatel.email_verification_expires_at < utc_now()
     ):
         return jsonify({"error": "Token vyprsel"}), 400
 
     try:
         uzivatel.email_verified = True
-        uzivatel.email_verified_at = datetime.utcnow()
+        uzivatel.email_verified_at = utc_now()
         uzivatel.email_verification_token = None
         uzivatel.email_verification_expires_at = None
         db.session.commit()
@@ -203,11 +217,14 @@ def verify_email(token):
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
-    data = request.get_json(silent=True) or {}
-    email = (data.get("email") or "").lower().strip()
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if not email:
-        return jsonify({"error": "Email je povinny"}), 400
+    email, email_error = get_str_field(data, "email", required=True)
+    if email_error:
+        return error_response(email_error)
+    email = email.lower()
 
     if not validate_email(email):
         return jsonify({"error": "Neplatny format emailu"}), 400
@@ -225,7 +242,6 @@ def forgot_password():
         db.session.commit()
 
         reset_url = f"{_get_frontend_url()}/reset-password/{token}"
-        print(f"RESET PASSWORD LINK: {reset_url}")
         send_password_reset_email(email, reset_url)
 
         return jsonify({"message": safe_message}), 200
@@ -246,7 +262,7 @@ def verify_reset_password_token(token):
 
     if (
         not uzivatel.password_reset_expires_at
-        or uzivatel.password_reset_expires_at < datetime.utcnow()
+        or uzivatel.password_reset_expires_at < utc_now()
     ):
         return jsonify({"error": "Token vyprsel"}), 400
 
@@ -255,12 +271,17 @@ def verify_reset_password_token(token):
 
 @auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
-    data = request.get_json(silent=True) or {}
-    token = (data.get("token") or "").strip()
-    new_password = data.get("new_password") or ""
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if not token or not new_password:
-        return jsonify({"error": "Token a nove heslo jsou povinne"}), 400
+    token, token_error = get_str_field(data, "token", required=True)
+    if token_error:
+        return error_response(token_error)
+
+    new_password, password_error = get_str_field(data, "new_password", required=True)
+    if password_error:
+        return error_response(password_error)
 
     uzivatel = Uzivatel.query.filter_by(password_reset_token=token).first()
     if not uzivatel:
@@ -268,7 +289,7 @@ def reset_password():
 
     if (
         not uzivatel.password_reset_expires_at
-        or uzivatel.password_reset_expires_at < datetime.utcnow()
+        or uzivatel.password_reset_expires_at < utc_now()
     ):
         return jsonify({"error": "Token vyprsel"}), 400
 
@@ -291,7 +312,7 @@ def reset_password():
 @jwt_required()
 def get_current_user():
     uzivatel_id = get_jwt_identity()
-    uzivatel = Uzivatel.query.get(uzivatel_id)
+    uzivatel = db.session.get(Uzivatel, int(uzivatel_id))
 
     if not uzivatel:
         return jsonify({"error": "Uzivatel nenalezen"}), 404
@@ -312,23 +333,30 @@ def get_current_user():
 @jwt_required()
 def change_password():
     uzivatel_id = get_jwt_identity()
-    data = request.get_json(silent=True) or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
-    if not data.get("stare_heslo") or not data.get("nove_heslo"):
-        return jsonify({"error": "Stare a nove heslo jsou povinne"}), 400
+    stare_heslo, old_password_error = get_str_field(data, "stare_heslo", required=True)
+    if old_password_error:
+        return error_response(old_password_error)
 
-    uzivatel = Uzivatel.query.get(uzivatel_id)
+    nove_heslo, new_password_error = get_str_field(data, "nove_heslo", required=True)
+    if new_password_error:
+        return error_response(new_password_error)
+
+    uzivatel = db.session.get(Uzivatel, int(uzivatel_id))
     if not uzivatel:
         return jsonify({"error": "Uzivatel nenalezen"}), 404
 
-    if not uzivatel.check_heslo(data["stare_heslo"]):
+    if not uzivatel.check_heslo(stare_heslo):
         return jsonify({"error": "Neplatne stare heslo"}), 401
 
-    if not validate_password(data["nove_heslo"]):
+    if not validate_password(nove_heslo):
         return jsonify({"error": "Nove heslo musi mit alespon 6 znaku"}), 400
 
     try:
-        uzivatel.set_heslo(data["nove_heslo"])
+        uzivatel.set_heslo(nove_heslo)
         db.session.commit()
         return jsonify({"message": "Heslo uspesne zmeneno"}), 200
 

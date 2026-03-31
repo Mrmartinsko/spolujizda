@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+import { getApiErrorMessage } from "../../utils/apiError";
 import "../cars/ReplaceCar.css";
 
 const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
@@ -19,7 +20,7 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
         });
         setCars(res.data || []);
       } catch (e) {
-        setError(e.response?.data?.error || e.response?.data?.message || "Chyba při načítání aut");
+        setError(getApiErrorMessage(e, "Chyba pri nacitani aut."));
       } finally {
         setLoading(false);
       }
@@ -31,21 +32,21 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
   return (
     <div className="replace-car-modal">
       <div className="modal-content">
-        <h2>Vyber auto pro jízdu</h2>
+        <h2>Vyber auto pro jizdu</h2>
 
         {loading ? (
-          <p>Načítání aut...</p>
+          <p>Nacitani aut...</p>
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : (
           <div className="available-cars">
-            {cars.length === 0 && <p>Nemáš žádné auto.</p>}
+            {cars.length === 0 && <p>Nemas zadne auto.</p>}
 
             {cars.map((auto) => (
               <div key={auto.id} className="available-car">
                 <span>
                   {auto.znacka} {auto.model} {auto.spz ? `(${auto.spz})` : ""}
-                  {auto.id === currentAutoId ? " — aktuální" : ""}
+                  {auto.id === currentAutoId ? " - aktualni" : ""}
                 </span>
 
                 <button
@@ -60,7 +61,7 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
         )}
 
         <button className="close-btn" onClick={onClose}>
-          Zavřít
+          Zavrit
         </button>
       </div>
     </div>

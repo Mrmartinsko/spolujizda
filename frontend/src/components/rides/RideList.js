@@ -716,7 +716,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
       {reservationModal.open && (
         <div className="app-modal-overlay" onClick={closeReservationModal}>
           <div className="app-modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3 className="app-modal-title">Potvrdit rezervaci</h3>
+            <h3 className="app-modal-title">Poslat rezervaci</h3>
             <p className="app-modal-message">
               Vyberte počet míst a případně přidejte poznámku pro řidiče. Rezervace se odešle až po potvrzení.
             </p>

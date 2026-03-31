@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { getApiErrorMessage } from '../utils/apiError';
 import RideList from '../components/rides/RideList';
 import Alert from '../components/ui/Alert';
 import Badge from '../components/ui/Badge';
@@ -10,22 +11,21 @@ import Card from '../components/ui/Card';
 import './MyRidesPage.css';
 
 const TEXT = {
-  loadError: 'J\u00edzdy se nepoda\u0159ilo na\u010d\u00edst.',
-  loadLog: 'Chyba p\u0159i na\u010d\u00edt\u00e1n\u00ed j\u00edzd:',
-  loading: 'Na\u010d\u00edt\u00e1m va\u0161e j\u00edzdy\u2026',
-  eyebrow: 'Moje j\u00edzdy',
-  title: 'P\u0159ehled v\u0161ech tras, kter\u00e9 nab\u00edz\u00edte jako \u0159idi\u010d',
-  active: 'Aktivn\u00ed',
-  all: 'V\u0161echny',
-  completed: 'Dokon\u010den\u00e9',
-  canceled: 'Zru\u0161en\u00e9',
-  emptyTitle: 'V tomto filtru zat\u00edm nic nen\u00ed',
-  emptyText: 'Pokud chcete p\u0159idat novou trasu, m\u016f\u017eete ji nab\u00eddnout b\u011bhem chv\u00edle.',
-  createRide: 'Nab\u00eddnout j\u00edzdu',
-  quickStats: 'Rychl\u00e9 statistiky',
-  totalRides: 'Celkem j\u00edzd',
-  activeOffers: 'Aktivn\u00ed nab\u00eddky',
-  transportedPassengers: 'P\u0159evezen\u00ed pasa\u017e\u00e9\u0159i',
+  loadError: 'Jizdy se nepodarilo nacist.',
+  loading: 'Nacitam vase jizdy...',
+  eyebrow: 'Moje jizdy',
+  title: 'Prehled vsech tras, ktere nabizite jako ridic',
+  active: 'Aktivni',
+  all: 'Vsechny',
+  completed: 'Dokoncene',
+  canceled: 'Zrusene',
+  emptyTitle: 'V tomto filtru zatim nic neni',
+  emptyText: 'Pokud chcete pridat novou trasu, muzete ji nabidnout behem chvile.',
+  createRide: 'Nabidnout jizdu',
+  quickStats: 'Rychle statistiky',
+  totalRides: 'Celkem jizd',
+  activeOffers: 'Aktivni nabidky',
+  transportedPassengers: 'Prevezeni pasazeri',
 };
 
 const MyRidesPage = () => {
@@ -53,8 +53,7 @@ const MyRidesPage = () => {
       });
       setMojeJizdy(response.data || []);
     } catch (err) {
-      console.log(TEXT.loadLog, err.response?.data || err.message);
-      setError(TEXT.loadError);
+      setError(getApiErrorMessage(err, TEXT.loadError));
     } finally {
       setLoading(false);
     }

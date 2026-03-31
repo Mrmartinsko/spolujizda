@@ -11,7 +11,15 @@ from models.jizda import Jizda
 from models.mezistanice import Mezistanice
 from models.rezervace import Rezervace
 from models.uzivatel import Uzivatel
+from utils.api import (
+    error_response,
+    get_json_data,
+    parse_iso_datetime,
+    parse_non_negative_float,
+    parse_positive_int,
+)
 from utils.cities import get_city_by_place_id
+from utils.datetime_utils import utc_now
 from utils.jizdy import zrusit_jizdu
 from utils.notifications import vytvorit_oznameni
 from utils.text_normalization import normalize_search_text, sanitize_location_text
@@ -30,8 +38,8 @@ def _validate_location_field(value, field_name):
     normalized = sanitize_location_text(value)
     if not normalized:
         return False, f"Pole {field_name} je povinne"
-    if len(normalized) > 50:
-        return False, f"Pole {field_name} muze mit maximalne 50 znaku"
+    if len(normalized) > 100:
+        return False, f"Pole {field_name} muze mit maximalne 100 znaku"
     if LOCATION_ALLOWED_RE.search(normalized):
         return False, f"Pole {field_name} muze obsahovat jen pismena, cisla, mezery a pomlcky"
 
@@ -298,7 +306,9 @@ def get_jizdy():
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["GET"])
 def get_jizda(jizda_id):
-    jizda = Jizda.query.get_or_404(jizda_id)
+    jizda = db.session.get(Jizda, jizda_id)
+    if not jizda:
+        return error_response("Jizda nenalezena", 404)
     return jsonify({"jizda": jizda.to_dict()})
 
 
@@ -306,7 +316,9 @@ def get_jizda(jizda_id):
 @jwt_required()
 def create_jizda():
     uzivatel_id = int(get_jwt_identity())
-    data = request.get_json() or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
     required_fields = [
         "auto_id",
@@ -320,15 +332,19 @@ def create_jizda():
 
     for field in required_fields:
         if field not in data:
-            return jsonify({"error": f"Pole {field} je povinne"}), 400
+            return error_response(f"Pole {field} je povinne")
+
+    auto_id, auto_error = parse_positive_int(data.get("auto_id"), "auto_id")
+    if auto_error:
+        return error_response(auto_error)
 
     auto = Auto.query.filter_by(
-        id=data["auto_id"],
+        id=auto_id,
         profil_id=uzivatel_id,
         smazane=False,
     ).first()
     if not auto:
-        return jsonify({"error": "Auto nenalezeno nebo nepatri uzivateli"}), 404
+        return error_response("Auto nenalezeno nebo nepatri uzivateli", 404)
 
     ok, odkud = _extract_location_payload(data, "odkud", required=True)
     if not ok:
@@ -343,13 +359,26 @@ def create_jizda():
         return jsonify({"error": mezistanice}), 400
 
     try:
-        cas_odjezdu = datetime.fromisoformat(data["cas_odjezdu"].replace("Z", "+00:00"))
-        cas_prijezdu = datetime.fromisoformat(data["cas_prijezdu"].replace("Z", "+00:00"))
+        cas_odjezdu, departure_error = parse_iso_datetime(data.get("cas_odjezdu"), "cas_odjezdu")
+        if departure_error:
+            return error_response(departure_error)
+
+        cas_prijezdu, arrival_error = parse_iso_datetime(data.get("cas_prijezdu"), "cas_prijezdu")
+        if arrival_error:
+            return error_response(arrival_error)
+
+        cena, price_error = parse_non_negative_float(data.get("cena"), "cena")
+        if price_error:
+            return error_response(price_error)
+
+        pocet_mist, seats_error = parse_positive_int(data.get("pocet_mist"), "pocet_mist")
+        if seats_error:
+            return error_response(seats_error)
 
         if cas_odjezdu >= cas_prijezdu:
-            return jsonify({"error": "Cas odjezdu musi byt pred casem prijezdu"}), 400
-        if cas_odjezdu <= datetime.now():
-            return jsonify({"error": "Cas odjezdu musi byt v budoucnosti"}), 400
+            return error_response("Cas odjezdu musi byt pred casem prijezdu")
+        if cas_odjezdu <= utc_now():
+            return error_response("Cas odjezdu musi byt v budoucnosti")
 
         existing_rides = Jizda.query.filter_by(
             ridic_id=uzivatel_id,
@@ -364,17 +393,17 @@ def create_jizda():
                 cas_odjezdu < (existing_end + timedelta(minutes=5))
                 and cas_prijezdu > (existing_start - timedelta(minutes=5))
             ):
-                return jsonify({"error": "Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut."}), 409
+                return error_response("Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut.", 409)
 
         jizda = Jizda(
             ridic_id=uzivatel_id,
-            auto_id=data["auto_id"],
+            auto_id=auto_id,
             odkud=odkud["text"],
             kam=kam["text"],
             cas_odjezdu=cas_odjezdu,
             cas_prijezdu=cas_prijezdu,
-            cena=float(data["cena"]),
-            pocet_mist=int(data["pocet_mist"]),
+            cena=cena,
+            pocet_mist=pocet_mist,
         )
         jizda.odkud_place_id = odkud["place_id"]
         jizda.odkud_address = odkud["address"]
@@ -395,11 +424,9 @@ def create_jizda():
 
         db.session.commit()
         return jsonify({"message": "Jizda uspesne vytvorena", "jizda": jizda.to_dict()}), 201
-    except ValueError:
-        return jsonify({"error": "Neplatny format data nebo casu"}), 400
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri vytvareni jizdy"}), 500
+        return error_response("Chyba pri vytvareni jizdy", 500)
 
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["PUT"])
@@ -411,11 +438,13 @@ def update_jizda(jizda_id):
     if jizda.ridic_id != uzivatel_id:
         return jsonify({"error": "Nemate opravneni upravovat tuto jizdu"}), 403
     if jizda.status != "aktivni":
-        return jsonify({"error": "Lze upravovat pouze aktivni jizdy"}), 400
-    if jizda.cas_odjezdu and jizda.cas_odjezdu <= datetime.now():
-        return jsonify({"error": "Jizdu uz nelze upravit, protoze uz odjela"}), 400
+        return error_response("Lze upravovat pouze aktivni jizdy")
+    if jizda.cas_odjezdu and jizda.cas_odjezdu <= utc_now():
+        return error_response("Jizdu uz nelze upravit, protoze uz odjela")
 
-    data = request.get_json() or {}
+    data, error = get_json_data()
+    if error:
+        return error
     previous_state = {
         "odkud": jizda.odkud,
         "kam": jizda.kam,
@@ -426,13 +455,17 @@ def update_jizda(jizda_id):
 
     try:
         if "auto_id" in data:
+            auto_id, auto_error = parse_positive_int(data.get("auto_id"), "auto_id")
+            if auto_error:
+                return error_response(auto_error)
+
             auto = Auto.query.filter_by(
-                id=data["auto_id"],
+                id=auto_id,
                 profil_id=uzivatel_id,
                 smazane=False,
             ).first()
             if not auto:
-                return jsonify({"error": "Auto nenalezeno nebo nepatri uzivateli"}), 404
+                return error_response("Auto nenalezeno nebo nepatri uzivateli", 404)
             jizda.auto_id = auto.id
 
         if "odkud" in data:
@@ -452,27 +485,35 @@ def update_jizda(jizda_id):
             jizda.kam_address = kam["address"]
 
         if "cena" in data:
-            return jsonify({"error": "Cenu existujici jizdy nelze menit"}), 400
+            return error_response("Cenu existujici jizdy nelze menit")
 
         if "pocet_mist" in data:
-            new_pocet_mist = int(data["pocet_mist"])
+            new_pocet_mist, seats_error = parse_positive_int(data.get("pocet_mist"), "pocet_mist")
+            if seats_error:
+                return error_response(seats_error)
+
+            # Kapacitu nenechame snizit pod jiz prijata rezervovana mista.
             if new_pocet_mist < jizda.get_pocet_prijatych_mist():
-                return jsonify({"error": "Pocet mist nemuze byt mensi nez pocet jiz prijatych pasazeru"}), 400
+                return error_response("Pocet mist nemuze byt mensi nez pocet jiz prijatych pasazeru")
             jizda.pocet_mist = new_pocet_mist
 
         new_cas_odjezdu = jizda.cas_odjezdu
         new_cas_prijezdu = jizda.cas_prijezdu
 
         if "cas_odjezdu" in data:
-            new_cas_odjezdu = datetime.fromisoformat(data["cas_odjezdu"].replace("Z", "+00:00"))
+            new_cas_odjezdu, departure_error = parse_iso_datetime(data.get("cas_odjezdu"), "cas_odjezdu")
+            if departure_error:
+                return error_response(departure_error)
         if "cas_prijezdu" in data:
-            new_cas_prijezdu = datetime.fromisoformat(data["cas_prijezdu"].replace("Z", "+00:00"))
+            new_cas_prijezdu, arrival_error = parse_iso_datetime(data.get("cas_prijezdu"), "cas_prijezdu")
+            if arrival_error:
+                return error_response(arrival_error)
 
         if new_cas_odjezdu and new_cas_prijezdu:
             if new_cas_odjezdu >= new_cas_prijezdu:
-                return jsonify({"error": "Cas odjezdu musi byt pred casem prijezdu"}), 400
-            if new_cas_odjezdu <= datetime.now():
-                return jsonify({"error": "Cas odjezdu musi byt v budoucnosti"}), 400
+                return error_response("Cas odjezdu musi byt pred casem prijezdu")
+            if new_cas_odjezdu <= utc_now():
+                return error_response("Cas odjezdu musi byt v budoucnosti")
 
             existing_rides = Jizda.query.filter_by(
                 ridic_id=uzivatel_id,
@@ -489,7 +530,7 @@ def update_jizda(jizda_id):
                     new_cas_odjezdu < (existing_end + timedelta(minutes=5))
                     and new_cas_prijezdu > (existing_start - timedelta(minutes=5))
                 ):
-                    return jsonify({"error": "Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut."}), 409
+                    return error_response("Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut.", 409)
 
         jizda.cas_odjezdu = new_cas_odjezdu
         jizda.cas_prijezdu = new_cas_prijezdu
@@ -528,11 +569,9 @@ def update_jizda(jizda_id):
 
         db.session.commit()
         return jsonify({"message": "Jizda uspesne aktualizovana", "jizda": jizda.to_dict()})
-    except ValueError:
-        return jsonify({"error": "Neplatny format dat"}), 400
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri aktualizaci jizdy"}), 500
+        return error_response("Chyba pri aktualizaci jizdy", 500)
 
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["DELETE"])

@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from models import db
 from models.blokace import Blokace
 from models.profil import Profil
 from models.uzivatel import Uzivatel
+from utils.api import error_response, get_json_data, get_str_field
 
 uzivatele_bp = Blueprint("uzivatele", __name__)
 
@@ -11,90 +13,88 @@ uzivatele_bp = Blueprint("uzivatele", __name__)
 @uzivatele_bp.route("/profil", methods=["GET"])
 @jwt_required()
 def get_muj_profil():
-    """Získání vlastního profilu"""
     uzivatel_id = int(get_jwt_identity())
-    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
-
+    uzivatel = db.session.get(Uzivatel, uzivatel_id)
+    if not uzivatel:
+        return error_response("Uzivatel nenalezen", 404)
     return jsonify({"uzivatel": uzivatel.to_dict()})
 
 
 @uzivatele_bp.route("/profil", methods=["PUT"])
 @jwt_required()
 def update_profil():
-    """Aktualizace vlastního profilu"""
     uzivatel_id = int(get_jwt_identity())
-    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
-
+    uzivatel = db.session.get(Uzivatel, uzivatel_id)
+    if not uzivatel:
+        return error_response("Uzivatel nenalezen", 404)
     if not uzivatel.profil:
-        return jsonify({"error": "Profil nenalezen"}), 404
+        return error_response("Profil nenalezen", 404)
 
-    data = request.get_json() or {}
+    data, error = get_json_data()
+    if error:
+        return error
 
     try:
-        # Aktualizace profilu
         if "jmeno" in data:
-            jmeno = (data.get("jmeno") or "").strip()
-            if not jmeno:
-                return jsonify({"error": "Uživatelské jméno je povinné."}), 400
-            if len(jmeno) > 20:
-                return jsonify({"error": "Uživatelské jméno může mít maximálně 20 znaků."}), 400
+            jmeno, name_error = get_str_field(data, "jmeno", required=True, max_length=50)
+            if name_error:
+                return error_response(name_error)
 
             existing_profile = (
                 Profil.query.filter(
                     db.func.lower(Profil.jmeno) == jmeno.lower(),
                     Profil.uzivatel_id != uzivatel_id,
-                )
-                .first()
+                ).first()
             )
             if existing_profile:
-                return jsonify({"error": "Toto uživatelské jméno je již obsazené."}), 409
-
+                return error_response("Toto uzivatelske jmeno je jiz obsazene.", 409)
             uzivatel.profil.jmeno = jmeno
+
         if "bio" in data:
-            bio = data.get("bio")
-            uzivatel.profil.bio = bio.strip() if isinstance(bio, str) else bio
+            bio, bio_error = get_str_field(data, "bio", max_length=500)
+            if bio_error:
+                return error_response(bio_error)
+            uzivatel.profil.bio = bio
+
         if "fotka" in data:
-            uzivatel.profil.fotka = data["fotka"]
+            fotka, photo_error = get_str_field(data, "fotka")
+            if photo_error:
+                return error_response(photo_error)
+            uzivatel.profil.fotka = fotka
 
         db.session.commit()
-
         return jsonify(
-            {"message": "Profil úspěšně aktualizován", "uzivatel": uzivatel.to_dict()}
+            {"message": "Profil uspesne aktualizovan", "uzivatel": uzivatel.to_dict()}
         )
-
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba při aktualizaci profilu"}), 500
+        return error_response("Chyba pri aktualizaci profilu", 500)
 
 
 @uzivatele_bp.route("/<int:uzivatel_id>", methods=["GET"])
 @jwt_required()
 def get_uzivatel_profil(uzivatel_id):
-    """Získání profilu jiného uživatele"""
     current_user_id = int(get_jwt_identity())
 
-    # Kontrola, zda uživatel není blokován
     blokace = Blokace.query.filter_by(
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
     ).first()
-
     if blokace:
-        return jsonify({"error": "Uživatel je blokován"}), 403
+        return error_response("Uzivatel je blokovan", 403)
 
-    # Kontrola, zda aktuální uživatel není blokován tímto uživatelem
     blokace_opacne = Blokace.query.filter_by(
         blokujici_id=uzivatel_id, blokovany_id=current_user_id
     ).first()
-
     if blokace_opacne:
-        return jsonify({"error": "Nemáte přístup k tomuto profilu"}), 403
+        return error_response("Nemate pristup k tomuto profilu", 403)
 
-    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
+    uzivatel = db.session.get(Uzivatel, uzivatel_id)
+    if not uzivatel:
+        return error_response("Uzivatel nenalezen", 404)
 
-    # Omezený profil pro cizí uživatele
     profil_data = uzivatel.to_dict()
     if uzivatel.profil:
-        profil_data["profil"]["email"] = None  # Skrytí emailu
+        profil_data["profil"]["email"] = None
 
     return jsonify({"uzivatel": profil_data})
 
@@ -102,15 +102,15 @@ def get_uzivatel_profil(uzivatel_id):
 @uzivatele_bp.route("/hledat", methods=["GET"])
 @jwt_required()
 def hledat_uzivatele():
-    """Vyhledávání uživatelů podle jména"""
-    query = request.args.get("q", "")
-
+    query = (request.args.get("q") or "").strip()
     if len(query) < 2:
-        return jsonify({"error": "Vyhledávací dotaz musí mít alespoň 2 znaky"}), 400
+        return error_response("Vyhledavaci dotaz musi mit alespon 2 znaky")
+    if len(query) > 50:
+        return error_response("Vyhledavaci dotaz muze mit maximalne 50 znaku")
 
     current_user_id = int(get_jwt_identity())
 
-    # Vyhledání uživatelů podle jména
+    # Vyhledavani jede pres partial match, aby vratilo i uzivatele podle casti jmena.
     uzivatele = (
         db.session.query(Uzivatel)
         .join(Profil)
@@ -119,19 +119,12 @@ def hledat_uzivatele():
         .all()
     )
 
-    # Vyfiltrování blokovaných uživatelů
     blokovane_ids = (
-        db.session.query(Blokace.blokovany_id)
-        .filter_by(blokujici_id=current_user_id)
-        .all()
+        db.session.query(Blokace.blokovany_id).filter_by(blokujici_id=current_user_id).all()
     )
+    blokovane_ids_list = [item.blokovany_id for item in blokovane_ids]
+    uzivatele = [user for user in uzivatele if user.id not in blokovane_ids_list]
 
-    # Extrahujeme ID z výsledků
-    blokovane_ids_list = [b.blokovany_id for b in blokovane_ids]
-
-    uzivatele = [u for u in uzivatele if u.id not in blokovane_ids_list]
-
-    # Omezené informace pro vyhledávání
     vysledky = []
     for uzivatel in uzivatele:
         if uzivatel.profil:
@@ -141,9 +134,7 @@ def hledat_uzivatele():
                     "jmeno": uzivatel.profil.jmeno,
                     "fotka": uzivatel.profil.fotka,
                     "hodnoceni_ridic": uzivatel.profil.get_prumerne_hodnoceni("ridic"),
-                    "hodnoceni_pasazer": uzivatel.profil.get_prumerne_hodnoceni(
-                        "pasazer"
-                    ),
+                    "hodnoceni_pasazer": uzivatel.profil.get_prumerne_hodnoceni("pasazer"),
                 }
             )
 
@@ -153,63 +144,51 @@ def hledat_uzivatele():
 @uzivatele_bp.route("/<int:uzivatel_id>/blokovat", methods=["POST"])
 @jwt_required()
 def blokovat_uzivatele(uzivatel_id):
-    """Blokování uživatele"""
     current_user_id = int(get_jwt_identity())
-
     if current_user_id == uzivatel_id:
-        return jsonify({"error": "Nemůžete blokovat sebe sama"}), 400
+        return error_response("Nemuzete blokovat sebe sama")
+    if not db.session.get(Uzivatel, uzivatel_id):
+        return error_response("Uzivatel nenalezen", 404)
 
-    # Ověření existence uživatele
-    uzivatel = Uzivatel.query.get_or_404(uzivatel_id)
-
-    # Kontrola, zda už není blokován
     existujici_blokace = Blokace.query.filter_by(
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
     ).first()
-
     if existujici_blokace:
-        return jsonify({"error": "Uživatel je již blokován"}), 400
+        return error_response("Uzivatel je jiz blokovan")
 
     try:
         blokace = Blokace(blokujici_id=current_user_id, blokovany_id=uzivatel_id)
-
         db.session.add(blokace)
         db.session.commit()
-
-        return jsonify({"message": "Uživatel úspěšně blokován"})
-
-    except Exception as e:
+        return jsonify({"message": "Uzivatel uspesne blokovan"})
+    except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba při blokování uživatele"}), 500
+        return error_response("Chyba pri blokovani uzivatele", 500)
 
 
 @uzivatele_bp.route("/<int:uzivatel_id>/odblokovat", methods=["DELETE"])
 @jwt_required()
 def odblokovat_uzivatele(uzivatel_id):
-    """Odblokování uživatele"""
     current_user_id = int(get_jwt_identity())
-
     blokace = Blokace.query.filter_by(
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
-    ).first_or_404()
+    ).first()
+    if not blokace:
+        return error_response("Blokace nenalezena", 404)
 
     try:
         db.session.delete(blokace)
         db.session.commit()
-
-        return jsonify({"message": "Uživatel úspěšně odblokován"})
-
-    except Exception as e:
+        return jsonify({"message": "Uzivatel uspesne odblokovan"})
+    except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba při odblokování uživatele"}), 500
+        return error_response("Chyba pri odblokovani uzivatele", 500)
 
 
 @uzivatele_bp.route("/blokovani", methods=["GET"])
 @jwt_required()
 def get_blokovani_uzivatele():
-    """Získání seznamu blokovaných uživatelů"""
     current_user_id = int(get_jwt_identity())
-
     blokace = (
         db.session.query(Blokace)
         .filter_by(blokujici_id=current_user_id)
@@ -219,8 +198,8 @@ def get_blokovani_uzivatele():
     )
 
     blokovani = []
-    for b in blokace:
-        uzivatel = Uzivatel.query.get(b.blokovany_id)
+    for item in blokace:
+        uzivatel = db.session.get(Uzivatel, item.blokovany_id)
         if uzivatel and uzivatel.profil:
             blokovani.append(
                 {
