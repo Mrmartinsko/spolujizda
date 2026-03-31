@@ -17,6 +17,7 @@ const Chat = () => {
   const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
+    // Seznam konverzaci stahneme pri vstupu na stranku, detail se obnovi znovu po zavreni chatu.
     fetchMojeChaty();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -40,6 +41,7 @@ const Chat = () => {
     setSearchQuery(query);
     const normalizedQuery = query.trim();
 
+    // Dve pismena jsou minimum, aby hledani nespoustelo hlucne a malo uzitecne dotazy.
     if (normalizedQuery.length < 2) {
       setSearchResults([]);
       return;
@@ -69,6 +71,7 @@ const Chat = () => {
   };
 
   const openExistingChat = (chat) => {
+    // U osobniho chatu vzdy hledame "toho druheho", ne aktualne prihlaseneho uzivatele.
     const otherUser = chat.ucastnici?.find((item) => item.id !== user?.id);
     if (!otherUser) return;
 
@@ -142,6 +145,14 @@ const Chat = () => {
                   key={searchUser.id}
                   className="search-result-item"
                   onClick={() => openChatWithUser(searchUser)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openChatWithUser(searchUser);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="user-avatar">
                     {searchUser.fotka ? (
@@ -178,6 +189,14 @@ const Chat = () => {
                   key={chat.id}
                   className="chat-list-item"
                   onClick={() => openExistingChat(chat)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openExistingChat(chat);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="user-avatar">
                     {otherUser?.profil?.fotka ? (

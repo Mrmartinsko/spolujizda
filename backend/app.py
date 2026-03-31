@@ -40,6 +40,7 @@ except ImportError:
 
 
 def create_app(config_name="development", test_config=None):
+    """Vytvori Flask aplikaci a zaregistruje globalni infrastrukturu API."""
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     if test_config:
@@ -64,6 +65,7 @@ def create_app(config_name="development", test_config=None):
 
     @app.errorhandler(BadRequest)
     def handle_bad_request(error):
+        # Sem padaji i chybne nebo nekompletni JSON requesty z Flasku/Werkzeugu.
         description = getattr(error, "description", None)
         if isinstance(description, str) and description:
             return jsonify({"error": description}), 400
@@ -71,10 +73,13 @@ def create_app(config_name="development", test_config=None):
 
     @app.errorhandler(HTTPException)
     def handle_http_exception(error):
+        # Ostatni HTTP chyby drzime ve stejnem JSON formatu, aby frontend nemusel
+        # rozlisovat mezi route-level a globalnim error handlingem.
         return jsonify({"error": error.description}), error.code
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(error):
+        # Log si nechavame pro diagnostiku, ale ven vracime jen bezpecny fallback.
         app.logger.exception("Neocekavana chyba pri zpracovani requestu")
         return jsonify({"error": "Doslo k neocekavane chybe serveru"}), 500
 

@@ -10,11 +10,13 @@ import "./EditRide.css";
 const API = "http://localhost:5000/api";
 
 function splitISO(iso) {
+  // Backend vraci jedno ISO datum, formular ale potrebuje oddelene pole pro datum a cas.
   if (!iso) return { date: "", time: "" };
   return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
 }
 
 function toISO(dateStr, timeStr) {
+  // Pri ukladani skladame zpet stejny tvar, ktery backend ocekava.
   if (!dateStr || !timeStr) return null;
   return `${dateStr}T${timeStr}:00`;
 }
@@ -89,6 +91,7 @@ export default function EditRide() {
       const odj = splitISO(j?.cas_odjezdu);
       const prij = splitISO(j?.cas_prijezdu);
 
+      // Serazeni drzi canonicalni poradi trasy i kdyz backend vratil pole v jinem poradi.
       const stops = (j?.mezistanice || [])
         .slice()
         .sort((a, b) => (a.poradi ?? 0) - (b.poradi ?? 0))
@@ -110,7 +113,7 @@ export default function EditRide() {
         mezistanice: stops,
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, "Nepodarilo se nacist jizdu."));
+      setError(getApiErrorMessage(e, "Nepodarilo se nacist jízdu."));
     } finally {
       setLoading(false);
     }
@@ -145,6 +148,7 @@ export default function EditRide() {
     e.preventDefault();
     setError("");
 
+    // Editace sdili stejnou zakladni validaci trasy a casu jako vytvareni nove jizdy.
     const odkudError = validateLocationField(form.odkud, "Odkud");
     if (odkudError) {
       setError(odkudError);
@@ -204,6 +208,7 @@ export default function EditRide() {
         cas_odjezdu: departureIso,
         cas_prijezdu: arrivalIso,
         pocet_mist: pocetMist,
+        // Poradi zastavek urcuje jejich poradi v poli, proto je serializujeme explicitne.
         mezistanice: form.mezistanice
           .map((s) => ({
             text: s.text.trim(),
@@ -233,9 +238,9 @@ export default function EditRide() {
   return (
     <div className="edit-ride-page">
       <div className="edit-ride-header">
-        <h2 className="edit-ride-title">Upravit jizdu</h2>
+        <h2 className="edit-ride-title">Upravit jízdu</h2>
         <button className="btn-secondary" type="button" onClick={() => navigate(-1)}>
-          Zpet
+          Zpět
         </button>
       </div>
 
@@ -246,13 +251,13 @@ export default function EditRide() {
         <div className="edit-auto-box">
           <div className="edit-auto-text">{autoText || "-"}</div>
           <button type="button" className="btn-primary" onClick={() => setShowSelectCar(true)}>
-            Zmenit auto
+            Změnit auto
           </button>
         </div>
 
         {ride?.auto?.smazane && (
           <div className="edit-warning">
-            Toto auto bylo smazano. Vyber prosim jine auto pro tuto jizdu.
+            Toto auto bylo smazano. Vyber prosim jine auto pro tuto jízdu.
           </div>
         )}
       </div>
@@ -272,7 +277,7 @@ export default function EditRide() {
           value={form.odkud}
           onChange={handleLocationChange}
           required
-          placeholder="Vychozi mesto"
+          placeholder="Výchozí město"
         />
 
         <LocationAutocompleteInput
@@ -281,21 +286,23 @@ export default function EditRide() {
           value={form.kam}
           onChange={handleLocationChange}
           required
-          placeholder="Cilove mesto"
+          placeholder="Cílové město"
         />
 
         <div className="edit-grid">
           <div className="edit-input">
-            <label>Datum odjezdu</label>
+            <label htmlFor="datum_odjezdu">Datum odjezdu</label>
             <input
+              id="datum_odjezdu"
               type="date"
               value={form.datum_odjezdu}
               onChange={(e) => setField("datum_odjezdu", e.target.value)}
             />
           </div>
           <div className="edit-input">
-            <label>Cas odjezdu</label>
+            <label htmlFor="cas_odjezdu">Čas odjezdu</label>
             <input
+              id="cas_odjezdu"
               type="time"
               value={form.cas_odjezdu}
               onChange={(e) => setField("cas_odjezdu", e.target.value)}
@@ -305,16 +312,18 @@ export default function EditRide() {
 
         <div className="edit-grid">
           <div className="edit-input">
-            <label>Datum prijezdu</label>
+            <label htmlFor="datum_prijezdu">Datum prijezdu</label>
             <input
+              id="datum_prijezdu"
               type="date"
               value={form.datum_prijezdu}
               onChange={(e) => setField("datum_prijezdu", e.target.value)}
             />
           </div>
           <div className="edit-input">
-            <label>Cas prijezdu</label>
+            <label htmlFor="cas_prijezdu">Čas příjezdu</label>
             <input
+              id="cas_prijezdu"
               type="time"
               value={form.cas_prijezdu}
               onChange={(e) => setField("cas_prijezdu", e.target.value)}
@@ -324,12 +333,12 @@ export default function EditRide() {
 
         <div className="edit-grid">
           <div className="edit-input">
-            <label>Cena</label>
-            <input value={form.cena} disabled readOnly />
+            <label htmlFor="cena">Cena</label>
+            <input id="cena" value={form.cena} disabled readOnly />
           </div>
           <div className="edit-input">
-            <label>Pocet mist</label>
-            <input type="number" min="1" value={form.pocet_mist} onChange={(e) => setField("pocet_mist", e.target.value)} />
+            <label htmlFor="pocet_mist">Počet míst</label>
+            <input id="pocet_mist" type="number" min="1" value={form.pocet_mist} onChange={(e) => setField("pocet_mist", e.target.value)} />
           </div>
         </div>
 
@@ -337,7 +346,7 @@ export default function EditRide() {
           <div className="stops-header">
             <h3>Mezistanice</h3>
             <button type="button" className="btn-secondary" onClick={addStop}>
-              + Pridat
+              + Přidat
             </button>
           </div>
 
@@ -364,7 +373,7 @@ export default function EditRide() {
 
         <div className="edit-actions">
           <button type="submit" className="btn-success" disabled={saving}>
-            {saving ? "Ukladam..." : "Ulozit"}
+            {saving ? "Ukladam..." : "Uložit"}
           </button>
         </div>
       </form>

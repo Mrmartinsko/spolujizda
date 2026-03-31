@@ -1,14 +1,16 @@
-from datetime import datetime
-
 from models import db
 
 
 class Jizda(db.Model):
+    """Jedna nabidka spolujizdy vcetne trasy, kapacity, auta a rezervaci."""
+
     __tablename__ = "jizda"
 
     id = db.Column(db.Integer, primary_key=True)
     ridic_id = db.Column(db.Integer, db.ForeignKey("uzivatel.id"), nullable=False)
-    auto_id = db.Column(db.Integer, db.ForeignKey("auto.id", ondelete="SET NULL"), nullable=True)
+    auto_id = db.Column(
+        db.Integer, db.ForeignKey("auto.id", ondelete="SET NULL"), nullable=True
+    )
     odkud = db.Column(db.String(255), nullable=False)
     odkud_place_id = db.Column(db.String(64), nullable=True, index=True)
     odkud_address = db.Column(db.String(255), nullable=True)
@@ -21,7 +23,7 @@ class Jizda(db.Model):
     pocet_mist = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="aktivni")
 
-    # Vztahy
+    # Rezervace a chat davaji smysl jen pro danou jizdu, proto se mazu spolu s ni.
     rezervace = db.relationship(
         "Rezervace", backref="jizda", cascade="all, delete-orphan"
     )
@@ -29,12 +31,12 @@ class Jizda(db.Model):
         "Chat", backref="jizda", uselist=False, cascade="all, delete-orphan"
     )
 
-    # M:N vztah s pasažéry
+    # Pasazeri jsou vedeni zvlast od rezervaci, aby slo drzet jen prijate ucastniky.
     pasazeri = db.relationship(
         "Uzivatel", secondary="pasazeri", back_populates="jizdy_pasazer"
     )
 
-    # 1:N mezistanice
+    # Mezistanice drzi poradi trasy, proto se nacitaji uz serazene.
     mezistanice = db.relationship(
         "Mezistanice",
         back_populates="jizda",
@@ -56,38 +58,45 @@ class Jizda(db.Model):
         self.pocet_mist = pocet_mist
 
     def get_volna_mista(self):
-        """Vrátí počet volných míst"""
+        """Vrati pocet volnych mist po odecteni prijatych rezervaci."""
         obsazena_mista = self.get_pocet_prijatych_mist()
         return max(0, self.pocet_mist - obsazena_mista)
 
     def get_pocet_prijatych_mist(self):
+        """Vrati skutecny soucet prijatych mist i pro jizdy nacitane bez rezervaci."""
         if not self.id:
             return sum(
-                rezervace.pocet_mist for rezervace in self.rezervace if rezervace.status == "prijata"
+                rezervace.pocet_mist
+                for rezervace in self.rezervace
+                if rezervace.status == "prijata"
             )
 
         from models.rezervace import Rezervace
 
-        prijate_rezervace = Rezervace.query.filter_by(jizda_id=self.id, status="prijata").all()
+        prijate_rezervace = Rezervace.query.filter_by(
+            jizda_id=self.id, status="prijata"
+        ).all()
         return sum(rezervace.pocet_mist for rezervace in prijate_rezervace)
 
     def get_pocet_cekajicich_rezervaci(self):
+        """Spocita cekajici rezervace, ktere mohou pozdeji zabrat kapacitu."""
         return sum(1 for rezervace in self.rezervace if rezervace.status == "cekajici")
 
     def ma_dostatek_volnych_mist(self, pocet_pasazeru):
+        """Overi kapacitu pro pozadovany pocet mist bez zmeny stavu jizdy."""
         if not pocet_pasazeru:
             return True
         return self.get_volna_mista() >= pocet_pasazeru
 
     def muze_rezervovat(self, uzivatel_id, pocet_mist=1):
-        """Zkontroluje, zda může uživatel rezervovat místo"""
+        """Vyhodnoti zakladni business podminky pro rezervaci z pohledu modelu."""
         if self.ridic_id == uzivatel_id:
             return False, "Řidič nemůže rezervovat vlastní jízdu"
 
         if not self.ma_dostatek_volnych_mist(pocet_mist):
             return False, "Jízda je plně obsazená"
 
-        # Zkontroluje, zda už uživatel není pasažér
+        # Uz prijaty pasazer nema vytvaret dalsi rezervaci na stejnou jizdu.
         for pasazer in self.pasazeri:
             if pasazer.id == uzivatel_id:
                 return False, "Uživatel je již pasažérem této jízdy"
@@ -95,6 +104,7 @@ class Jizda(db.Model):
         return True, "OK"
 
     def to_dict(self):
+        """Serializuje jizdu pro API vcetne auta, kapacity a serazene trasy."""
         return {
             "id": self.id,
             "ridic_id": self.ridic_id,
@@ -106,7 +116,7 @@ class Jizda(db.Model):
                     "smazane": True,
                     "znacka": "Smazané auto",
                     "model": None,
-                    "spz": None
+                    "spz": None,
                 }
             ),
             "odkud": self.odkud,
@@ -123,13 +133,10 @@ class Jizda(db.Model):
             "pocet_cekajicich_rezervaci": self.get_pocet_cekajicich_rezervaci(),
             "status": self.status,
             "pasazeri": [
-                {
-                    "uzivatel_id": p.id,
-                    **(p.profil.to_dict() if p.profil else {})
-                }
+                {"uzivatel_id": p.id, **(p.profil.to_dict() if p.profil else {})}
                 for p in self.pasazeri
             ],
-            # mezistanice (vždy pole, i když prázdné)
+            # Frontend dostava mezistanice vzdy jako pole, aby nemusel resit specialni pripad.
             "mezistanice": [
                 {
                     "id": m.id,

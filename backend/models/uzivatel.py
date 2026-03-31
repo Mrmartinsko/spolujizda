@@ -1,21 +1,26 @@
-from datetime import datetime
 import bcrypt
+
 from models import db
 
 
 class Uzivatel(db.Model):
+    """Zakladni ucet aplikace s vazbami na profil, jizdy, rezervace a bezpecnostni data."""
+
     __tablename__ = "uzivatel"
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     heslo = db.Column(db.String(128), nullable=False)
     email_verified = db.Column(db.Boolean, default=False, nullable=False)
-    email_verified_at = db.Column(db.DateTime, nullable=True)  
-    email_verification_token = db.Column(db.String(128), unique=True, index=True, nullable=True)
+    email_verified_at = db.Column(db.DateTime, nullable=True)
+    email_verification_token = db.Column(
+        db.String(128), unique=True, index=True, nullable=True
+    )
     email_verification_expires_at = db.Column(db.DateTime, nullable=True)
     password_reset_token = db.Column(db.String(128), unique=True, index=True, nullable=True)
     password_reset_expires_at = db.Column(db.DateTime, nullable=True)
-    # Vztahy
+
+    # Profil a rezervace se mazou spolu s uctem, aby nezustala sirotci data.
     profil = db.relationship(
         "Profil", backref="uzivatel", uselist=False, cascade="all, delete-orphan"
     )
@@ -29,7 +34,7 @@ class Uzivatel(db.Model):
         cascade="all, delete-orphan",
     )
 
-    # M:N vztahy
+    # Ridic i pasazer maji vlastni vazby, aby slo jednoduse rozlisit roli v jizde.
     jizdy_pasazer = db.relationship(
         "Jizda", secondary="pasazeri", back_populates="pasazeri"
     )
@@ -37,7 +42,7 @@ class Uzivatel(db.Model):
         "Chat", secondary="ucastnici_chatu", back_populates="ucastnici"
     )
 
-    # Blokování
+    # Smer blokace je dulezity: kdo blokuje a kdo je blokovany.
     blokujici = db.relationship(
         "Blokace",
         foreign_keys="Blokace.blokujici_id",
@@ -48,7 +53,7 @@ class Uzivatel(db.Model):
         "Blokace", foreign_keys="Blokace.blokovany_id", backref="blokovany_uzivatel"
     )
 
-    # Hodnocení
+    # Hodnoceni ma dve role: autor zpetne vazby a jeji cilovy uzivatel.
     hodnoceni_autor = db.relationship(
         "Hodnoceni",
         foreign_keys="Hodnoceni.autor_id",
@@ -66,13 +71,13 @@ class Uzivatel(db.Model):
         self.set_heslo(heslo)
 
     def set_heslo(self, heslo):
-        """Zahashuje a uloží heslo"""
+        """Pred ulozenim zahashuje heslo, aby v databazi nikdy nebyl otevreny text."""
         self.heslo = bcrypt.hashpw(heslo.encode("utf-8"), bcrypt.gensalt()).decode(
             "utf-8"
         )
 
     def check_heslo(self, heslo):
-        """Ověří heslo"""
+        """Porovna zadane heslo s ulozenym hashem bez vraceni puvodni hodnoty."""
         return bcrypt.checkpw(heslo.encode("utf-8"), self.heslo.encode("utf-8"))
 
     def to_dict(self):

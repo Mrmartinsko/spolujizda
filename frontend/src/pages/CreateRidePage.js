@@ -7,23 +7,23 @@ import './CreateRidePage.css';
 const tips = [
   {
     icon: MapPinned,
-    title: 'PlĂˇnujte s pĹ™edstihem',
-    text: 'KdyĹľ jĂ­zdu zveĹ™ejnĂ­te dĹ™Ă­v, cestujĂ­cĂ­ majĂ­ vĂ­c ÄŤasu zareagovat a domluvit se.',
+    title: 'Plánujte s předstihem',
+    text: 'Když jízdu zveřejníte dřív, cestující mají víc času zareagovat a domluvit se.',
   },
   {
     icon: Coins,
-    title: 'Nastavte fĂ©rovou cenu',
-    text: 'JednoduchĂˇ, srozumitelnĂˇ cena pĹŻsobĂ­ lĂ©pe neĹľ sloĹľitĂ© dopoÄŤĂ­tĂˇvĂˇnĂ­ na poslednĂ­ chvĂ­li.',
+    title: 'Nastavte férovou cenu',
+    text: 'Jednoduchá, srozumitelná cena působí lépe než složité dopočítávání na poslední chvíli.',
   },
   {
     icon: MessageSquareText,
-    title: 'BuÄŹte v kontaktu',
-    text: 'KrĂˇtkĂˇ zprĂˇva pĹ™i zmÄ›nÄ› ÄŤasu nebo trasy pomĹŻĹľe pĹ™edejĂ­t zmatkĹŻm.',
+    title: 'Buďte v kontaktu',
+    text: 'Krátká zpráva při změně času nebo trasy pomůže předejít zmatkům.',
   },
   {
     icon: CarFront,
-    title: 'Myslete na pohodlĂ­',
-    text: 'PĹ™ehlednÄ› popsanĂ© auto i poÄŤet mĂ­st dĂˇvajĂ­ ostatnĂ­m jistotu jeĹˇtÄ› pĹ™ed rezervacĂ­.',
+    title: 'Myslete na pohodlí',
+    text: 'Přehledně popsané auto i počet míst dávají ostatním jistotu ještě před rezervací.',
   },
 ];
 
@@ -31,10 +31,10 @@ const CreateRidePage = () => {
   return (
     <div className="page-shell create-ride-page">
       <section className="page-hero">
-        <span className="page-hero__eyebrow">NabĂ­dka jĂ­zdy</span>
-        <h1 className="page-hero__title">NabĂ­dnout jĂ­zdu</h1>
+        <span className="page-hero__eyebrow">Nabídka jízdy</span>
+        <h1 className="page-hero__title">Nabídnout jízdu</h1>
         <p className="page-hero__text">
-          VyplĹte trasu, ÄŤas a auto. SprĂˇvu rezervacĂ­ pak vyĹ™eĹˇĂ­te v pĹ™ehledu jĂ­zd.
+          Vyplňte trasu, čas a auto. Správu rezervací pak vyřešíte v přehledu jízd.
         </p>
       </section>
 
@@ -44,7 +44,7 @@ const CreateRidePage = () => {
 
       <section className="page-section">
         <div className="section-heading">
-          <h2>Tipy pro lepĹˇĂ­ nabĂ­dku</h2>
+          <h2>Tipy pro lepší nabídku</h2>
         </div>
 
         <div className="tips-grid">

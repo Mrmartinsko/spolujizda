@@ -102,7 +102,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
       if (onCarReplaced) onCarReplaced();
       onClose();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Chyba pri ruseni aktivnich jizd.'));
+      setError(getApiErrorMessage(err, 'Chyba pri ruseni aktivnich jízd.'));
     } finally {
       setCancellingRides(false);
     }
@@ -111,14 +111,22 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
   return (
     <div className="replace-car-modal">
       <div className="modal-content">
+        <button
+          type="button"
+          className="replace-car-close"
+          onClick={onClose}
+          aria-label="Zavřít formulář"
+        >
+          ×
+        </button>
         <div className="replace-car-header">
-          <h2>Aktivni jizdy u auta</h2>
+          <h2>Aktivní jízdy u auta</h2>
           <p className="modal-intro">
-            Auto, ktere chcete smazat, je navazano na aktivni jizdy. Muzete je prevest
-            na jine auto, nebo je zrusit a auto odstranit.
+            Auto, které chcete smazat, je navázáno na aktivní jízdy. Můžete je převést
+            na jiné auto, nebo je zrušit a auto odstranit.
           </p>
           {aktivniJizdyCount > 0 && (
-            <p className="modal-intro">Dotcene aktivni jizdy: {aktivniJizdyCount}</p>
+            <p className="modal-intro">Dotčené aktivní jízdy: {aktivniJizdyCount}</p>
           )}
         </div>
 
@@ -132,19 +140,19 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
               <section className="replace-option-card">
                 <div className="replace-option-section">
                   <div className="card-section-heading">
-                    <h3>Nahradit auto u aktivnich jizd</h3>
+                    <h3>Nahradit auto u aktivních jízd</h3>
                     <p className="section-description">
-                      Vyberte jine existujici auto, nebo rychle pridejte nove a pouzijte ho
-                      misto puvodniho.
+                      Vyberte jiné existující auto, nebo rychle přidejte nové a použijte ho
+                      místo původního.
                     </p>
                   </div>
 
                   <div className="card-subsection">
-                    <div className="subsection-label">Dostupna auta</div>
+                    <div className="subsection-label">Dostupná auta</div>
                     <div className="available-cars">
                       {availableCars.length === 0 ? (
                         <div className="empty-state-box">
-                          Zadna dostupna auta pro nahrazeni.
+                          Žádná dostupná auta pro nahrazení.
                         </div>
                       ) : (
                         availableCars.map((auto) => (
@@ -164,11 +172,11 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
                   <div className="replace-divider" />
 
                   <div className="card-subsection">
-                    <div className="subsection-label">Pridat nove auto</div>
+                    <div className="subsection-label">Přidat nové auto</div>
                     <div className="new-car-form">
                       <input
                         type="text"
-                        placeholder="Znacka"
+                        placeholder="Značka"
                         value={newCar.znacka}
                         onChange={(e) => setNewCar({ ...newCar, znacka: e.target.value })}
                       />
@@ -196,7 +204,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
                         onClick={addNewCar}
                         disabled={adding}
                       >
-                        {adding ? 'Pridavam...' : 'Pridat auto'}
+                        {adding ? 'Přidávám...' : 'Přidat auto'}
                       </button>
                     </div>
                   </div>
@@ -205,23 +213,23 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
 
               <section className="replace-option-card replace-option-card--danger">
                 <div className="replace-option-section danger-section">
-                  <span className="danger-badge">Krajni moznost</span>
+                  <span className="danger-badge">Krajní možnost</span>
 
                   <div className="card-section-heading">
-                    <h3>Zrusit aktivni jizdy a smazat auto</h3>
+                    <h3>Zrušit aktivní jízdy a smazat auto</h3>
                   </div>
 
                   <div className="danger-copy">
                     <p className="danger-text">
-                      Zrusi se pouze aktivni jizdy navazane na toto auto.
+                      Zruší se pouze aktivní jízdy navázané na toto auto.
                     </p>
                     <p className="danger-text">
-                      Dokoncene ani drive zrusene jizdy se nezmeni.
+                      Dokončené ani dříve zrušené jízdy se nezmění.
                     </p>
                   </div>
 
                   <div className="danger-note">
-                    Tuto moznost pouzijte jen tehdy, pokud auto nechcete nahradit jinym.
+                    Tuto možnost použijte jen tehdy, pokud auto nechcete nahradit jiným.
                   </div>
 
                   <label className="danger-confirm">
@@ -230,7 +238,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
                       checked={confirmCancellationChecked}
                       onChange={(e) => setConfirmCancellationChecked(e.target.checked)}
                     />
-                    <span>Rozumim, ze se aktivni jizdy zrusi.</span>
+                    <span>Rozumím, že se aktivní jízdy zruší.</span>
                   </label>
 
                   <button
@@ -239,7 +247,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
                     onClick={() => setConfirmCancelModalOpen(true)}
                     disabled={cancellingRides || !confirmCancellationChecked}
                   >
-                    {cancellingRides ? 'Rusi se...' : 'Zrusit aktivni jizdy'}
+                    {cancellingRides ? 'Ruší se...' : 'Zrušit aktivní jízdy'}
                   </button>
                 </div>
               </section>
@@ -256,9 +264,9 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
 
       <ConfirmModal
         isOpen={confirmCancelModalOpen}
-        title="Zrusit aktivni jizdy?"
-        message="Opravdu chcete zrusit vsechny aktivni jizdy navazane na toto auto a auto odstranit?"
-        confirmText="Ano, zrusit jizdy"
+        title="Zrušit aktivní jízdy?"
+        message="Opravdu chcete zrušit všechny aktivní jízdy navázané na toto auto a auto odstranit?"
+        confirmText="Ano, zrušit jízdy"
         cancelText="Zpet"
         danger
         onCancel={() => setConfirmCancelModalOpen(false)}

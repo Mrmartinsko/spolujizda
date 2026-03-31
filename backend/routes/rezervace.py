@@ -19,6 +19,7 @@ MAX_DELKA_JMENA_PASAZERA = 80
 
 
 def _validate_dalsi_pasazeri(raw_pasazeri, pocet_mist):
+    """Overi seznam doprovodu tak, aby odpovidal poctu rezervovanych mist."""
     if raw_pasazeri is None:
         raw_pasazeri = []
 
@@ -47,6 +48,7 @@ def _validate_dalsi_pasazeri(raw_pasazeri, pocet_mist):
 
 
 def _get_user_display_name(uzivatel):
+    """Vrati jmeno vhodne do notifikaci i kdyz uzivatel nema kompletni profil."""
     if not uzivatel:
         return "Uzivatel"
 
@@ -62,6 +64,7 @@ def _get_user_display_name(uzivatel):
 @rezervace_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_rezervace():
+    """Vytvori rezervaci jen pokud neporusi kapacitu ani navazujici business pravidla."""
     uzivatel_id = int(get_jwt_identity())
     data, error = get_json_data()
     if error:
@@ -89,6 +92,7 @@ def create_rezervace():
     if chyba_dalsich_pasazeru:
         return jsonify({"error": chyba_dalsich_pasazeru}), 400
 
+    # Dokud uzivatel nedokonci povinne hodnoceni predchozi jizdy, dalsi rezervaci nepustime.
     pending = sync_pending_ratings_for_user(uzivatel_id, create_notifications=True)
     if pending:
         return jsonify(
@@ -109,6 +113,7 @@ def create_rezervace():
     if not muze:
         return error_response(zprava)
 
+    # Jedna aktivni rezervace na stejnou jizdu staci, dalsi by jen komplikovala kapacitu i UI.
     existujici = (
         Rezervace.query.filter_by(uzivatel_id=uzivatel_id, jizda_id=jizda_id)
         .filter(Rezervace.status.in_(["cekajici", "prijata"]))
@@ -158,8 +163,10 @@ def create_rezervace():
 @rezervace_bp.route("/<int:rezervace_id>/prijmout", methods=["POST"])
 @jwt_required()
 def prijmout_rezervaci(rezervace_id):
+    """Prijme cekajici rezervaci pod zamkem, aby se kapacita nerozbila soubehem."""
     uzivatel_id = int(get_jwt_identity())
 
+    # with_for_update chrani kapacitu pred soubeznymi pokusy o prijeti vice rezervaci.
     rezervace = (
         Rezervace.query.filter_by(id=rezervace_id)
         .with_for_update()
@@ -212,6 +219,7 @@ def prijmout_rezervaci(rezervace_id):
 @rezervace_bp.route("/<int:rezervace_id>/odmitnout", methods=["POST"])
 @jwt_required()
 def odmitnout_rezervaci(rezervace_id):
+    """Odmitne cekajici rezervaci a informuje pasazera o vysledku."""
     uzivatel_id = int(get_jwt_identity())
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
@@ -251,6 +259,7 @@ def odmitnout_rezervaci(rezervace_id):
 @rezervace_bp.route("/<int:rezervace_id>/zrusit", methods=["DELETE"])
 @jwt_required()
 def zrusit_rezervaci(rezervace_id):
+    """Umozni pasazerovi opustit aktivni jizdu jen s dostatecnym predstihem."""
     user_id = int(get_jwt_identity())
     rez = Rezervace.query.get_or_404(rezervace_id)
 
@@ -277,6 +286,7 @@ def zrusit_rezervaci(rezervace_id):
 @rezervace_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_rezervace():
+    """Vrati odeslane i prijate rezervace v jednom payloadu pro prehledovou obrazovku."""
     uzivatel_id = int(get_jwt_identity())
 
     moje_rezervace = Rezervace.query.filter_by(uzivatel_id=uzivatel_id).all()
@@ -307,6 +317,7 @@ def get_moje_rezervace():
 @rezervace_bp.route("/jizda/<int:jizda_id>", methods=["GET"])
 @jwt_required()
 def get_rezervace_jizdy(jizda_id):
+    """Vrati seznam rezervaci jen ridici dane jizdy."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 

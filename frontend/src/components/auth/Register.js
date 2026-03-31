@@ -30,35 +30,37 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
+    // Hodnoty trimujeme jeste pred odeslanim, aby se bezne preklepy zachytily uz ve formulari.
     const jmeno = (formData.jmeno || '').trim();
     const email = (formData.email || '').trim().toLowerCase();
     const telefon = (formData.telefon || '').trim();
     const password = formData.password || '';
     const confirmPassword = formData.confirmPassword || '';
+    // Jde jen o lehkou UX validaci zjevne spatneho cisla, backend ma stale posledni slovo.
     const phoneRegex = /^(?:\+\d{1,3}[\s-]?)?(?:\d{3}[\s-]?){2}\d{3}$/;
 
     if (!jmeno || !email || !telefon || !password || !confirmPassword) {
-      setError('VyplĹte vĹˇechna pole.');
+      setError('Vyplňte všechna pole.');
       return;
     }
 
     if (jmeno.length > 50) {
-      setError('Jmeno muze mit maximalne 50 znaku.');
+      setError('Jméno může mít maximálně 50 znaků.');
       return;
     }
 
     if (!phoneRegex.test(telefon)) {
-      setError('Telefon zadejte treba ve formatu +420 123 456 789.');
+      setError('Telefon zadejte třeba ve formátu +420 123 456 789.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Hesla se neshoduji.');
+      setError('Hesla se neshodují.');
       return;
     }
 
     if (password.length < 6) {
-      setError('Heslo musi mit alespon 6 znaku.');
+      setError('Heslo musí mít alespoň 6 znaků.');
       return;
     }
 
@@ -86,22 +88,22 @@ const Register = () => {
         <div className="auth-card">
           <aside className="auth-aside">
             <div className="auth-brand">S</div>
-            <span className="auth-kicker">NovĂ˝ ĂşÄŤet</span>
-            <h1>PĹ™ipojte se ke ĹˇkolnĂ­ komunitÄ› na cestĂˇch</h1>
+            <span className="auth-kicker">Nový účet</span>
+            <h1>Připojte se ke školní komunitě na cestách</h1>
             <p>
-              Po registraci budete moct rovnou nabĂ­zet jĂ­zdy, rezervovat mĂ­sta a psĂˇt ostatnĂ­m bez zbyteÄŤnĂ˝ch krokĹŻ navĂ­c.
+              Po registraci budete moct rovnou nabízet jízdy, rezervovat místa a psát ostatním bez zbytečných kroků navíc.
             </p>
             <div className="auth-points">
-              <div className="auth-point">OvÄ›Ĺ™enĂ˝ email pro bezpeÄŤnÄ›jĹˇĂ­ domluvu.</div>
-              <div className="auth-point">JednotnĂ˝ pĹ™ehled jĂ­zd, aut i rezervacĂ­.</div>
-              <div className="auth-point">JednoduchĂ© hodnocenĂ­ po dokonÄŤenĂ­ cesty.</div>
+              <div className="auth-point">Ověřený email pro bezpečnější domluvu.</div>
+              <div className="auth-point">Jednotný přehled jízd, aut i rezervací.</div>
+              <div className="auth-point">Jednoduché hodnocení po dokončení cesty.</div>
             </div>
           </aside>
 
           <section className="auth-form-panel">
             <div className="auth-header">
               <h2>Registrace</h2>
-              <p>StaÄŤĂ­ pĂˇr ĂşdajĹŻ a ĂşÄŤet bude pĹ™ipravenĂ˝ bÄ›hem chvilky.</p>
+              <p>Stačí pár údajů a účet bude připravený během chvilky.</p>
             </div>
 
             {error && <Alert variant="error">{error}</Alert>}
@@ -109,9 +111,9 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="field-group">
                 <label className="field-label" htmlFor="jmeno">
-                  UĹľivatelskĂ© jmĂ©no
+                  Uživatelské jméno
                 </label>
-                <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleChange} required maxLength={50} placeholder="NapĹ™. Jana NovĂˇkovĂˇ" />
+                <input className="ui-input" type="text" id="jmeno" name="jmeno" value={formData.jmeno} onChange={handleChange} required maxLength={50} placeholder="Např. Jana Nováková" />
               </div>
 
               <div className="field-group">
@@ -132,26 +134,26 @@ const Register = () => {
                 <label className="field-label" htmlFor="password">
                   Heslo
                 </label>
-                <input className="ui-input" type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="MinimĂˇlnÄ› 6 znakĹŻ" />
+                <input className="ui-input" type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Minimálně 6 znaků" />
               </div>
 
               <div className="field-group">
                 <label className="field-label" htmlFor="confirmPassword">
-                  PotvrzenĂ­ hesla
+                  Potvrzení hesla
                 </label>
                 <input className="ui-input" type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Zadejte heslo znovu" />
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? 'VytvĂˇĹ™Ă­m ĂşÄŤetâ€¦' : 'VytvoĹ™it ĂşÄŤet'}
+                {loading ? 'Vytvářím účet…' : 'Vytvořit účet'}
               </Button>
             </form>
 
             <div className="auth-footer">
               <p>
-                UĹľ ĂşÄŤet mĂˇte?
+                Už účet máte?
                 <Link to="/login" className="auth-link">
-                  PĹ™ihlaste se
+                  Přihlaste se
                 </Link>
               </p>
             </div>
