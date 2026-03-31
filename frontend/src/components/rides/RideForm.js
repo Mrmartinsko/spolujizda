@@ -35,7 +35,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
     };
 
     if (!normalizedCarData.znacka || !normalizedCarData.model) {
-      setError('Znacka a model jsou povinne.');
+      setError('Značka a model jsou povinné.');
       return;
     }
 
@@ -48,7 +48,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
       });
       onCarCreated(response.data.auto);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Auto se nepodarilo vytvorit.'));
+      setError(getApiErrorMessage(err, 'Auto se nepodařilo vytvořit.'));
     } finally {
       setLoading(false);
     }
@@ -58,8 +58,8 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
     <Card className="ride-form__car-card">
       <div className="ui-card__header">
         <div>
-          <h3 className="ui-card__title">Pridat auto</h3>
-          <p className="ui-card__subtitle">Bez auta se nabidka jízdy neobejde. Staci doplnit zakladni udaje.</p>
+          <h3 className="ui-card__title">Přidat auto</h3>
+          <p className="ui-card__subtitle">Bez auta se nabídka jízdy neobejde. Stačí doplnit základní údaje.</p>
         </div>
       </div>
 
@@ -68,7 +68,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
       <form onSubmit={handleSubmit} className="ride-form__grid ride-form__grid--two">
         <div className="field-group">
           <label className="field-label" htmlFor="znacka">
-            Znacka
+            Značka
           </label>
           <input id="znacka" className="ui-input" type="text" name="znacka" value={carData.znacka} onChange={handleChange} required maxLength={50} />
         </div>
@@ -96,10 +96,10 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
 
         <div className="ride-form__actions">
           <Button type="submit" disabled={loading}>
-            {loading ? 'Ukladam auto...' : 'Ulozit auto'}
+            {loading ? 'Ukládám auto...' : 'Uložit auto'}
           </Button>
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
-            Zpet
+            Zpět
           </Button>
         </div>
       </form>
@@ -174,7 +174,7 @@ const RideForm = ({ onRideCreated }) => {
           setNoCars(false);
         }
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Auta se nepodarilo nacist.'));
+        setError(getApiErrorMessage(err, 'Auta se nepodařilo načíst.'));
       }
     };
 
@@ -306,12 +306,12 @@ const RideForm = ({ onRideCreated }) => {
     }
 
     if (!departureDate || Number.isNaN(departureDate.getTime())) {
-      setError('Zadejte platny cas odjezdu.');
+      setError('Zadejte platný čas odjezdu.');
       return;
     }
 
     if (!arrivalDate || Number.isNaN(arrivalDate.getTime())) {
-      setError('Zadejte platny cas prijezdu.');
+      setError('Zadejte platný čas příjezdu.');
       return;
     }
 
@@ -321,7 +321,7 @@ const RideForm = ({ onRideCreated }) => {
     }
 
     if (arrivalDate <= departureDate) {
-      setError('Prijezd musi byt po odjezdu.');
+      setError('Příjezd musí být po odjezdu.');
       return;
     }
 
@@ -368,9 +368,9 @@ const RideForm = ({ onRideCreated }) => {
 
       if (onRideCreated) onRideCreated(response.data);
       resetForm();
-      setSuccess('Jízda byla uspesne pridana.');
+      setSuccess('Jízda byla úspěšně přidána.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Jízdu se nepodarilo vytvorit.'));
+      setError(getApiErrorMessage(err, 'Jízdu se nepodařilo vytvořit.'));
     } finally {
       setLoading(false);
     }
@@ -381,7 +381,7 @@ const RideForm = ({ onRideCreated }) => {
       <div className="ui-card__header ride-form__header">
         <div>
           <h2 className="ui-card__title">Detaily jízdy</h2>
-          <p className="ui-card__subtitle">Vyplnte jen to podstatne. Nepodstatne interni detaily nechavame stranou.</p>
+          <p className="ui-card__subtitle">Vyplňte jen to podstatné. Nepodstatné interní detaily necháváme stranou.</p>
         </div>
       </div>
 
@@ -394,14 +394,14 @@ const RideForm = ({ onRideCreated }) => {
             <CarFront size={24} />
           </div>
           <div>
-            <h3 className="empty-state__title">Nejdriv potrebujete pridat auto</h3>
+            <h3 className="empty-state__title">Nejdřív potřebujete přidat auto</h3>
             <p className="empty-state__text">
-              Jakmile bude auto v garazi, pujde ho vybrat i pro nove jízdy. Staci ho pridat jednou.
+              Jakmile bude auto v garáži, půjde ho vybrat i pro nové jízdy. Stačí ho přidat jednou.
             </p>
           </div>
           <Button type="button" onClick={() => setCreatingCar(true)}>
             <CirclePlus size={16} />
-            Pridat auto
+            Přidat auto
           </Button>
         </div>
       )}
