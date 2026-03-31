@@ -17,6 +17,36 @@
     border-radius: 18px;
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
     padding: 24px;
+    position: relative;
+}
+
+.replace-car-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: #edf2f8;
+    color: #314360;
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.replace-car-close:hover {
+    background: #dfe7f2;
+    transform: translateY(-1px);
+}
+
+.replace-car-close:focus-visible {
+    outline: 2px solid #4d8df5;
+    outline-offset: 2px;
 }
 
 .replace-car-header {
@@ -115,6 +145,25 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.available-cars--scroll {
+    max-height: min(52vh, 420px);
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.available-cars--scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.available-cars--scroll::-webkit-scrollbar-thumb {
+    background: rgba(98, 113, 143, 0.35);
+    border-radius: 999px;
+}
+
+.available-cars--scroll::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .available-car {
@@ -336,5 +385,9 @@
     .available-car button,
     .close-btn {
         width: 100%;
+    }
+
+    .available-cars--scroll {
+        max-height: min(46vh, 340px);
     }
 }

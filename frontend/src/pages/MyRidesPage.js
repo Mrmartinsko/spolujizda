@@ -12,20 +12,20 @@ import './MyRidesPage.css';
 
 const TEXT = {
   loadError: 'Jizdy se nepodarilo nacist.',
-  loading: 'Nacitam vase jizdy...',
-  eyebrow: 'Moje jizdy',
-  title: 'Prehled vsech tras, ktere nabizite jako ridic',
+  loading: 'Nacitam vase jízdy...',
+  eyebrow: 'Moje jízdy',
+  title: 'Přehled všech tras, které nabízíte jako řidič',
   active: 'Aktivni',
-  all: 'Vsechny',
-  completed: 'Dokoncene',
-  canceled: 'Zrusene',
-  emptyTitle: 'V tomto filtru zatim nic neni',
+  all: 'Všechny',
+  completed: 'Dokončené',
+  canceled: 'Zrušené',
+  emptyTitle: 'V tomto filtru zatím nic není',
   emptyText: 'Pokud chcete pridat novou trasu, muzete ji nabidnout behem chvile.',
-  createRide: 'Nabidnout jizdu',
-  quickStats: 'Rychle statistiky',
-  totalRides: 'Celkem jizd',
-  activeOffers: 'Aktivni nabidky',
-  transportedPassengers: 'Prevezeni pasazeri',
+  createRide: 'Nabídnout jízdu',
+  quickStats: 'Rychlé statistiky',
+  totalRides: 'Celkem jízd',
+  activeOffers: 'Aktivní nabídky',
+  transportedPassengers: 'Převezení pasažéři',
 };
 
 const MyRidesPage = () => {

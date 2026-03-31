@@ -2,6 +2,8 @@ from models import db
 
 
 class Profil(db.Model):
+    """Rozsirena verejna cast uzivatele s profilem, auty a souhrnem hodnoceni."""
+
     __tablename__ = "profil"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -10,7 +12,7 @@ class Profil(db.Model):
     bio = db.Column(db.Text)
     fotka = db.Column(db.String(255))
 
-    # Vztahy
+    # Auta se mazou spolu s profilem, protoze bez profilu ztraci vlastnika.
     auta = db.relationship("Auto", backref="profil", cascade="all, delete-orphan")
 
     def __init__(self, uzivatel_id, jmeno, bio=None, fotka=None):
@@ -20,7 +22,7 @@ class Profil(db.Model):
         self.fotka = fotka
 
     def get_prumerne_hodnoceni(self, role=None):
-        """Získá průměrné hodnocení pro danou roli"""
+        """Spocita prumerne hodnoceni pro zadanou roli nebo pro vsechna hodnoceni."""
         hodnoceni = self.uzivatel.hodnoceni_cilovy
         if role:
             hodnoceni = [h for h in hodnoceni if h.role == role]
@@ -42,4 +44,4 @@ class Profil(db.Model):
         }
 
     def __repr__(self):
-        return f"<Profil {self}>".jmeno
+        return f"<Profil {self.jmeno}>"

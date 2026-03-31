@@ -32,6 +32,7 @@ LOCATION_ALLOWED_RE = re.compile(r"[^A-Za-zÀ-ž0-9\s-]")
 
 
 def _validate_location_field(value, field_name):
+    """Overi text lokace a vrati jeho sanitizovanou podobu pro dalsi ulozeni."""
     if not isinstance(value, str):
         return False, f"Pole {field_name} musi byt text"
 
@@ -47,6 +48,7 @@ def _validate_location_field(value, field_name):
 
 
 def _extract_location_payload(data, field_name, *, required):
+    """Sjednoti textovou lokaci a volitelny place_id do jednoho payloadu."""
     raw_text = data.get(field_name)
     if raw_text is None:
         if required:
@@ -63,6 +65,7 @@ def _extract_location_payload(data, field_name, *, required):
     if place_id and not city:
         return False, f"Pole {field_name} obsahuje neplatnou lokalitu"
 
+    # Pokud mame place_id z autocomplete, bereme canonical display_name z backendu.
     if city:
         return True, {
             "text": city["display_name"],
@@ -78,6 +81,7 @@ def _extract_location_payload(data, field_name, *, required):
 
 
 def _validate_mezistanice_list(data):
+    """Prevede mezistanice ze stringu nebo objektu na jednotny seznam zastavek."""
     raw_stops = data.get("mezistanice", [])
     if raw_stops is None:
         return True, []
@@ -113,6 +117,7 @@ def _validate_mezistanice_list(data):
 
 
 def _get_auto_label(auto):
+    """Vrati kratky lidsky citelny popis auta pro notifikace a porovnani zmen."""
     if not auto:
         return None
 
@@ -127,6 +132,7 @@ def _get_auto_label(auto):
 
 
 def _collect_important_ride_changes(jizda, previous_state):
+    """Vypise jen ty zmeny jizdy, ktere maji smysl oznamit pasazerum."""
     changed_labels = []
 
     if previous_state["odkud"] != jizda.odkud:
@@ -144,6 +150,7 @@ def _collect_important_ride_changes(jizda, previous_state):
 
 
 def _route_points_for_ride(ride):
+    """Slozi celou trasu do poradi odkud -> mezistanice -> kam pro vyhledavani."""
     points = [{
         "role": "odkud",
         "position": 0,
@@ -170,6 +177,7 @@ def _route_points_for_ride(ride):
 
 
 def _matches_query_point(point, query):
+    """Porovna hledanou lokaci bud pres place_id, nebo fallbackem pres text."""
     if not query:
         return False
 
@@ -183,6 +191,7 @@ def _matches_query_point(point, query):
 
 
 def _build_search_query_payload(text_key, place_id_key):
+    """Pripravi query payload z URL parametru jen pokud uzivatel vyplnil nejaky filtr."""
     text_value = (request.args.get(text_key) or "").strip()
     place_id_value = (request.args.get(place_id_key) or "").strip() or None
     if not text_value and not place_id_value:
@@ -194,6 +203,7 @@ def _build_search_query_payload(text_key, place_id_key):
 
 
 def _classify_ride_match(ride, odkud_query, kam_query):
+    """Rozlisi full a partial match podle poradi bodu na trase."""
     route_points = _route_points_for_ride(ride)
     odkud_candidates = [point for point in route_points if point["role"] != "kam"]
     kam_candidates = [point for point in route_points if point["role"] != "odkud"]
@@ -214,6 +224,7 @@ def _classify_ride_match(ride, odkud_query, kam_query):
 
     if odkud_query and kam_query:
         if has_odkud_match and has_kam_match:
+            # Full match plati jen tehdy, kdyz hledane odkud lezi na trase pred hledanym kam.
             if any(i < j for i in odkud_positions for j in kam_positions):
                 return "full"
             return None
@@ -227,6 +238,7 @@ def _classify_ride_match(ride, odkud_query, kam_query):
 
 
 def _filter_rides_by_volna_mista(jizdy, pocet_pasazeru):
+    """Odstrani jizdy, ktere nemaji dostatek volnych mist pro zadany pocet pasazeru."""
     return [jizda for jizda in jizdy if jizda.ma_dostatek_volnych_mist(pocet_pasazeru)]
 
 
@@ -315,6 +327,7 @@ def get_jizda(jizda_id):
 @jizdy_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_jizda():
+    """Vytvori novou jizdu ridice po kontrole auta, casu a kapacity."""
     uzivatel_id = int(get_jwt_identity())
     data, error = get_json_data()
     if error:
@@ -380,6 +393,7 @@ def create_jizda():
         if cas_odjezdu <= utc_now():
             return error_response("Cas odjezdu musi byt v budoucnosti")
 
+        # Ridic by nemel mit dve prakticky soubezne jizdy, proto hlidame i kratkou rezervu.
         existing_rides = Jizda.query.filter_by(
             ridic_id=uzivatel_id,
             status="aktivni",
@@ -432,6 +446,7 @@ def create_jizda():
 @jizdy_bp.route("/<int:jizda_id>", methods=["PUT"])
 @jwt_required()
 def update_jizda(jizda_id):
+    """Upravi aktivni jizdu ridice bez poruseni kapacity a casovych pravidel."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
@@ -536,6 +551,7 @@ def update_jizda(jizda_id):
         jizda.cas_prijezdu = new_cas_prijezdu
 
         if "mezistanice" in data:
+            # Mezistanice se ukladaji jako cele nove poradi, aby zustala konzistence trasy.
             ok, mezistanice = _validate_mezistanice_list(data)
             if not ok:
                 return jsonify({"error": mezistanice}), 400
@@ -554,6 +570,7 @@ def update_jizda(jizda_id):
         changed_labels = _collect_important_ride_changes(jizda, previous_state)
 
         if changed_labels:
+            # Pasazery upozornujeme jen na zmeny, ktere maji realny dopad na domluvu cesty.
             labels_text = ", ".join(changed_labels)
             for pasazer in jizda.pasazeri:
                 vytvorit_oznameni(
@@ -577,6 +594,7 @@ def update_jizda(jizda_id):
 @jizdy_bp.route("/<int:jizda_id>", methods=["DELETE"])
 @jwt_required()
 def delete_jizda(jizda_id):
+    """Zrusi jizdu ridice pres sdileny helper, aby se aplikovala stejna pravidla vsude."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
@@ -595,14 +613,16 @@ def delete_jizda(jizda_id):
 @jizdy_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_jizdy():
+    """Vrati jizdy ridice i pasazera a dodela automaticke dokonceni po prijezdu."""
     uzivatel_id = int(get_jwt_identity())
 
     jizdy_ridic = Jizda.query.filter_by(ridic_id=uzivatel_id).all()
-    uzivatel = Uzivatel.query.get(uzivatel_id)
+    uzivatel = db.session.get(Uzivatel, uzivatel_id)
     jizdy_pasazer = uzivatel.jizdy_pasazer if uzivatel else []
     vsechny_jizdy = jizdy_ridic + list(jizdy_pasazer)
 
     changed = False
+    # Dokonceni delame lazy pri cteni, aby se stare aktivni jizdy samy dorovnaly i bez cron jobu.
     for jizda in vsechny_jizdy:
         if jizda.status == "aktivni" and jizda.cas_prijezdu < datetime.now():
             jizda.status = "dokoncena"
@@ -616,6 +636,7 @@ def get_moje_jizdy():
 
 @jizdy_bp.route("/vyhledat", methods=["GET"])
 def vyhledat_jizdy():
+    """Vrati jizdy serazene tak, aby full match mel prednost pred partial match."""
     datum = (request.args.get("datum") or "").strip()
     pocet_pasazeru = request.args.get("pocet_pasazeru", type=int) or 1
     odkud_query = _build_search_query_payload("odkud", "odkud_place_id")
@@ -633,6 +654,7 @@ def vyhledat_jizdy():
     full_match = []
     partial_match = []
 
+    # Full a partial match drzi frontend oddelene, ale backend urcuje prioritu vysledku.
     for ride in all_rides:
         match_type = _classify_ride_match(ride, odkud_query, kam_query)
         if match_type == "full":
@@ -672,6 +694,7 @@ def nejnovejsi_jizdy():
 @jizdy_bp.route("/<int:jizda_id>/pasazeri/<int:pasazer_id>", methods=["DELETE"])
 @jwt_required()
 def vyhodit_pasazera(jizda_id, pasazer_id):
+    """Umoznuje ridici odebrat pasazera jen u aktivni jizdy a s casovou rezervou."""
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.status != "aktivni":

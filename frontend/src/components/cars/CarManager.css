@@ -1,6 +1,30 @@
+.car-manager .grid-2 {
+  align-items: start;
+}
+
+.car-manager__list-panel {
+  min-height: 0;
+}
+
 .cars-grid {
   display: grid;
   gap: 16px;
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.cars-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cars-grid::-webkit-scrollbar-thumb {
+  background: rgba(98, 113, 143, 0.35);
+  border-radius: 999px;
+}
+
+.cars-grid::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .car-card {
@@ -50,6 +74,12 @@
 }
 
 @media (max-width: 760px) {
+  .cars-grid {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+
   .form-row,
   .form-actions,
   .car-actions {

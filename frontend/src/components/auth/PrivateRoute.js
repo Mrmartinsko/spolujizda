@@ -10,7 +10,7 @@ const PrivateRoute = ({ children }) => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>NaÄŤĂ­tĂˇnĂ­...</p>
+        <p>Načítání...</p>
       </div>
     );
   }

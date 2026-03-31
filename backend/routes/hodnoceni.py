@@ -131,6 +131,7 @@ def create_hodnoceni():
 @hodnoceni_bp.route("/pending", methods=["GET"])
 @jwt_required()
 def pending_hodnoceni():
+    """Vrati dokoncene jizdy, kde ma uzivatel stale nevyresene hodnoceni."""
     uzivatel_id = int(get_jwt_identity())
     pending = sync_pending_ratings_for_user(uzivatel_id, create_notifications=True)
     return jsonify({"pending": pending})
@@ -139,6 +140,7 @@ def pending_hodnoceni():
 @hodnoceni_bp.route("/uzivatel/<int:uzivatel_id>", methods=["GET"])
 @jwt_required()
 def get_hodnoceni_uzivatele(uzivatel_id):
+    """Vrati hodnoceni konkretniho uzivatele a souhrnne statistiky podle role."""
     role = request.args.get("role")
 
     if not db.session.get(Uzivatel, uzivatel_id):
@@ -171,6 +173,7 @@ def get_hodnoceni_uzivatele(uzivatel_id):
 @hodnoceni_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_hodnoceni():
+    """Vrati oddelene prijata a udelena hodnoceni prihlaseneho uzivatele."""
     uzivatel_id = int(get_jwt_identity())
 
     dostana = (
@@ -195,6 +198,7 @@ def get_moje_hodnoceni():
 @hodnoceni_bp.route("/<int:hodnoceni_id>", methods=["PUT"])
 @jwt_required()
 def update_hodnoceni(hodnoceni_id):
+    """Umozni autorovi upravit znamku nebo komentar bez zmeny vazby na jizdu."""
     uzivatel_id = int(get_jwt_identity())
     hodnoceni = db.session.get(Hodnoceni, hodnoceni_id)
     if not hodnoceni:
@@ -239,6 +243,7 @@ def update_hodnoceni(hodnoceni_id):
 @hodnoceni_bp.route("/<int:hodnoceni_id>", methods=["DELETE"])
 @jwt_required()
 def delete_hodnoceni(hodnoceni_id):
+    """Smaze hodnoceni pouze jeho autorovi, aby nesla menit cizi zpetna vazba."""
     uzivatel_id = int(get_jwt_identity())
     hodnoceni = db.session.get(Hodnoceni, hodnoceni_id)
     if not hodnoceni:

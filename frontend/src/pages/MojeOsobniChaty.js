@@ -141,7 +141,7 @@ const MojeOsobniChaty = () => {
 
         {chaty.length === 0 ? (
           <div className="chat-sidebar__empty">
-            Zatim tu neni zadna konverzace. Jakmile si s nekym napisete, objevi se prave tady.
+            Zatím tu není žádná konverzace. Jakmile si s někým napíšete, objeví se právě tady.
           </div>
         ) : (
           <div className="chat-sidebar__list">

@@ -92,7 +92,7 @@ const OhodnotitPage = () => {
   };
 
   const RideInfo = () => {
-    if (loading) return <p className="rate-muted">Nacitam jizdu...</p>;
+    if (loading) return <p className="rate-muted">Nacitam jízdu...</p>;
     if (!ride) return null;
 
     const odkud = ride.odkud || ride.jizda?.odkud;
@@ -143,9 +143,10 @@ const OhodnotitPage = () => {
             </span>
           </div>
 
-          <label className="rate-label">
+          <label className="rate-label" htmlFor="komentar">
             Komentar (volitelne)
             <textarea
+              id="komentar"
               className="rate-textarea"
               value={komentar}
               onChange={(e) => setKomentar(e.target.value)}

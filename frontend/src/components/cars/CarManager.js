@@ -140,29 +140,29 @@ const CarManager = () => {
   return (
     <div className="page-shell car-manager">
       <section className="page-hero page-hero--light">
-        <span className="page-hero__eyebrow">Garaz</span>
-        <h1 className="page-hero__title">Sprava aut na jednom miste</h1>
+        <span className="page-hero__eyebrow">Garáž</span>
+        <h1 className="page-hero__title">Správa aut na jednom místě</h1>
         <p className="page-hero__text">
-          Vyberte si primarni auto, upravte detaily nebo pridejte dalsi vuz pro jiny typ cesty.
+          Vyberte si primární auto, upravte detaily nebo přidejte další vůz pro jiný typ cesty.
         </p>
       </section>
 
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="grid-2">
-        <Card>
+        <Card className="car-manager__list-panel">
           <div className="ui-card__header">
             <div>
               <h2 className="ui-card__title">Moje auta</h2>
-              <p className="ui-card__subtitle">Primarni auto bude predvyplnene pri tvorbe jizdy.</p>
+              <p className="ui-card__subtitle">Primární auto bude předvyplněné při tvorbě jízdy.</p>
             </div>
             <Badge variant="primary">{auta.length} vozu</Badge>
           </div>
 
           {auta.length === 0 ? (
             <div className="empty-state">
-              <h3 className="empty-state__title">Zatim tu neni zadne auto</h3>
-              <p className="empty-state__text">Pridejte prvni vuz a nabidka jizd bude pripravena hned na dalsi krok.</p>
+              <h3 className="empty-state__title">Zatím tu není žádné auto</h3>
+              <p className="empty-state__text">Přidejte první vůz a nabídka jízd bude připravena hned na další krok.</p>
             </div>
           ) : (
             <div className="cars-grid">
@@ -173,7 +173,7 @@ const CarManager = () => {
                       <h3>{auto.znacka} {auto.model}</h3>
                       <p>{auto.barva || 'Barva neuvedena'}{auto.spz ? ` - ${auto.spz}` : ''}</p>
                     </div>
-                    {auto.primarni && <Badge variant="success">Primarni</Badge>}
+                    {auto.primarni && <Badge variant="success">Primární</Badge>}
                   </div>
 
                   <div className="car-actions">
@@ -193,13 +193,13 @@ const CarManager = () => {
         <Card>
           <div className="ui-card__header">
             <div>
-              <h2 className="ui-card__title">{editing ? 'Upravit auto' : 'Pridat nove auto'}</h2>
-              <p className="ui-card__subtitle">Drzime jednoduchy formular, aby bylo auto pripravene behem chvilky.</p>
+              <h2 className="ui-card__title">{editing ? 'Upravit auto' : 'Přidat nové auto'}</h2>
+              <p className="ui-card__subtitle">Držíme jednoduchý formulář, aby bylo auto připravené během chvilky.</p>
             </div>
             {!editing && (
               <Badge variant="neutral">
                 <PlusCircle size={14} />
-                Novy zaznam
+                Nový záznam
               </Badge>
             )}
           </div>
@@ -208,7 +208,7 @@ const CarManager = () => {
             <div className="form-row">
               <div className="field-group">
                 <label className="field-label" htmlFor="znacka">
-                  Znacka
+                  Značka
                 </label>
                 <input id="znacka" className="ui-input" type="text" name="znacka" value={formData.znacka} onChange={handleChange} required maxLength={50} />
               </div>
@@ -233,18 +233,18 @@ const CarManager = () => {
                 <label className="field-label" htmlFor="spz">
                   SPZ
                 </label>
-                <input id="spz" className="ui-input" type="text" name="spz" value={formData.spz} onChange={handleChange} maxLength={20} placeholder="Napriklad 1A2 3456" />
+                <input id="spz" className="ui-input" type="text" name="spz" value={formData.spz} onChange={handleChange} maxLength={20} placeholder="Například 1A2 3456" />
               </div>
             </div>
 
             <label className="checkbox-row">
               <input type="checkbox" name="primarni" checked={formData.primarni} onChange={handleChange} />
-              Nastavit jako primarni auto
+              Nastavit jako primární auto
             </label>
 
             <div className="form-actions">
               <Button type="submit" disabled={loading}>
-                {loading ? 'Ukladam...' : editing ? 'Ulozit zmeny' : 'Pridat auto'}
+                {loading ? 'Ukladam...' : editing ? 'Ulozit zmeny' : 'Přidat auto'}
               </Button>
               {editing && (
                 <Button type="button" variant="secondary" onClick={cancelEdit} disabled={loading}>

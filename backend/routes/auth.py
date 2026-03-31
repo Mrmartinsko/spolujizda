@@ -20,11 +20,13 @@ logger = getLogger(__name__)
 
 
 def _get_frontend_url():
+    """Vrati frontend URL bez koncoveho lomitka pro skladani odkazu v emailech."""
     return os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    """Zaregistruje uzivatele a pripravi email verification pred prvnim loginem."""
     data, error = get_json_data()
     if error:
         return error
@@ -49,6 +51,7 @@ def register():
     if bio_error:
         return error_response(bio_error)
 
+    # Email sjednocujeme na lower-case, aby se duplicity neschovaly za ruzne varianty zapisu.
     email = email.lower()
     bio = bio or ""
 
@@ -103,6 +106,7 @@ def register():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    """Prihlasi jen overeneho uzivatele a vrati JWT pro dalsi API volani."""
     data, error = get_json_data()
     if error:
         return error
@@ -144,6 +148,7 @@ def login():
 
 @auth_bp.route("/resend-verification", methods=["POST"])
 def resend_verification():
+    """Znovu posle overovaci email nebo znovu pouzije stale platny token."""
     data, error = get_json_data()
     if error:
         return error
@@ -162,6 +167,7 @@ def resend_verification():
         return jsonify({"message": "Email uz je overen"}), 200
 
     try:
+        # Kdyz je puvodni token porad platny, nema smysl vytvaret dalsi aktivni odkaz.
         if (
             uzivatel.email_verification_token
             and uzivatel.email_verification_expires_at
@@ -186,6 +192,7 @@ def resend_verification():
 
 @auth_bp.route("/verify-email/<token>", methods=["GET"])
 def verify_email(token):
+    """Potvrdi email pomoci jednorazoveho tokenu s expiraci."""
     if not token:
         return jsonify({"error": "Chybi token"}), 400
 
@@ -217,6 +224,7 @@ def verify_email(token):
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
+    """Spusti bezpecny reset hesla bez prozrazeni existence uctu."""
     data, error = get_json_data()
     if error:
         return error
@@ -229,6 +237,7 @@ def forgot_password():
     if not validate_email(email):
         return jsonify({"error": "Neplatny format emailu"}), 400
 
+    # Stejna zprava pro existujici i neexistujici email omezuje enumeraci uctu.
     safe_message = "Pokud ucet existuje, poslali jsme email s instrukcemi pro obnovu hesla."
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
@@ -253,6 +262,7 @@ def forgot_password():
 
 @auth_bp.route("/reset-password/<token>", methods=["GET"])
 def verify_reset_password_token(token):
+    """Overi, ze reset token stale existuje a jeste nevyprsel."""
     if not token:
         return jsonify({"error": "Chybi token"}), 400
 
@@ -271,6 +281,7 @@ def verify_reset_password_token(token):
 
 @auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
+    """Nastavi nove heslo a zneplatni pouzity reset token."""
     data, error = get_json_data()
     if error:
         return error
@@ -311,6 +322,7 @@ def reset_password():
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
+    """Vrati aktualne prihlaseneho uzivatele pro obnovu session ve frontendu."""
     uzivatel_id = get_jwt_identity()
     uzivatel = db.session.get(Uzivatel, int(uzivatel_id))
 
@@ -332,6 +344,7 @@ def get_current_user():
 @auth_bp.route("/change-password", methods=["POST"])
 @jwt_required()
 def change_password():
+    """Zmeni heslo jen po kontrole puvodniho hesla aktualniho uzivatele."""
     uzivatel_id = get_jwt_identity()
     data, error = get_json_data()
     if error:

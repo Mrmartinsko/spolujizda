@@ -47,6 +47,7 @@ const RideSearch = ({ onSearchResults }) => {
     const kam = (searchData.kam || '').trim();
     const pocetPasazeru = Number(searchData.pocet_pasazeru);
 
+    // Zakladni kombinace trasy, data a poctu mist je povinna, jinak by backend vracel moc siroke vysledky.
     if (!odkud || !kam || !searchData.datum) {
       setError('Vyplnte odkud, kam a datum odjezdu.');
       setHasSearched(true);
@@ -78,18 +79,20 @@ const RideSearch = ({ onSearchResults }) => {
       });
 
       const data = Array.isArray(response.data) ? response.data : [];
+      // Backend vraci i typ shody, ktery si nechavame pro pripadne odliseni full a partial match.
       const fetchedRides = data.map((item) => ({
         ...item.ride,
         match_type: item.match_type,
       }));
 
       const now = new Date();
+      // Jde o obranny filtr pro pripad, ze backend vrati uz neaktualni zaznam tesne po odjezdu.
       const aktualniJizdy = fetchedRides.filter((ride) => new Date(ride.cas_odjezdu) > now);
 
       setSearchResults(aktualniJizdy);
       if (onSearchResults) onSearchResults(aktualniJizdy);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Vyhledavani jizd se nepovedlo.'));
+      setError(getApiErrorMessage(err, 'Vyhledavani jízd se nepovedlo.'));
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -106,8 +109,8 @@ const RideSearch = ({ onSearchResults }) => {
       <Card className="ride-search__card">
         <div className="ui-card__header">
           <div>
-            <h2 className="ui-card__title">Najit vhodnou jizdu</h2>
-            <p className="ui-card__subtitle">Vyberte trasu, datum a pocet mist. O zbytek se postara aplikace.</p>
+            <h2 className="ui-card__title">Najít vhodnou jízdu</h2>
+            <p className="ui-card__subtitle">Vyberte trasu, datum a počet míst. O zbytek se postará aplikace.</p>
           </div>
         </div>
 
@@ -120,7 +123,7 @@ const RideSearch = ({ onSearchResults }) => {
               name="odkud"
               value={searchData.odkud}
               onChange={handleLocationChange}
-              placeholder="Napriklad Brno"
+              placeholder="Například Brno"
             />
 
             <LocationAutocompleteInput
@@ -128,7 +131,7 @@ const RideSearch = ({ onSearchResults }) => {
               name="kam"
               value={searchData.kam}
               onChange={handleLocationChange}
-              placeholder="Napriklad Praha"
+              placeholder="Například Praha"
             />
 
             <div className="field-group">
@@ -140,7 +143,7 @@ const RideSearch = ({ onSearchResults }) => {
 
             <div className="field-group">
               <label className="field-label" htmlFor="pocet_pasazeru">
-                Pocet mist
+                Počet míst
               </label>
               <input
                 id="pocet_pasazeru"
@@ -167,7 +170,7 @@ const RideSearch = ({ onSearchResults }) => {
           <div className="section-heading">
             <div>
               <h2>Vysledky vyhledavani</h2>
-              <p className="ride-search__results-copy">{searchResults.length} odpovidajicich jizd</p>
+              <p className="ride-search__results-copy">{searchResults.length} odpovidajicich jízd</p>
             </div>
           </div>
 
@@ -181,7 +184,7 @@ const RideSearch = ({ onSearchResults }) => {
             />
           ) : (
             <Card className="no-results">
-              Zadna vhodna jizda se ted nenasla. Zkuste jiny cas, trasu nebo nabidnete vlastni spoj.
+              Zadna vhodna jízda se ted nenasla. Zkuste jiny cas, trasu nebo nabidnete vlastni spoj.
             </Card>
           )}
         </div>

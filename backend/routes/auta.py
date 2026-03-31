@@ -15,15 +15,18 @@ auta_bp = Blueprint("auta", __name__)
 
 
 def _get_aktivni_jizdy_auta(auto_id):
+    """Vrati aktivni jizdy navazane na auto, ktere brani jeho primemu smazani."""
     return Jizda.query.filter(Jizda.auto_id == auto_id, Jizda.status == "aktivni").all()
 
 
 def _soft_delete_auto(auto, profil_id):
+    """Oznaci auto jako smazane a pripadne prehodi primarni vlajku na jine auto."""
     bylo_primarni = auto.primarni
     auto.smazane = True
     auto.primarni = False
 
     if bylo_primarni:
+        # Po smazani primarniho auta chceme zachovat jedno vychozi auto i do budoucna.
         nove_primarni = Auto.query.filter(
             Auto.profil_id == profil_id,
             Auto.smazane == false(),
@@ -34,6 +37,7 @@ def _soft_delete_auto(auto, profil_id):
 
 
 def _normalize_auto_payload(data, *, partial=False):
+    """Sjednoti a zvaliduje payload auta pro vytvoreni i castecne upravy."""
     normalized = {}
 
     if not partial or "znacka" in data:
@@ -71,6 +75,7 @@ def _normalize_auto_payload(data, *, partial=False):
 
 
 def get_uzivatel_a_profil():
+    """Vrati prihlaseneho uzivatele s profilem nebo hotovou chybovou odpoved."""
     uzivatel_id = int(get_jwt_identity())
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
@@ -83,6 +88,7 @@ def get_uzivatel_a_profil():
 @auta_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_auta():
+    """Vrati aktivni auta prihlaseneho uzivatele s primarnim autem na zacatku."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -98,6 +104,7 @@ def get_moje_auta():
 @auta_bp.route("/moje-nove", methods=["POST"])
 @jwt_required()
 def create_auto():
+    """Vytvori auto uzivatele a podle potreby nastavi primarni auto."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -134,6 +141,7 @@ def create_auto():
             Auto.primarni.is_(True),
             Auto.smazane == false(),
         ).first()
+        # Prvni aktivni auto ma byt primarni i kdyz to klient neposle explicitne.
         if not auto.primarni and not ma_primarni:
             auto.primarni = True
 
@@ -148,6 +156,7 @@ def create_auto():
 @auta_bp.route("/<int:auto_id>", methods=["PUT"])
 @jwt_required()
 def update_auto(auto_id):
+    """Upravi vlastni auto a hlida konzistenci primarniho auta v garazi."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -191,6 +200,7 @@ def update_auto(auto_id):
 @auta_bp.route("/<int:auto_id>", methods=["DELETE"])
 @jwt_required()
 def delete_auto(auto_id):
+    """Smaze auto pouze pokud na nem nezustaly aktivni jizdy."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -219,6 +229,7 @@ def delete_auto(auto_id):
 @auta_bp.route("/<int:auto_id>/nastavit-primarni", methods=["POST"])
 @jwt_required()
 def nastavit_primarni(auto_id):
+    """Prehodi primarni auto uzivatele bez zmeny ostatnich detailu."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -249,6 +260,7 @@ def nastavit_primarni(auto_id):
 @auta_bp.route("/replace/<int:stare_auto_id>", methods=["POST"])
 @jwt_required()
 def replace_auto(stare_auto_id):
+    """Prevede aktivni jizdy na jine auto a puvodni bezpecne skryje."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -300,6 +312,7 @@ def replace_auto(stare_auto_id):
 @auta_bp.route("/<int:auto_id>/zrusit-aktivni-jizdy", methods=["POST"])
 @jwt_required()
 def zrusit_aktivni_jizdy_auta(auto_id):
+    """Zrusi aktivni jizdy auta a nasledne auto oznaci jako smazane."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code

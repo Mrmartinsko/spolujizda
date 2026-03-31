@@ -3,6 +3,8 @@ from utils.datetime_utils import utc_now
 
 
 class Hodnoceni(db.Model):
+    """Zpetna vazba mezi ucastniky konkretni dokoncene jizdy."""
+
     __tablename__ = "hodnoceni"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -20,6 +22,7 @@ class Hodnoceni(db.Model):
     datum = db.Column(db.DateTime, default=utc_now)
 
     __table_args__ = (
+        # Jeden autor muze za danou jizdu a roli vytvorit prave jedno hodnoceni.
         db.UniqueConstraint(
             "autor_id",
             "cilovy_uzivatel_id",
@@ -40,6 +43,7 @@ class Hodnoceni(db.Model):
         self.komentar = komentar
 
     def to_dict(self):
+        """Serializuje hodnoceni pro profil, historii i notifikace ve frontendu."""
         return {
             "id": self.id,
             "jizda_id": self.jizda_id,
@@ -53,4 +57,7 @@ class Hodnoceni(db.Model):
         }
 
     def __repr__(self):
-        return f"<Hodnoceni {self.znamka}/5 pro {self.cilovy_uzivatel_id} (jizda {self.jizda_id})>"
+        return (
+            f"<Hodnoceni {self.znamka}/5 pro {self.cilovy_uzivatel_id} "
+            f"(jizda {self.jizda_id})>"
+        )

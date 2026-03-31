@@ -30,10 +30,10 @@ const ForgotPassword = () => {
       setMessage(
         response?.error ||
           response?.message ||
-          'Pokud ĂşÄŤet existuje, poslali jsme email s odkazem pro obnovu hesla.'
+          'Pokud účet existuje, poslali jsme email s odkazem pro obnovu hesla.'
       );
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Zadost o obnovu hesla se nepovedla.'));
+      setError(getApiErrorMessage(err, 'Žádost o obnovu hesla se nepovedla.'));
     } finally {
       setLoading(false);
     }
@@ -45,17 +45,17 @@ const ForgotPassword = () => {
         <div className="auth-card">
           <aside className="auth-aside">
             <div className="auth-brand">S</div>
-            <span className="auth-kicker">Obnova pĹ™Ă­stupu</span>
-            <h1>VrĂˇtĂ­me vĂˇs zpĂˇtky do ĂşÄŤtu</h1>
+            <span className="auth-kicker">Obnova přístupu</span>
+            <h1>Vrátíme vás zpátky do účtu</h1>
             <p>
-              Zadejte svĹŻj email a poĹˇleme vĂˇm bezpeÄŤnĂ˝ odkaz, pĹ™es kterĂ˝ si nastavĂ­te novĂ© heslo.
+              Zadejte svůj email a pošleme vám bezpečný odkaz, přes který si nastavíte nové heslo.
             </p>
           </aside>
 
           <section className="auth-form-panel">
             <div className="auth-header">
-              <h2>ZapomenutĂ© heslo</h2>
-              <p>Po odeslĂˇnĂ­ ĹľĂˇdosti zkontrolujte schrĂˇnku i spam. Odkaz mĂˇ omezenou platnost.</p>
+              <h2>Zapomenuté heslo</h2>
+              <p>Po odeslání žádosti zkontrolujte schránku i spam. Odkaz má omezenou platnost.</p>
             </div>
 
             {message && <Alert variant="success">{message}</Alert>}
@@ -70,15 +70,15 @@ const ForgotPassword = () => {
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? 'OdesĂ­lĂˇm odkazâ€¦' : 'Poslat odkaz pro novĂ© heslo'}
+                {loading ? 'Odesílám odkaz…' : 'Poslat odkaz pro nové heslo'}
               </Button>
             </form>
 
             <div className="auth-footer">
               <p>
-                UĹľ si heslo pamatujete?
+                Už si heslo pamatujete?
                 <Link to="/login" className="auth-link">
-                  PĹ™ihlĂˇsit se
+                  Přihlásit se
                 </Link>
               </p>
             </div>

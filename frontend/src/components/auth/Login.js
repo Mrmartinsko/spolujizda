@@ -27,11 +27,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
+    // Frontend jen odfiltruje prazdne hodnoty a bezne mezery, backend zustava hlavni autorita.
     const email = (formData.email || '').trim().toLowerCase();
     const password = formData.password || '';
 
     if (!email || !password) {
-      setError('Vyplnte email a heslo.');
+      setError('Vyplňte email a heslo.');
       return;
     }
 
@@ -43,6 +44,7 @@ const Login = () => {
     } catch (err) {
       const data = err.response?.data;
 
+      // Neovereny email ma vlastni navazujici flow, proto uzivatele presmerujeme rovnou tam.
       if (err.response?.status === 403 && data?.requires_email_verification) {
         navigate('/verify-email', {
           state: { email: data.email || email },
@@ -51,11 +53,11 @@ const Login = () => {
       }
 
       if (err.response?.status === 401) {
-        setError('Zadany email nebo heslo nesedi.');
+        setError('Zadaný email nebo heslo nesedí.');
         return;
       }
 
-      setError(getApiErrorMessage(err, 'Prihlaseni se nepovedlo.'));
+      setError(getApiErrorMessage(err, 'Přihlášení se nepovedlo.'));
     } finally {
       setLoading(false);
     }
@@ -67,22 +69,22 @@ const Login = () => {
         <div className="auth-card">
           <aside className="auth-aside">
             <div className="auth-brand">S</div>
-            <span className="auth-kicker">SpolujĂ­zda</span>
-            <h1>Cesty mezi lidmi, ne jen mezi mÄ›sty</h1>
+            <span className="auth-kicker">Spolujízda</span>
+            <h1>Cesty mezi lidmi, ne jen mezi městy</h1>
             <p>
-              PĹ™ihlaste se a mÄ›jte po ruce svĂ© jĂ­zdy, rezervace, zprĂˇvy i hodnocenĂ­ v jednom pĹ™ehlednĂ©m prostoru.
+              Přihlaste se a mějte po ruce své jízdy, rezervace, zprávy i hodnocení v jednom přehledném prostoru.
             </p>
             <div className="auth-points">
-              <div className="auth-point">RychlĂ© rezervace bez zmatkĹŻ v konverzacĂ­ch.</div>
-              <div className="auth-point">PĹ™Ă­mĂ© napojenĂ­ na chat a oznĂˇmenĂ­.</div>
-              <div className="auth-point">StudentskĂ© prostĹ™edĂ­ bez zbyteÄŤnĂ©ho balastu.</div>
+              <div className="auth-point">Rychlé rezervace bez zmatků v konverzacích.</div>
+              <div className="auth-point">Přímé napojení na chat a oznámení.</div>
+              <div className="auth-point">Studentské prostředí bez zbytečného balastu.</div>
             </div>
           </aside>
 
           <section className="auth-form-panel">
             <div className="auth-header">
-              <h2>PĹ™ihlĂˇĹˇenĂ­</h2>
-              <p>PĹ™ihlaste se do svĂ©ho ĂşÄŤtu a pokraÄŤujte tam, kde jste naposledy skonÄŤili.</p>
+              <h2>Přihlášení</h2>
+              <p>Přihlaste se do svého účtu a pokračujte tam, kde jste naposledy skončili.</p>
             </div>
 
             {error && <Alert variant="error">{error}</Alert>}
@@ -116,24 +118,24 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  placeholder="Zadejte svĂ© heslo"
+                  placeholder="Zadejte své heslo"
                 />
               </div>
 
               <div className="auth-inline-links">
                 <Link to="/forgot-password" className="auth-link auth-link-inline">
-                  ZapomenutĂ© heslo?
+                  Zapomenuté heslo?
                 </Link>
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? 'PĹ™ihlaĹˇujiâ€¦' : 'PĹ™ihlĂˇsit se'}
+                {loading ? 'Přihlašuji…' : 'Přihlásit se'}
               </Button>
             </form>
 
             <div className="auth-footer">
               <p>
-                NemĂˇte ĂşÄŤet?
+                Nemáte účet?
                 <Link to="/register" className="auth-link">
                   Zaregistrujte se
                 </Link>

@@ -59,7 +59,7 @@ const CarForm = ({ token, onCarCreated, onCancel }) => {
       <div className="ui-card__header">
         <div>
           <h3 className="ui-card__title">Pridat auto</h3>
-          <p className="ui-card__subtitle">Bez auta se nabidka jizdy neobejde. Staci doplnit zakladni udaje.</p>
+          <p className="ui-card__subtitle">Bez auta se nabidka jízdy neobejde. Staci doplnit zakladni udaje.</p>
         </div>
       </div>
 
@@ -145,6 +145,7 @@ const RideForm = ({ onRideCreated }) => {
 
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || '').trim();
+    // Frontend kopiruje zakladni limity backendu, aby uzivatel dostal chybu co nejdriv.
     if (!normalized) return `${fieldLabel} je povinne.`;
     if (normalized.length > 100) return `${fieldLabel} muze mit maximalne 100 znaku.`;
     if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
@@ -165,6 +166,7 @@ const RideForm = ({ onRideCreated }) => {
         if (userCars.length === 0) {
           setNoCars(true);
         } else {
+          // Kdyz auto existuje, predvyplnime primarni volbu a formular muze zustat jednou obrazovkou.
           setFormData((prev) => ({
             ...prev,
             auto_id: userCars.find((car) => car.primarni)?.id || userCars[0].id,
@@ -207,6 +209,7 @@ const RideForm = ({ onRideCreated }) => {
       return;
     }
 
+    // Duplicity hlidame podle place_id, jinak aspon podle textu pro rucne zadane zastavky.
     const exists = mezistanice.some((m) =>
       m.place_id && novaMezistanice.place_id
         ? m.place_id === novaMezistanice.place_id
@@ -246,6 +249,7 @@ const RideForm = ({ onRideCreated }) => {
   };
 
   const resetForm = () => {
+    // Po uspesnem vytvoreni nechavame predvybrane primarni auto, aby slo rychle zalozit dalsi jizdu.
     setFormData({
       odkud: '',
       odkud_place_id: null,
@@ -268,6 +272,7 @@ const RideForm = ({ onRideCreated }) => {
     setError('');
     setSuccess('');
 
+    // Datumy validujeme i na klientu, aby uzivatel nemusel cekat na backend odpoved kvuli zjevne chybe.
     const odkud = formData.odkud.trim();
     const kam = formData.kam.trim();
     const departureDate = formData.casOdjezdu ? new Date(formData.casOdjezdu) : null;
@@ -296,7 +301,7 @@ const RideForm = ({ onRideCreated }) => {
     }
 
     if (!formData.auto_id) {
-      setError('Vyberte auto pro jizdu.');
+      setError('Vyberte auto pro jízdu.');
       return;
     }
 
@@ -351,6 +356,7 @@ const RideForm = ({ onRideCreated }) => {
       pocet_mist: pocetMist,
     };
 
+    // Prazdne mezistanice neposilame, backend pak dostane jednodussi a konzistentni payload.
     if (payload.mezistanice.length === 0) {
       delete payload.mezistanice;
     }
@@ -362,9 +368,9 @@ const RideForm = ({ onRideCreated }) => {
 
       if (onRideCreated) onRideCreated(response.data);
       resetForm();
-      setSuccess('Jizda byla uspesne pridana.');
+      setSuccess('Jízda byla uspesne pridana.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Jizdu se nepodarilo vytvorit.'));
+      setError(getApiErrorMessage(err, 'Jízdu se nepodarilo vytvorit.'));
     } finally {
       setLoading(false);
     }
@@ -374,7 +380,7 @@ const RideForm = ({ onRideCreated }) => {
     <Card className="ride-form">
       <div className="ui-card__header ride-form__header">
         <div>
-          <h2 className="ui-card__title">Detaily jizdy</h2>
+          <h2 className="ui-card__title">Detaily jízdy</h2>
           <p className="ui-card__subtitle">Vyplnte jen to podstatne. Nepodstatne interni detaily nechavame stranou.</p>
         </div>
       </div>
@@ -390,7 +396,7 @@ const RideForm = ({ onRideCreated }) => {
           <div>
             <h3 className="empty-state__title">Nejdriv potrebujete pridat auto</h3>
             <p className="empty-state__text">
-              Jakmile bude auto v garazi, pujde ho vybrat i pro nove jizdy. Staci ho pridat jednou.
+              Jakmile bude auto v garazi, pujde ho vybrat i pro nove jízdy. Staci ho pridat jednou.
             </p>
           </div>
           <Button type="button" onClick={() => setCreatingCar(true)}>
@@ -422,7 +428,7 @@ const RideForm = ({ onRideCreated }) => {
               value={formData.odkud}
               onChange={handleLocationChange}
               required
-              placeholder="Vychozi mesto"
+              placeholder="Výchozí město"
             />
 
             <LocationAutocompleteInput
@@ -431,15 +437,15 @@ const RideForm = ({ onRideCreated }) => {
               value={formData.kam}
               onChange={handleLocationChange}
               required
-              placeholder="Cilove mesto"
+              placeholder="Cílové město"
             />
           </div>
 
           <Card className="ride-form__subcard">
             <div className="ui-card__header">
               <div>
-                <h3 className="ui-card__title">Mezizastavky</h3>
-                <p className="ui-card__subtitle">Volitelne body na trase. Pomahaji cestujicim lip odhadnout, kde mohou nastoupit.</p>
+                <h3 className="ui-card__title">Mezizastávky</h3>
+                <p className="ui-card__subtitle">Volitelné body na trase. Pomáhají cestujícím lépe odhadnout, kde mohou nastoupit.</p>
               </div>
             </div>
 
@@ -459,7 +465,7 @@ const RideForm = ({ onRideCreated }) => {
                 }}
               />
               <Button type="button" variant="secondary" className="mezistanice-add" onClick={pridatMezistanici}>
-                Pridat zastavku
+                Přidat zastávku
               </Button>
             </div>
 
@@ -501,21 +507,21 @@ const RideForm = ({ onRideCreated }) => {
           <div className="ride-form__grid ride-form__grid--three">
             <div className="field-group">
               <label className="field-label" htmlFor="casOdjezdu">
-                Cas odjezdu
+                Čas odjezdu
               </label>
               <input id="casOdjezdu" className="ui-input" type="datetime-local" name="casOdjezdu" value={formData.casOdjezdu} onChange={handleChange} required />
             </div>
 
             <div className="field-group">
               <label className="field-label" htmlFor="casPrijezdu">
-                Cas prijezdu
+                Čas příjezdu
               </label>
               <input id="casPrijezdu" className="ui-input" type="datetime-local" name="casPrijezdu" value={formData.casPrijezdu} onChange={handleChange} required />
             </div>
 
             <div className="field-group">
               <label className="field-label" htmlFor="cena">
-                Cena za misto
+                Cena za místo
               </label>
               <input id="cena" className="ui-input" type="number" name="cena" value={formData.cena} onChange={handleChange} required min="0" step="10" />
             </div>
@@ -545,9 +551,9 @@ const RideForm = ({ onRideCreated }) => {
           </div>
 
           <div className="ride-form__footer">
-            <p className="field-hint">Po vytvoreni jizdy se rezervace i zmeny budou dal spravovat z prehledu Moje jizdy.</p>
+            <p className="field-hint">Po vytvoření jízdy se rezervace i změny budou dál spravovat z přehledu Moje jízdy.</p>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Vytvarim jizdu...' : 'Nabidnout jizdu'}
+              {loading ? 'Vytvarim jizdu...' : 'Nabídnout jízdu'}
             </Button>
           </div>
         </form>

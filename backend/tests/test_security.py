@@ -294,7 +294,7 @@ def test_get_user_ratings_stats(client, completed_ride_with_passenger, rating_fa
     assert response.status_code == 200
     data = response.get_json()["statistiky"]
     assert data["celkem"] == 1
-    assert data["prumer"] == 4.0
+    assert data["prumer"] == pytest.approx(4.0)
 
 
 def test_get_my_ratings(client, completed_ride_with_passenger, rating_factory, auth_headers):

@@ -13,8 +13,10 @@ depends_on = None
 
 
 def upgrade():
+    # Merge migration only joins two heads, so there is no schema change to apply.
     pass
 
 
 def downgrade():
+    # Downgrade is also intentionally empty because this revision only merges heads.
     pass

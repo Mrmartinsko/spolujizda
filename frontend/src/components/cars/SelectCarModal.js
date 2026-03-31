@@ -32,21 +32,21 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
   return (
     <div className="replace-car-modal">
       <div className="modal-content">
-        <h2>Vyber auto pro jizdu</h2>
+        <h2>Vyber auto pro jízdu</h2>
 
         {loading ? (
           <p>Nacitani aut...</p>
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : (
-          <div className="available-cars">
+          <div className="available-cars available-cars--scroll">
             {cars.length === 0 && <p>Nemas zadne auto.</p>}
 
             {cars.map((auto) => (
               <div key={auto.id} className="available-car">
                 <span>
                   {auto.znacka} {auto.model} {auto.spz ? `(${auto.spz})` : ""}
-                  {auto.id === currentAutoId ? " - aktualni" : ""}
+                  {auto.id === currentAutoId ? " - aktuální" : ""}
                 </span>
 
                 <button
@@ -61,7 +61,7 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
         )}
 
         <button className="close-btn" onClick={onClose}>
-          Zavrit
+          Zavřít
         </button>
       </div>
     </div>

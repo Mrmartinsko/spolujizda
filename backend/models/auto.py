@@ -1,6 +1,9 @@
 from models import db
 
+
 class Auto(db.Model):
+    """Auto uzivatele, ktere lze vybrat pro jizdu nebo pozdeji jen soft-delete skryt."""
+
     __tablename__ = "auto"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +16,7 @@ class Auto(db.Model):
     docasne = db.Column(db.Boolean, default=False)
     smazane = db.Column(db.Boolean, default=False)
 
-    # Vztahy
+    # Jizdy zustavaji zachovane i po soft delete auta, proto se auto u jizdy jen skryje.
     jizdy = db.relationship("Jizda", backref=db.backref("auto", passive_deletes=True))
 
     def __init__(
@@ -25,7 +28,7 @@ class Auto(db.Model):
         spz=None,
         primarni=False,
         docasne=False,
-        smazane=False
+        smazane=False,
     ):
         self.profil_id = profil_id
         self.znacka = znacka
@@ -46,17 +49,17 @@ class Auto(db.Model):
             "spz": self.spz,
             "primarni": self.primarni,
             "docasne": self.docasne,
-            "smazane": self.smazane
+            "smazane": self.smazane,
         }
 
     def __repr__(self):
         return f"<Auto {self.znacka} {self.model}>"
 
     def ma_aktivni_jizdy(self):
-        """Vrátí True, pokud má auto nějaké aktivní jízdy"""
+        """Vrati True, pokud je auto stale pouzite u nejake aktivni jizdy."""
         from models.jizda import Jizda
-        return Jizda.query.filter(
-            Jizda.auto_id == self.id,
-            Jizda.status == "aktivni"
-        ).count() > 0
 
+        return (
+            Jizda.query.filter(Jizda.auto_id == self.id, Jizda.status == "aktivni").count()
+            > 0
+        )

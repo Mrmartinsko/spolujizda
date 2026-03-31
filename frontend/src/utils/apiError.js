@@ -1,6 +1,7 @@
 export const getApiErrorMessage = (error, fallback = 'Doslo k chybe.') => {
   const responseData = error?.response?.data;
 
+  // Hardened backend vraci hlavne `error`, fallback na `message` drzi kompatibilitu se starsimi odpovedmi.
   if (typeof responseData?.error === 'string' && responseData.error.trim()) {
     return responseData.error.trim();
   }
