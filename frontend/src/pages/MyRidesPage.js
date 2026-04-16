@@ -80,6 +80,10 @@ const MyRidesPage = () => {
     return true;
   });
 
+  const handleRideCancelled = () => {
+    setFilter('cancelled');
+  };
+
   const stats = {
     all: ridicJizdy.length,
     active: ridicJizdy.filter((j) => j.status === 'aktivni').length,
@@ -129,7 +133,7 @@ const MyRidesPage = () => {
           </div>
         </Card>
       ) : (
-        <RideList rides={filteredJizdy} onRideUpdate={fetchMojeJizdy} compactMode="management" />
+        <RideList rides={filteredJizdy} onRideUpdate={fetchMojeJizdy} onRideCancelled={handleRideCancelled} compactMode="management" />
       )}
 
       <section className="page-section">

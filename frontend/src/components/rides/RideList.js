@@ -10,7 +10,7 @@ import './RideList.css';
 const API = 'http://localhost:5000/api';
 const emptyReservationModal = { open: false, rideId: null, pocet_mist: 1, max_mist: 1, dalsi_pasazeri: [], poznamka: '' };
 
-const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode = 'default' }) => {
+const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist = 1, compactMode = 'default' }) => {
   const { token, user } = useAuth();
   const [showReservations, setShowReservations] = useState({});
   const [rezervace, setRezervace] = useState({});
@@ -171,6 +171,7 @@ const RideList = ({ rides, onRideUpdate, defaultReservationMist = 1, compactMode
       setError(''); setSuccess('');
       await axios.delete(`${API}/jizdy/${jizdaId}`, { headers: { Authorization: `Bearer ${token}` } });
       setSuccess('Jízda byla zrušena.');
+      if (onRideCancelled) onRideCancelled(jizdaId);
       if (onRideUpdate) onRideUpdate();
     } catch (err) {
       setSuccess('');
