@@ -58,7 +58,7 @@ def test_create_rating_before_completion_rejected(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Hodnotit lze az po dokonceni jizdy"
+    assert _error_text(response) == "Hodnotit lze až po dokončení jízdy"
 
 
 def test_create_rating_rejects_self_rating(client, completed_ride_with_passenger, auth_headers):
@@ -76,7 +76,7 @@ def test_create_rating_rejects_self_rating(client, completed_ride_with_passenger
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Nemuzete hodnotit sebe sama"
+    assert _error_text(response) == "Nemůžete hodnotit sebe sama"
 
 
 @pytest.mark.parametrize("znamka", [0, 6, "spatne", None])
@@ -97,7 +97,7 @@ def test_create_rating_rejects_invalid_grade(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Znamka musi byt cislo od 1 do 5"
+    assert _error_text(response) == "Známka musí být číslo od 1 do 5"
 
 
 def test_create_rating_rejects_duplicate_role(
@@ -118,7 +118,7 @@ def test_create_rating_rejects_duplicate_role(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Hodnoceni pro tuto jizdu uz existuje"
+    assert _error_text(response) == "Hodnocení pro tuto jízdu už existuje"
 
 
 def test_create_rating_rejects_non_participant(
@@ -139,7 +139,7 @@ def test_create_rating_rejects_non_participant(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Tuto jizdu jste nejel"
+    assert _error_text(response) == "Tuto jízdu jste nejel"
     assert cizi.id != ridic.id
 
 
@@ -161,7 +161,7 @@ def test_create_rating_rejects_target_outside_ride(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Cilovy uzivatel nebyl ucastnikem teto jizdy"
+    assert _error_text(response) == "Cílový uživatel nebyl účastníkem této jízdy"
 
 
 def test_create_rating_rejects_wrong_role_direction(
@@ -198,7 +198,7 @@ def test_create_rating_rejects_wrong_role_direction(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Pasazera muze hodnotit pouze ridic z teto jizdy"
+    assert _error_text(response) == "Pasažéra může hodnotit pouze řidič z této jízdy"
     assert ridic.id != pasazer.id
 
 
@@ -233,7 +233,7 @@ def test_update_rating_rejects_foreign_author(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni upravovat toto hodnoceni"
+    assert _error_text(response) == "Nemáte oprávnění upravovat toto hodnocení"
 
 
 def test_update_rating_rejects_invalid_grade(
@@ -249,7 +249,7 @@ def test_update_rating_rejects_invalid_grade(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Znamka musi byt cislo od 1 do 5"
+    assert _error_text(response) == "Známka musí být číslo od 1 do 5"
 
 
 def test_delete_rating_by_author_success(
@@ -279,7 +279,7 @@ def test_delete_rating_rejects_foreign_user(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni smazat toto hodnoceni"
+    assert _error_text(response) == "Nemáte oprávnění smazat toto hodnocení"
 
 
 def test_get_user_ratings_stats(client, completed_ride_with_passenger, rating_factory, auth_headers):
@@ -444,7 +444,7 @@ def test_blocked_profile_access_via_user_endpoint(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Uzivatel je blokovan"
+    assert _error_text(response) == "Uživatel je blokován"
 
 
 def test_pending_rating_notification_is_marked_read_after_rating(
@@ -453,7 +453,7 @@ def test_pending_rating_notification_is_marked_read_after_rating(
     ridic, pasazer, _, jizda, _ = completed_ride_with_passenger()
     notification_factory(
         recipient=pasazer,
-        zprava="Mas nevyresene hodnoceni",
+        zprava="Máš nevyřešené hodnocení",
         typ="hodnoceni_ceka",
         jizda_id=jizda.id,
         cilovy_uzivatel_id=ridic.id,

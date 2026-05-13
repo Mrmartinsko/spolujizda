@@ -1,25 +1,28 @@
-# Spolujizda - PowerShell startup script s debugging
-# Spousta backend a frontend servery s detailnim logovanim
+# Spolujízda - PowerShell startup script s debuggingem
+# Spouští backend a frontend servery s detailním logováním
 
-# Nastaveni encoding na UTF-8
+# Nastavení encodingu na UTF-8
+chcp 65001 | Out-Null
+$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Spolujízda - Spouštím aplikaci" -ForegroundColor Yellow
-Write-Host "   DEBUG REŽIM ZAPNUTÝ" -ForegroundColor Magenta
+Write-Host "   Spolujizda - Spoustim aplikaci" -ForegroundColor Yellow
+Write-Host "   DEBUG REZIM ZAPNUTY" -ForegroundColor Magenta
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 
-# Kontrola Python
+# Kontrola Pythonu
 try {
     $pythonVersion = python --version 2>&1
     Write-Host "OK Python: $pythonVersion" -ForegroundColor Green
 }
 catch {
-    Write-Host "CHYBA: Python není nainstalovaný nebo není v PATH" -ForegroundColor Red
-    Write-Host "   Stáhněte Python z https://python.org" -ForegroundColor Yellow
-    Read-Host "Stiskněte Enter pro ukončení"
+    Write-Host "CHYBA: Python neni nainstalovany nebo neni v PATH" -ForegroundColor Red
+    Write-Host "   Stahnete Python z https://python.org" -ForegroundColor Yellow
+    Read-Host "Stisknete Enter pro ukonceni"
     exit 1
 }
 
@@ -31,75 +34,103 @@ try {
     Write-Host "OK NPM: $npmVersion" -ForegroundColor Green
 }
 catch {
-    Write-Host "CHYBA: Node.js není nainstalovaný nebo není v PATH" -ForegroundColor Red
-    Write-Host "   Stáhněte Node.js z https://nodejs.org" -ForegroundColor Yellow
-    Read-Host "Stiskněte Enter pro ukončení"
+    Write-Host "CHYBA: Node.js neni nainstalovany nebo neni v PATH" -ForegroundColor Red
+    Write-Host "   Stahnete Node.js z https://nodejs.org" -ForegroundColor Yellow
+    Read-Host "Stisknete Enter pro ukonceni"
     exit 1
 }
 
 Write-Host
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "         Nastavuji Backend" -ForegroundColor Yellow
+Write-Host "         Nastavuji backend" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan
 
 Set-Location backend
 
 # Vytvor virtualni prostredi pokud neexistuje
 if (!(Test-Path "venv")) {
-    Write-Host "Vytvářím virtuální prostředí..." -ForegroundColor Yellow
+    Write-Host "Vytvarim virtualni prostredi..." -ForegroundColor Yellow
     python -m venv venv
-    Write-Host "OK Virtuální prostředí vytvořeno" -ForegroundColor Green
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "CHYBA: Nepodarilo se vytvorit virtualni prostredi" -ForegroundColor Red
+        Set-Location ..
+        Read-Host "Stisknete Enter pro ukonceni"
+        exit 1
+    }
+
+    Write-Host "OK Virtualni prostredi vytvoreno" -ForegroundColor Green
 }
 
 # Aktivuj virtualni prostredi
-Write-Host "Aktivuji virtuální prostředí..." -ForegroundColor Yellow
+Write-Host "Aktivuji virtualni prostredi..." -ForegroundColor Yellow
 try {
     & ".\venv\Scripts\Activate.ps1"
     Write-Host "OK Virtualni prostredi aktivovano" -ForegroundColor Green
 }
 catch {
-    Write-Host "VAROVÁNÍ Problém s aktivací PowerShell skriptu, zkouším CMD..." -ForegroundColor Yellow
-    cmd /c "venv\Scripts\activate.bat"
+    Write-Host "CHYBA: Nepodarilo se aktivovat virtualni prostredi" -ForegroundColor Red
+    Write-Host "Zkuste povolit spousteni skriptu prikazem:" -ForegroundColor Yellow
+    Write-Host "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Gray
+    Set-Location ..
+    Read-Host "Stisknete Enter pro ukonceni"
+    exit 1
 }
 
+# Aktualizuj pip
+Write-Host "Aktualizuji pip..." -ForegroundColor Yellow
+python -m pip install --upgrade pip
+
 # Nainstaluj zavislosti
-Write-Host "Instaluji Python závislosti..." -ForegroundColor Yellow
-$pipOutput = pip install -r requirements.txt 2>&1
+Write-Host "Instaluji Python zavislosti..." -ForegroundColor Yellow
+$pipOutput = python -m pip install -r requirements.txt 2>&1
+
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "OK Python závislosti nainstalovány" -ForegroundColor Green
+    Write-Host "OK Python zavislosti nainstalovany" -ForegroundColor Green
 } else {
-    Write-Host "CHYBA při instalaci Python závislostí:" -ForegroundColor Red
-    Write-Host $pipOutput -ForegroundColor Red
+    Write-Host "CHYBA pri instalaci Python zavislosti:" -ForegroundColor Red
+    $pipOutput | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    Set-Location ..
+    Read-Host "Stisknete Enter pro ukonceni"
+    exit 1
 }
 
 # Vytvor databazi pokud neexistuje
 if (!(Test-Path "spolujizda.db")) {
-    Write-Host "Vytvářím databázi..." -ForegroundColor Yellow
+    Write-Host "Vytvarim databazi..." -ForegroundColor Yellow
     $dbOutput = python -c "from app import app; app.app_context().push(); from models import db; db.create_all()" 2>&1
+
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "OK Databáze vytvořena" -ForegroundColor Green
+        Write-Host "OK Databaze vytvorena" -ForegroundColor Green
     } else {
-        Write-Host "CHYBA při vytváření databáze:" -ForegroundColor Red
-        Write-Host $dbOutput -ForegroundColor Red
+        Write-Host "CHYBA pri vytvareni databaze:" -ForegroundColor Red
+        $dbOutput | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        Set-Location ..
+        Read-Host "Stisknete Enter pro ukonceni"
+        exit 1
     }
 }
 
 # Test importu aplikace
 Write-Host "Testuji import aplikace..." -ForegroundColor Yellow
 $testOutput = python -c "from app import app; print('Import OK')" 2>&1
+
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "OK Import aplikace v pořádku" -ForegroundColor Green
+    Write-Host "OK Import aplikace v poradku" -ForegroundColor Green
 } else {
     Write-Host "CHYBA pri importu aplikace:" -ForegroundColor Red
-    Write-Host $testOutput -ForegroundColor Red
-    Write-Host "VAROVÁNÍ Backend se pravděpodobně nespustí správně!" -ForegroundColor Yellow
+    $testOutput | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    Write-Host "Backend se pravdepodobne nespusti spravne." -ForegroundColor Yellow
+    Set-Location ..
+    Read-Host "Stisknete Enter pro ukonceni"
+    exit 1
 }
 
 Set-Location ..
 
 Write-Host
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "         Nastavuji Frontend" -ForegroundColor Yellow  
+Write-Host "         Nastavuji frontend" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan
 
 Set-Location frontend
@@ -108,30 +139,35 @@ Set-Location frontend
 if (!(Test-Path "package.json")) {
     Write-Host "CHYBA: package.json nenalezen!" -ForegroundColor Red
     Set-Location ..
-    Read-Host "Stiskněte Enter pro ukončení"
+    Read-Host "Stisknete Enter pro ukonceni"
     exit 1
 }
 
 # Nainstaluj Node.js zavislosti pokud neni node_modules
 if (!(Test-Path "node_modules")) {
-    Write-Host "Instaluji Node.js závislosti..." -ForegroundColor Yellow
+    Write-Host "Instaluji Node.js zavislosti..." -ForegroundColor Yellow
     $npmOutput = npm install 2>&1
+
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "OK Node.js závislosti nainstalovány" -ForegroundColor Green
+        Write-Host "OK Node.js zavislosti nainstalovany" -ForegroundColor Green
     } else {
         Write-Host "CHYBA pri instalaci Node.js zavislosti:" -ForegroundColor Red
-        Write-Host $npmOutput -ForegroundColor Red
+        $npmOutput | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        Set-Location ..
+        Read-Host "Stisknete Enter pro ukonceni"
+        exit 1
     }
 }
 
 # Test kompilace React aplikace
 Write-Host "Testuji kompilaci React aplikace..." -ForegroundColor Yellow
 $buildTest = npm run build --silent 2>&1
+
 if ($LASTEXITCODE -eq 0) {
     Write-Host "OK React aplikace se kompiluje bez chyb" -ForegroundColor Green
 } else {
     Write-Host "VAROVANI pri kompilaci React aplikace:" -ForegroundColor Yellow
-    Write-Host $buildTest -ForegroundColor Yellow
+    $buildTest | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
 }
 
 Set-Location ..
@@ -141,60 +177,69 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "       Spoustim servery" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 
+$rootPath = (Get-Location).Path
+$backendPath = Join-Path $rootPath "backend"
+$frontendPath = Join-Path $rootPath "frontend"
+
 # Spust backend v novem okne s logovanim
-Write-Host "Spouštím backend server..." -ForegroundColor Yellow
-$backendPath = (Get-Location).Path + "\backend"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$backendPath'; & '.\venv\Scripts\Activate.ps1'; Write-Host 'Backend startuje...' -ForegroundColor Green; python app.py"
+Write-Host "Spoustim backend server..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList @(
+    "-NoExit",
+    "-Command",
+    "chcp 65001 | Out-Null; Set-Location '$backendPath'; & '.\venv\Scripts\Activate.ps1'; Write-Host 'Backend startuje...' -ForegroundColor Green; python app.py"
+)
 
 # Cekej chvilku na start backendu
 Start-Sleep 3
 
 # Spust frontend v novem okne s logovanim
-Write-Host "Spouštím frontend server..." -ForegroundColor Yellow
-$frontendPath = (Get-Location).Path + "\frontend"
-# Nastavit BROWSER=none zabranuje automatickemu otevreni prohlizece
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendPath'; `$env:BROWSER='none'; Write-Host 'Frontend startuje...' -ForegroundColor Green; npm start"
+Write-Host "Spoustim frontend server..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList @(
+    "-NoExit",
+    "-Command",
+    "chcp 65001 | Out-Null; Set-Location '$frontendPath'; `$env:BROWSER='none'; Write-Host 'Frontend startuje...' -ForegroundColor Green; npm start"
+)
 
 Write-Host
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "       Aplikace se spouští!" -ForegroundColor Green
+Write-Host "       Aplikace se spousti!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 Write-Host "Backend:  http://localhost:5000" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
 Write-Host
-Write-Host "Otevřela se dvě nová okna s logy serveru" -ForegroundColor Yellow
-Write-Host "   - Jedno okno pro backend (Python/Flask)" -ForegroundColor Gray
-Write-Host "   - Jedno okno pro frontend (React)" -ForegroundColor Gray
+Write-Host "Otevrou se dve nova okna s logy serveru" -ForegroundColor Yellow
+Write-Host "   - Jedno okno pro backend Python/Flask" -ForegroundColor Gray
+Write-Host "   - Jedno okno pro frontend React" -ForegroundColor Gray
 Write-Host
 Write-Host "Pro debugging:" -ForegroundColor Magenta
-Write-Host "   - Sledujte chybové hlášky v oknech serveru" -ForegroundColor Gray
-Write-Host "   - Otevřete Developer Tools v prohlížeči (F12)" -ForegroundColor Gray
+Write-Host "   - Sledujte chybove hlasky v oknech serveru" -ForegroundColor Gray
+Write-Host "   - Otevrete Developer Tools v prohlizeci F12" -ForegroundColor Gray
 Write-Host "   - Zkontrolujte Console a Network taby" -ForegroundColor Gray
 Write-Host
 
-# Cekej 10 sekund na start serveru...
-Write-Host "Čekám 10 sekund na start serveru..." -ForegroundColor Cyan
+# Cekej 10 sekund na start serveru
+Write-Host "Cekam 10 sekund na start serveru..." -ForegroundColor Cyan
 for ($i = 10; $i -gt 0; $i--) {
     Write-Host "   $i..." -ForegroundColor Gray
     Start-Sleep 1
 }
 
-Write-Host "Otevírám prohlížeč..." -ForegroundColor Cyan
+Write-Host "Oteviram prohlizec..." -ForegroundColor Cyan
 Start-Process "http://localhost:3000"
 
 Write-Host
-Write-Host "Aplikace spuštěna!" -ForegroundColor Green
-Write-Host "Pro více informací viz README.md a SETUP.md" -ForegroundColor Gray
+Write-Host "Aplikace spustena!" -ForegroundColor Green
+Write-Host "Pro vice informaci viz README.md a SETUP.md" -ForegroundColor Gray
 Write-Host
-Write-Host "Pokud vidíte bílou obrazovku:" -ForegroundColor Yellow
-Write-Host "   1. Otevřete Developer Tools (F12)" -ForegroundColor Gray
+Write-Host "Pokud vidite bilou obrazovku:" -ForegroundColor Yellow
+Write-Host "   1. Otevrete Developer Tools F12" -ForegroundColor Gray
 Write-Host "   2. Zkontrolujte Console tab pro chyby" -ForegroundColor Gray
-Write-Host "   3. Zkontrolujte Network tab pro API volání" -ForegroundColor Gray
+Write-Host "   3. Zkontrolujte Network tab pro API volani" -ForegroundColor Gray
 Write-Host "   4. Zkontrolujte okna serveru pro logy" -ForegroundColor Gray
 Write-Host
-Write-Host "Pro zastavení serveru zavřete okna serveru" -ForegroundColor Red
-Write-Host "   nebo stiskněte Ctrl+C v příslušných oknech" -ForegroundColor Gray
+Write-Host "Pro zastaveni serveru zavrete okna serveru" -ForegroundColor Red
+Write-Host "   nebo stisknete Ctrl+C v prislusnych oknech" -ForegroundColor Gray
 Write-Host
 
-Read-Host "Stiskněte Enter pro ukončení tohoto okna"
+Read-Host "Stisknete Enter pro ukonceni tohoto okna"

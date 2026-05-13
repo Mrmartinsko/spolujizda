@@ -13,6 +13,7 @@ DEFAULT_CATEGORY_BY_TYPE = {
     "rezervace_prijata": "rezervace",
     "rezervace_odmitnuta": "rezervace",
     "jizda_zmena": "jizdy",
+    "jizda_zrusena": "jizdy",
     "hodnoceni_ceka": "hodnoceni",
 }
 

@@ -242,6 +242,17 @@ def _filter_rides_by_volna_mista(jizdy, pocet_pasazeru):
     return [jizda for jizda in jizdy if jizda.ma_dostatek_volnych_mist(pocet_pasazeru)]
 
 
+def _notification_recipient_ids_for_cancelled_ride(jizda):
+    recipient_ids = {pasazer.id for pasazer in jizda.pasazeri if pasazer.id != jizda.ridic_id}
+    active_reservation_statuses = {"cekajici", "prijata"}
+
+    for rezervace in jizda.rezervace:
+        if rezervace.status in active_reservation_statuses and rezervace.uzivatel_id != jizda.ridic_id:
+            recipient_ids.add(rezervace.uzivatel_id)
+
+    return sorted(recipient_ids)
+
+
 @jizdy_bp.route("/", methods=["GET"])
 def get_jizdy():
     """Jednoduchý filtr výpisu.
@@ -602,6 +613,19 @@ def delete_jizda(jizda_id):
 
     try:
         zrusit_jizdu(jizda)
+        route_text = f"{jizda.odkud} → {jizda.kam}"
+        for recipient_id in _notification_recipient_ids_for_cancelled_ride(jizda):
+            vytvorit_oznameni(
+                recipient_id,
+                f"Řidič zrušil jízdu {route_text}.",
+                "jizda_zrusena",
+                kategorie="jizdy",
+                odesilatel_id=uzivatel_id,
+                target_path=f"/moje-rezervace?focusRide={jizda.id}",
+                jizda_id=jizda.id,
+                unikatni_klic=f"jizda_zrusena:{jizda.id}:{recipient_id}",
+                commit=False,
+            )
         db.session.commit()
         return jsonify({"message": "Jízda úspěšně zrušena"})
     except Exception:

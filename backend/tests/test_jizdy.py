@@ -31,4 +31,4 @@ def test_nelze_vytvorit_jizdu_v_minulosti(client, create_verified_user, create_a
     )
 
     assert response.status_code == 400
-    assert response.get_json()["error"] == "Cas odjezdu musi byt v budoucnosti"
+    assert response.get_json()["error"] == "Čas odjezdu musí být v budoucnosti"

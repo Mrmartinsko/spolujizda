@@ -64,7 +64,7 @@ def test_create_booking_requires_json(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Request musi obsahovat JSON"
+    assert _error_text(response) == "Request musí obsahovat JSON"
 
 
 def test_create_booking_requires_ride_id(
@@ -79,29 +79,29 @@ def test_create_booking_requires_ride_id(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "ID jizdy je povinne"
+    assert _error_text(response) == "ID jízdy je povinné"
 
 
 @pytest.mark.parametrize(
     ("payload", "expected_error"),
     [
-        ({"jizda_id": "abc", "pocet_mist": 1}, "Pole jizda_id musi byt cele cislo"),
-        ({"jizda_id": 1, "pocet_mist": "abc"}, "Pole pocet_mist musi byt cele cislo"),
-        ({"jizda_id": 1, "pocet_mist": 0}, "Pole pocet_mist musi byt vetsi nez 0"),
-        ({"jizda_id": 1, "pocet_mist": 2, "dalsi_pasazeri": "x"}, "Dalsi pasazeri musi byt seznam jmen"),
+        ({"jizda_id": "abc", "pocet_mist": 1}, "Pole jizda_id musí být celé číslo"),
+        ({"jizda_id": 1, "pocet_mist": "abc"}, "Pole pocet_mist musí být celé číslo"),
+        ({"jizda_id": 1, "pocet_mist": 0}, "Pole pocet_mist musí být větší než 0"),
+        ({"jizda_id": 1, "pocet_mist": 2, "dalsi_pasazeri": "x"}, "Další pasažéři musí být seznam jmen"),
         (
             {"jizda_id": 1, "pocet_mist": 2, "dalsi_pasazeri": []},
-            "Pocet jmen dalsich pasazeru musi odpovidat poctu rezervovanych mist",
+            "Počet jmen dalších pasažérů musí odpovídat počtu rezervovaných míst",
         ),
         (
             {"jizda_id": 1, "pocet_mist": 2, "dalsi_pasazeri": [123]},
-            "Kazde jmeno dalsiho pasazera musi byt text",
+            "Každé jméno dalšího pasažéra musí být text",
         ),
         (
             {"jizda_id": 1, "pocet_mist": 2, "dalsi_pasazeri": [" "]},
-            "Jmena dalsich pasazeru nesmi byt prazdna",
+            "Jména dalších pasažérů nesmí být prázdná",
         ),
-        ({"jizda_id": 1, "pocet_mist": 1, "poznamka": 123}, "Pole poznamka musi byt text"),
+        ({"jizda_id": 1, "pocet_mist": 1, "poznamka": 123}, "Pole poznamka musí být text"),
     ],
 )
 def test_create_booking_rejects_invalid_payload(
@@ -152,7 +152,7 @@ def test_create_booking_rejects_duplicate_booking(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Jiz mate aktivni rezervaci na tuto jizdu"
+    assert _error_text(response) == "Již máte aktivní rezervaci na tuto jízdu"
 
 
 @pytest.mark.parametrize("status", ["zrusena", "dokoncena"])
@@ -171,7 +171,7 @@ def test_create_booking_rejects_inactive_ride(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Rezervaci lze vytvorit jen pro aktivni jizdu"
+    assert _error_text(response) == "Rezervaci lze vytvořit jen pro aktivní jízdu"
 
 
 def test_create_booking_on_past_active_ride_matches_current_behavior(
@@ -275,7 +275,7 @@ def test_get_ride_bookings_rejects_foreign_user(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni zobrazit rezervace teto jizdy"
+    assert _error_text(response) == "Nemáte oprávnění zobrazit rezervace této jízdy"
 
 
 def test_accept_booking_success(
@@ -314,7 +314,7 @@ def test_accept_booking_rejects_foreign_user(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni prijmout tuto rezervaci"
+    assert _error_text(response) == "Nemáte oprávnění přijmout tuto rezervaci"
 
 
 def test_accept_booking_rejects_processed_booking(
@@ -332,7 +332,7 @@ def test_accept_booking_rejects_processed_booking(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Rezervace jiz byla zpracovana"
+    assert _error_text(response) == "Rezervace již byla zpracována"
 
 
 def test_accept_booking_rejects_inactive_ride(
@@ -350,7 +350,7 @@ def test_accept_booking_rejects_inactive_ride(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Rezervaci lze prijmout jen u aktivni jizdy"
+    assert _error_text(response) == "Rezervaci lze přijmout jen u aktivní jízdy"
 
 
 def test_accept_booking_rejects_when_capacity_is_full(
@@ -414,7 +414,7 @@ def test_reject_booking_rejects_foreign_user(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni odmitnout tuto rezervaci"
+    assert _error_text(response) == "Nemáte oprávnění odmítnout tuto rezervaci"
 
 
 def test_cancel_booking_success_before_deadline(
@@ -453,7 +453,7 @@ def test_cancel_booking_rejects_foreign_user(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemas opravneni rusit tuto rezervaci."
+    assert _error_text(response) == "Nemáš oprávnění rušit tuto rezervaci."
 
 
 def test_cancel_booking_rejects_inactive_ride(
@@ -471,7 +471,7 @@ def test_cancel_booking_rejects_inactive_ride(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Jizda neni aktivni, nelze ji opustit."
+    assert _error_text(response) == "Jízda není aktivní, nelze ji opustit."
 
 
 def test_cancel_booking_rejects_too_late(
@@ -494,7 +494,7 @@ def test_cancel_booking_rejects_too_late(
     )
 
     assert response.status_code == 400
-    assert "1 hodinu pred odjezdem" in _error_text(response)
+    assert "1 hodinu před odjezdem" in _error_text(response)
 
 
 def test_accepted_passengers_follow_ride_capacity(

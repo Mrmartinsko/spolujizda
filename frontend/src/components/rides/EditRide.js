@@ -21,11 +21,34 @@ function toISO(dateStr, timeStr) {
   return `${dateStr}T${timeStr}:00`;
 }
 
+let stopKeyCounter = 0;
+const createStopKey = () => {
+  stopKeyCounter += 1;
+  return `stop-${stopKeyCounter}`;
+};
+
 const createStop = (text = "", meta = null) => ({
   text,
   place_id: meta?.place_id || null,
   address: meta?.address || "",
+  client_id: meta?.client_id || createStopKey(),
 });
+
+const normalizeLocationKey = (value) =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+const areSameLocation = (a, b) => {
+  if (!a || !b) return false;
+  if (a.place_id && b.place_id) return a.place_id === b.place_id;
+  const aKey = normalizeLocationKey(a.address || a.text);
+  const bKey = normalizeLocationKey(b.address || b.text);
+  return Boolean(aKey && bKey && aKey === bKey);
+};
 
 export default function EditRide() {
   const { id } = useParams();
@@ -130,7 +153,7 @@ export default function EditRide() {
   const updateStop = (idx, value, meta) =>
     setField(
       "mezistanice",
-      form.mezistanice.map((s, i) => (i === idx ? createStop(value, meta || s) : s))
+      form.mezistanice.map((s, i) => (i === idx ? createStop(value, { ...s, ...(meta || {}) }) : s))
     );
 
   const changeRideCar = async (auto) => {
@@ -165,6 +188,26 @@ export default function EditRide() {
       const stopError = validateLocationField(stop, "Mezistanice");
       if (stopError) {
         setError(stopError);
+        return;
+      }
+    }
+
+    const filledStops = form.mezistanice
+      .map((s) => createStop(s.text.trim(), s))
+      .filter((s) => s.text);
+    const routeEndpoints = [
+      createStop(form.odkud.trim(), { place_id: form.odkud_place_id, address: form.odkud_address }),
+      createStop(form.kam.trim(), { place_id: form.kam_place_id, address: form.kam_address }),
+    ];
+
+    for (let i = 0; i < filledStops.length; i += 1) {
+      const stop = filledStops[i];
+      if (routeEndpoints.some((endpoint) => areSameLocation(endpoint, stop))) {
+        setError("Mezistanice nemůže být stejná jako počáteční nebo cílové místo.");
+        return;
+      }
+      if (filledStops.slice(i + 1).some((other) => areSameLocation(stop, other))) {
+        setError("Tato mezistanice už je v trase přidaná.");
         return;
       }
     }
@@ -354,7 +397,7 @@ export default function EditRide() {
 
           <div className="stops-list">
             {form.mezistanice.map((s, idx) => (
-              <div key={s.place_id || `${s.text}-${idx}`} className="stop-row">
+              <div key={s.client_id} className="stop-row">
                 <LocationAutocompleteInput
                   name={`mezistanice-${idx}`}
                   value={s.text}

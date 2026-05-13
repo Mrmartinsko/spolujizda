@@ -5,6 +5,7 @@ import pytest
 from models import db
 from models.auto import Auto
 from models.jizda import Jizda
+from models.oznameni import Oznameni
 from models.rezervace import Rezervace
 from utils.datetime_utils import utc_now
 
@@ -51,7 +52,7 @@ def test_create_ride_requires_json(client, create_verified_user, create_auto, au
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Request musi obsahovat JSON"
+    assert _error_text(response) == "Request musí obsahovat JSON"
 
 
 @pytest.mark.parametrize(
@@ -136,7 +137,7 @@ def test_create_ride_rejects_departure_in_past(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Cas odjezdu musi byt v budoucnosti"
+    assert _error_text(response) == "Čas odjezdu musí být v budoucnosti"
 
 
 def test_create_ride_rejects_arrival_before_departure(
@@ -154,16 +155,16 @@ def test_create_ride_rejects_arrival_before_departure(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Cas odjezdu musi byt pred casem prijezdu"
+    assert _error_text(response) == "Čas odjezdu musí být před časem příjezdu"
 
 
 @pytest.mark.parametrize(
     ("field", "value", "expected_error"),
     [
-        ("cena", "abc", "Pole cena musi byt cislo"),
-        ("cena", -1, "Pole cena musi byt vetsi nebo rovno 0"),
-        ("pocet_mist", "abc", "Pole pocet_mist musi byt cele cislo"),
-        ("pocet_mist", 0, "Pole pocet_mist musi byt vetsi nez 0"),
+        ("cena", "abc", "Pole cena musí být číslo"),
+        ("cena", -1, "Pole cena musí být větší nebo rovno 0"),
+        ("pocet_mist", "abc", "Pole pocet_mist musí být celé číslo"),
+        ("pocet_mist", 0, "Pole pocet_mist musí být větší než 0"),
     ],
 )
 def test_create_ride_rejects_invalid_price_and_seats(
@@ -204,7 +205,7 @@ def test_create_ride_rejects_non_owned_car(
     )
 
     assert response.status_code == 404
-    assert _error_text(response) == "Auto nenalezeno nebo nepatri uzivateli"
+    assert _error_text(response) == "Auto nenalezeno nebo nepatří uživateli"
 
 
 def test_create_ride_rejects_deleted_car(
@@ -220,7 +221,7 @@ def test_create_ride_rejects_deleted_car(
     )
 
     assert response.status_code == 404
-    assert _error_text(response) == "Auto nenalezeno nebo nepatri uzivateli"
+    assert _error_text(response) == "Auto nenalezeno nebo nepatří uživateli"
 
 
 def test_create_ride_with_string_stopovers(client, create_verified_user, create_auto, auth_headers, ride_payload):
@@ -265,9 +266,9 @@ def test_create_ride_with_object_stopovers(client, create_verified_user, create_
 @pytest.mark.parametrize(
     ("mezistanice", "expected_error"),
     [
-        ("Jihlava", "mezistanice musi byt seznam"),
-        ([123], "mezistanice musi byt seznam textu nebo objektu"),
-        ([" "], "Pole mezistanice je povinne"),
+        ("Jihlava", "mezistanice musí být seznam"),
+        ([123], "mezistanice musí být seznam textů nebo objektů"),
+        ([" "], "Pole mezistanice je povinné"),
     ],
 )
 def test_create_ride_rejects_invalid_stopovers(
@@ -329,14 +330,14 @@ def test_create_ride_rejects_overlapping_driver_rides(
     )
 
     assert response.status_code == 409
-    assert "nesmi kryt" in _error_text(response)
+    assert "nesmí krýt" in _error_text(response)
 
 
 def test_get_ride_not_found(client):
     response = client.get("/api/jizdy/999")
 
     assert response.status_code == 404
-    assert _error_text(response) == "Jizda nenalezena"
+    assert _error_text(response) == "Jízda nenalezena"
 
 
 def test_update_ride_success(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -379,7 +380,7 @@ def test_update_foreign_ride_forbidden(client, create_verified_user, create_auto
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni upravovat tuto jizdu"
+    assert _error_text(response) == "Nemáte oprávnění upravovat tuto jízdu"
 
 
 @pytest.mark.parametrize("status", ["zrusena", "dokoncena"])
@@ -397,7 +398,7 @@ def test_update_non_active_ride_rejected(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Lze upravovat pouze aktivni jizdy"
+    assert _error_text(response) == "Lze upravovat pouze aktivní jízdy"
 
 
 def test_update_past_ride_rejected(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -414,7 +415,7 @@ def test_update_past_ride_rejected(client, create_verified_user, create_auto, cr
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Jizdu uz nelze upravit, protoze uz odjela"
+    assert _error_text(response) == "Jízdu už nelze upravit, protože už odjela"
 
 
 def test_update_ride_rejects_price_change(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -429,7 +430,7 @@ def test_update_ride_rejects_price_change(client, create_verified_user, create_a
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Cenu existujici jizdy nelze menit"
+    assert _error_text(response) == "Cenu existující jízdy nelze měnit"
 
 
 def test_update_ride_rejects_capacity_below_accepted_reservations(
@@ -453,7 +454,7 @@ def test_update_ride_rejects_capacity_below_accepted_reservations(
     )
 
     assert response.status_code == 400
-    assert "jiz prijatych pasazeru" in _error_text(response)
+    assert "již přijatých pasažérů" in _error_text(response)
 
 
 def test_update_ride_rejects_invalid_auto(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -470,7 +471,7 @@ def test_update_ride_rejects_invalid_auto(client, create_verified_user, create_a
     )
 
     assert response.status_code == 404
-    assert _error_text(response) == "Auto nenalezeno nebo nepatri uzivateli"
+    assert _error_text(response) == "Auto nenalezeno nebo nepatří uživateli"
 
 
 def test_delete_ride_success(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -485,6 +486,59 @@ def test_delete_ride_success(client, create_verified_user, create_auto, create_r
     assert jizda.status == "zrusena"
 
 
+def test_delete_ride_notifies_passengers_without_driver_notification(
+    client,
+    create_verified_user,
+    create_auto,
+    create_ride,
+    create_accepted_reservation,
+    auth_headers,
+):
+    ridic = create_verified_user(email="ridic@example.com", jmeno="Ridic")
+    pasazer = create_verified_user(email="pasazer@example.com", jmeno="Pasazer")
+    auto = create_auto(ridic)
+    jizda = create_ride(ridic, auto, odkud="Vsetín", kam="Praha")
+    create_accepted_reservation(pasazer, jizda)
+
+    response = client.delete(f"/api/jizdy/{jizda.id}", headers=auth_headers("ridic@example.com"))
+
+    assert response.status_code == 200
+    notifications = Oznameni.query.all()
+    assert len(notifications) == 1
+    assert notifications[0].prijemce_id == pasazer.id
+    assert notifications[0].odesilatel_id == ridic.id
+    assert notifications[0].typ == "jizda_zrusena"
+    assert notifications[0].kategorie == "jizdy"
+    assert notifications[0].zprava == "Řidič zrušil jízdu Vsetín → Praha."
+    assert not Oznameni.query.filter_by(prijemce_id=ridic.id).first()
+
+
+def test_delete_ride_notifies_waiting_reservations_once(
+    client,
+    create_verified_user,
+    create_auto,
+    create_ride,
+    create_accepted_reservation,
+    reservation_factory,
+    auth_headers,
+):
+    ridic = create_verified_user(email="ridic@example.com", jmeno="Ridic")
+    accepted = create_verified_user(email="accepted@example.com", jmeno="Accepted")
+    waiting = create_verified_user(email="waiting@example.com", jmeno="Waiting")
+    auto = create_auto(ridic)
+    jizda = create_ride(ridic, auto)
+    create_accepted_reservation(accepted, jizda)
+    reservation_factory(accepted, jizda, status="cekajici")
+    reservation_factory(waiting, jizda, status="cekajici")
+
+    response = client.delete(f"/api/jizdy/{jizda.id}", headers=auth_headers("ridic@example.com"))
+
+    assert response.status_code == 200
+    notifications = Oznameni.query.order_by(Oznameni.prijemce_id.asc()).all()
+    assert [item.prijemce_id for item in notifications] == sorted([accepted.id, waiting.id])
+    assert len({item.unikatni_klic for item in notifications}) == 2
+
+
 def test_delete_foreign_ride_forbidden(client, create_verified_user, create_auto, create_ride, auth_headers):
     ridic = create_verified_user(email="ridic@example.com", jmeno="Ridic")
     cizi = create_verified_user(email="cizi@example.com", jmeno="Cizi")
@@ -494,7 +548,7 @@ def test_delete_foreign_ride_forbidden(client, create_verified_user, create_auto
     response = client.delete(f"/api/jizdy/{jizda.id}", headers=auth_headers("cizi@example.com"))
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate opravneni zrusit tuto jizdu"
+    assert _error_text(response) == "Nemáte oprávnění zrušit tuto jízdu"
 
 
 def test_my_rides_marks_finished_past_rides(client, create_verified_user, create_auto, create_ride, auth_headers):
@@ -597,7 +651,7 @@ def test_search_rides_by_date_invalid_format(client):
     response = client.get("/api/jizdy/vyhledat?datum=31-03-2026")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny format data (YYYY-MM-DD)"
+    assert _error_text(response) == "Neplatný formát data (YYYY-MM-DD)"
 
 
 def test_search_rides_returns_full_and_partial_matches(client, create_verified_user, create_auto, create_ride):
@@ -698,7 +752,7 @@ def test_remove_passenger_forbidden_for_non_driver(
     )
 
     assert response.status_code == 403
-    assert "opravneni" in _error_text(response)
+    assert "oprávnění" in _error_text(response)
 
 
 def test_remove_passenger_rejected_too_close_to_departure(
@@ -726,4 +780,4 @@ def test_remove_passenger_rejected_too_close_to_departure(
     )
 
     assert response.status_code == 400
-    assert "1 hodinu pred odjezdem" in _error_text(response)
+    assert "1 hodinu před odjezdem" in _error_text(response)

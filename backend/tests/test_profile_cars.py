@@ -44,10 +44,10 @@ def test_update_profile_success(client, create_verified_user, auth_headers):
 @pytest.mark.parametrize(
     ("payload", "expected_error"),
     [
-        ({"jmeno": " "}, "Pole jmeno je povinne"),
-        ({"jmeno": "A" * 51}, "Pole jmeno muze mit maximalne 50 znaku"),
-        ({"bio": "A" * 501}, "Pole bio muze mit maximalne 500 znaku"),
-        ({"fotka": 123}, "Pole fotka musi byt text"),
+        ({"jmeno": " "}, "Pole jmeno je povinné"),
+        ({"jmeno": "A" * 51}, "Pole jmeno může mít maximálně 50 znaků"),
+        ({"bio": "A" * 501}, "Pole bio může mít maximálně 500 znaků"),
+        ({"fotka": 123}, "Pole fotka musí být text"),
     ],
 )
 def test_update_profile_rejects_invalid_values(
@@ -76,7 +76,7 @@ def test_update_profile_rejects_duplicate_username(client, create_verified_user,
     )
 
     assert response.status_code == 409
-    assert _error_text(response) == "Toto uzivatelske jmeno je jiz obsazene."
+    assert _error_text(response) == "Toto uživatelské jméno je již obsazené."
 
 
 def test_get_other_profile_hides_email(client, create_verified_user, auth_headers):
@@ -107,7 +107,7 @@ def test_get_other_profile_rejects_when_blocked_by_current(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Uzivatel je blokovan"
+    assert _error_text(response) == "Uživatel je blokován"
 
 
 def test_get_other_profile_rejects_when_blocked_me(
@@ -123,7 +123,7 @@ def test_get_other_profile_rejects_when_blocked_me(
     )
 
     assert response.status_code == 403
-    assert _error_text(response) == "Nemate pristup k tomuto profilu"
+    assert _error_text(response) == "Nemáte přístup k tomuto profilu"
 
 
 def test_search_users_partial_match(client, create_verified_user, auth_headers):
@@ -142,7 +142,7 @@ def test_search_users_partial_match(client, create_verified_user, auth_headers):
 
 @pytest.mark.parametrize(
     ("query", "expected_error"),
-    [("A", "Vyhledavaci dotaz musi mit alespon 2 znaky"), ("A" * 51, "Vyhledavaci dotaz muze mit maximalne 50 znaku")],
+    [("A", "Vyhledávací dotaz musí mít alespoň 2 znaky"), ("A" * 51, "Vyhledávací dotaz může mít maximálně 50 znaků")],
 )
 def test_search_users_rejects_invalid_query(
     client, create_verified_user, auth_headers, query, expected_error
@@ -176,16 +176,16 @@ def test_create_car_success(client, create_verified_user, auth_headers):
 @pytest.mark.parametrize(
     ("payload", "expected_error"),
     [
-        ({"model": "Octavia"}, "Pole znacka je povinne"),
-        ({"znacka": "Skoda"}, "Pole model je povinne"),
-        ({"znacka": "Skoda", "model": "Octavia", "spz": "???"}, "Neplatny format SPZ"),
+        ({"model": "Octavia"}, "Pole znacka je povinné"),
+        ({"znacka": "Skoda"}, "Pole model je povinné"),
+        ({"znacka": "Skoda", "model": "Octavia", "spz": "???"}, "Neplatný formát SPZ"),
         (
             {"znacka": "Skoda", "model": "Octavia", "primarni": "ano"},
-            "Pole primarni musi byt true nebo false",
+            "Pole primarni musí být true nebo false",
         ),
         (
             {"znacka": "Skoda", "model": "Octavia", "docasne": "ano"},
-            "Pole docasne musi byt true nebo false",
+            "Pole docasne musí být true nebo false",
         ),
     ],
 )
@@ -279,7 +279,7 @@ def test_delete_car_with_active_rides_rejected(
     response = client.delete(f"/api/auta/{auto.id}", headers=auth_headers("profil@example.com"))
 
     assert response.status_code == 409
-    assert "aktivni jizdy" in _error_text(response)
+    assert "aktivní jízdy" in _error_text(response)
 
 
 def test_set_primary_car_success(client, create_verified_user, create_auto, auth_headers):
@@ -348,7 +348,7 @@ def test_replace_car_requires_new_car_id(
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Pole nove_auto_id musi byt cele cislo"
+    assert _error_text(response) == "Pole nove_auto_id musí být celé číslo"
 
 
 def test_cancel_active_rides_for_car_success(

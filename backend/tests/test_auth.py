@@ -81,7 +81,7 @@ def test_register_requires_json(client):
     response = client.post("/api/auth/register", data="email=test")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Request musi obsahovat JSON"
+    assert _error_text(response) == "Request musí obsahovat JSON"
 
 
 def test_register_rejects_invalid_json(client):
@@ -92,7 +92,7 @@ def test_register_rejects_invalid_json(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny JSON"
+    assert _error_text(response) == "Neplatný JSON"
 
 
 def test_register_rejects_invalid_email(client):
@@ -107,7 +107,7 @@ def test_register_rejects_invalid_email(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny format emailu"
+    assert _error_text(response) == "Neplatný formát emailu"
 
 
 def test_register_rejects_short_password(client):
@@ -122,7 +122,7 @@ def test_register_rejects_short_password(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Heslo musi mit alespon 6 znaku"
+    assert _error_text(response) == "Heslo musí mít alespoň 6 znaků"
 
 
 def test_register_rejects_invalid_phone(client):
@@ -152,7 +152,7 @@ def test_register_rejects_too_long_name(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Pole jmeno muze mit maximalne 50 znaku"
+    assert _error_text(response) == "Pole jmeno může mít maximálně 50 znaků"
 
 
 def test_register_rejects_too_long_bio(client):
@@ -168,7 +168,7 @@ def test_register_rejects_too_long_bio(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Pole bio muze mit maximalne 500 znaku"
+    assert _error_text(response) == "Pole bio může mít maximálně 500 znaků"
 
 
 def test_register_rejects_duplicate_email(client, create_verified_user):
@@ -185,7 +185,7 @@ def test_register_rejects_duplicate_email(client, create_verified_user):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Uzivatel s timto emailem jiz existuje"
+    assert _error_text(response) == "Uživatel s tímto emailem již existuje"
 
 
 def test_register_rejects_duplicate_username(client, create_verified_user):
@@ -202,7 +202,7 @@ def test_register_rejects_duplicate_username(client, create_verified_user):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Toto uzivatelske jmeno je jiz obsazene."
+    assert _error_text(response) == "Toto uživatelské jméno je již obsazené."
 
 
 def test_login_success(client, create_verified_user):
@@ -228,7 +228,7 @@ def test_login_wrong_password(client, create_verified_user):
     )
 
     assert response.status_code == 401
-    assert _error_text(response) == "Spatne prihlasovaci udaje"
+    assert _error_text(response) == "Špatné přihlašovací údaje"
 
 
 def test_login_nonexistent_account(client):
@@ -238,7 +238,7 @@ def test_login_nonexistent_account(client):
     )
 
     assert response.status_code == 401
-    assert _error_text(response) == "Spatne prihlasovaci udaje"
+    assert _error_text(response) == "Špatné přihlašovací údaje"
 
 
 @pytest.mark.parametrize("payload", [{"email": "a@example.com"}, {"password": "tajneheslo"}, {}])
@@ -259,7 +259,7 @@ def test_login_rejects_unverified_user(client, create_unverified_user):
 
     assert response.status_code == 403
     data = response.get_json()
-    assert data["error"] == "Email neni overen"
+    assert data["error"] == "Email není ověřen"
     assert data["requires_email_verification"] is True
 
 
@@ -269,7 +269,7 @@ def test_resend_verification_for_existing_unverified_user(client, create_unverif
     response = client.post("/api/auth/resend-verification", json={"email": "nover@example.com"})
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Pokud ucet existuje, overovaci email byl odeslan"
+    assert response.get_json()["message"] == "Pokud účet existuje, ověřovací email byl odeslán"
     assert len(mock_emails) == 1
     assert mock_emails[0]["type"] == "verification"
 
@@ -280,7 +280,7 @@ def test_resend_verification_for_verified_user(client, create_verified_user, moc
     response = client.post("/api/auth/resend-verification", json={"email": "overeny@example.com"})
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Email uz je overen"
+    assert response.get_json()["message"] == "Email už je ověřen"
     assert mock_emails == []
 
 
@@ -288,7 +288,7 @@ def test_resend_verification_for_nonexistent_user(client, mock_emails):
     response = client.post("/api/auth/resend-verification", json={"email": "nikdo@example.com"})
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Pokud ucet existuje, overovaci email byl odeslan"
+    assert response.get_json()["message"] == "Pokud účet existuje, ověřovací email byl odeslán"
     assert mock_emails == []
 
 
@@ -301,7 +301,7 @@ def test_verify_email_with_valid_token(client, create_unverified_user):
     response = client.get("/api/auth/verify-email/valid-token")
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Email uspesne overen"
+    assert response.get_json()["message"] == "Email úspěšně ověřen"
     db.session.refresh(uzivatel)
     assert uzivatel.email_verified is True
     assert uzivatel.email_verification_token is None
@@ -311,7 +311,7 @@ def test_verify_email_with_invalid_token(client):
     response = client.get("/api/auth/verify-email/neplatny")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny nebo pouzity token"
+    assert _error_text(response) == "Neplatný nebo použitý token"
 
 
 def test_verify_email_with_expired_token(client, create_unverified_user):
@@ -323,7 +323,7 @@ def test_verify_email_with_expired_token(client, create_unverified_user):
     response = client.get("/api/auth/verify-email/expired-token")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Token vyprsel"
+    assert _error_text(response) == "Token vypršel"
 
 
 def test_verify_email_already_verified_token(client, create_verified_user):
@@ -335,7 +335,7 @@ def test_verify_email_already_verified_token(client, create_verified_user):
     response = client.get("/api/auth/verify-email/already-token")
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Email uz je overen"
+    assert response.get_json()["message"] == "Email už je ověřen"
 
 
 def test_forgot_password_for_existing_user(client, create_verified_user, mock_emails):
@@ -344,7 +344,7 @@ def test_forgot_password_for_existing_user(client, create_verified_user, mock_em
     response = client.post("/api/auth/forgot-password", json={"email": "forgot@example.com"})
 
     assert response.status_code == 200
-    assert "Pokud ucet existuje" in response.get_json()["message"]
+    assert "Pokud účet existuje" in response.get_json()["message"]
     db.session.refresh(uzivatel)
     assert uzivatel.password_reset_token is not None
     assert len(mock_emails) == 1
@@ -355,7 +355,7 @@ def test_forgot_password_for_nonexistent_user(client, mock_emails):
     response = client.post("/api/auth/forgot-password", json={"email": "missing@example.com"})
 
     assert response.status_code == 200
-    assert "Pokud ucet existuje" in response.get_json()["message"]
+    assert "Pokud účet existuje" in response.get_json()["message"]
     assert mock_emails == []
 
 
@@ -363,7 +363,7 @@ def test_forgot_password_rejects_invalid_email(client):
     response = client.post("/api/auth/forgot-password", json={"email": "neplatny"})
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny format emailu"
+    assert _error_text(response) == "Neplatný formát emailu"
 
 
 def test_verify_reset_password_token_valid(client, create_verified_user):
@@ -375,14 +375,14 @@ def test_verify_reset_password_token_valid(client, create_verified_user):
     response = client.get("/api/auth/reset-password/reset-token")
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Token je platny"
+    assert response.get_json()["message"] == "Token je platný"
 
 
 def test_verify_reset_password_token_invalid(client):
     response = client.get("/api/auth/reset-password/spatny-token")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny nebo jiz pouzity token"
+    assert _error_text(response) == "Neplatný nebo již použitý token"
 
 
 def test_verify_reset_password_token_expired(client, create_verified_user):
@@ -394,7 +394,7 @@ def test_verify_reset_password_token_expired(client, create_verified_user):
     response = client.get("/api/auth/reset-password/expired-reset")
 
     assert response.status_code == 400
-    assert _error_text(response) == "Token vyprsel"
+    assert _error_text(response) == "Token vypršel"
 
 
 def test_reset_password_success(client, create_verified_user):
@@ -409,7 +409,7 @@ def test_reset_password_success(client, create_verified_user):
     )
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Heslo bylo uspesne obnoveno"
+    assert response.get_json()["message"] == "Heslo bylo úspěšně obnoveno"
     db.session.refresh(uzivatel)
     assert uzivatel.password_reset_token is None
     assert uzivatel.check_heslo("noveheslo123") is True
@@ -422,7 +422,7 @@ def test_reset_password_invalid_token(client):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Neplatny nebo jiz pouzity token"
+    assert _error_text(response) == "Neplatný nebo již použitý token"
 
 
 def test_reset_password_expired_token(client, create_verified_user):
@@ -437,7 +437,7 @@ def test_reset_password_expired_token(client, create_verified_user):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Token vyprsel"
+    assert _error_text(response) == "Token vypršel"
 
 
 def test_reset_password_rejects_short_password(client, create_verified_user):
@@ -452,7 +452,7 @@ def test_reset_password_rejects_short_password(client, create_verified_user):
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Nove heslo musi mit alespon 6 znaku"
+    assert _error_text(response) == "Nové heslo musí mít alespoň 6 znaků"
 
 
 def test_get_current_user(client, create_verified_user, auth_headers):
@@ -474,7 +474,7 @@ def test_change_password_success(client, create_verified_user, auth_headers):
     )
 
     assert response.status_code == 200
-    assert response.get_json()["message"] == "Heslo uspesne zmeneno"
+    assert response.get_json()["message"] == "Heslo úspěšně změněno"
 
     login_response = client.post(
         "/api/auth/login",
@@ -493,7 +493,7 @@ def test_change_password_wrong_old_password(client, create_verified_user, auth_h
     )
 
     assert response.status_code == 401
-    assert _error_text(response) == "Neplatne stare heslo"
+    assert _error_text(response) == "Neplatné staré heslo"
 
 
 def test_change_password_requires_json(client, create_verified_user, auth_headers):
@@ -506,7 +506,7 @@ def test_change_password_requires_json(client, create_verified_user, auth_header
     )
 
     assert response.status_code == 400
-    assert _error_text(response) == "Request musi obsahovat JSON"
+    assert _error_text(response) == "Request musí obsahovat JSON"
 
 
 def test_register_creates_profile_record(client):

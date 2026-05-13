@@ -119,6 +119,22 @@ const createStop = (text = '', meta = null) => ({
   address: meta?.address || '',
 });
 
+const normalizeLocationKey = (value) =>
+  (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const areSameLocation = (a, b) => {
+  if (!a || !b) return false;
+  if (a.place_id && b.place_id) return a.place_id === b.place_id;
+  const aKey = normalizeLocationKey(a.address || a.text);
+  const bKey = normalizeLocationKey(b.address || b.text);
+  return Boolean(aKey && bKey && aKey === bKey);
+};
+
 const RideForm = ({ onRideCreated }) => {
   const { token } = useAuth();
   const [formData, setFormData] = useState({
@@ -209,19 +225,23 @@ const RideForm = ({ onRideCreated }) => {
       return;
     }
 
-    // Duplicity hlídáme podle place_id, jinak aspoň podle textu pro ručně zadané zastávky.
-    const exists = mezistanice.some((m) =>
-      m.place_id && novaMezistanice.place_id
-        ? m.place_id === novaMezistanice.place_id
-        : m.text.toLowerCase() === value.toLowerCase()
-    );
+    const nextStop = createStop(value, novaMezistanice);
+    const routeEndpoints = [
+      createStop(formData.odkud, { place_id: formData.odkud_place_id, address: formData.odkud_address }),
+      createStop(formData.kam, { place_id: formData.kam_place_id, address: formData.kam_address }),
+    ];
 
-    if (exists) {
-      setNovaMezistanice(emptyLocationMeta);
+    if (mezistanice.some((m) => areSameLocation(m, nextStop))) {
+      setError('Tato mezistanice už je v trase přidaná.');
       return;
     }
 
-    setMezistanice((prev) => [...prev, createStop(value, novaMezistanice)]);
+    if (routeEndpoints.some((endpoint) => areSameLocation(endpoint, nextStop))) {
+      setError('Mezistanice nemůže být stejná jako počáteční nebo cílové místo.');
+      return;
+    }
+
+    setMezistanice((prev) => [...prev, nextStop]);
     setNovaMezistanice(emptyLocationMeta);
     setError('');
   };
@@ -296,6 +316,23 @@ const RideForm = ({ onRideCreated }) => {
       const stopError = validateLocationField(stop.text, 'Mezistanice');
       if (stopError) {
         setError(stopError);
+        return;
+      }
+    }
+
+    const routeEndpoints = [
+      createStop(odkud, { place_id: formData.odkud_place_id, address: formData.odkud_address }),
+      createStop(kam, { place_id: formData.kam_place_id, address: formData.kam_address }),
+    ];
+
+    for (let i = 0; i < mezistanice.length; i += 1) {
+      const stop = mezistanice[i];
+      if (routeEndpoints.some((endpoint) => areSameLocation(endpoint, stop))) {
+        setError('Mezistanice nemůže být stejná jako počáteční nebo cílové místo.');
+        return;
+      }
+      if (mezistanice.slice(i + 1).some((other) => areSameLocation(stop, other))) {
+        setError('Tato mezistanice už je v trase přidaná.');
         return;
       }
     }
