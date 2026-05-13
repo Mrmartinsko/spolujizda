@@ -10,13 +10,13 @@ import "./EditRide.css";
 const API = "http://localhost:5000/api";
 
 function splitISO(iso) {
-  // Backend vraci jedno ISO datum, formular ale potrebuje oddelene pole pro datum a cas.
+  // Backend vrací jedno ISO datum, formulář ale potřebuje oddělené pole pro datum a čas.
   if (!iso) return { date: "", time: "" };
   return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
 }
 
 function toISO(dateStr, timeStr) {
-  // Pri ukladani skladame zpet stejny tvar, ktery backend ocekava.
+  // Při ukládání skládáme zpět stejný tvar, který backend očekává.
   if (!dateStr || !timeStr) return null;
   return `${dateStr}T${timeStr}:00`;
 }
@@ -60,10 +60,10 @@ export default function EditRide() {
 
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || "").trim();
-    if (!normalized) return `${fieldLabel} je povinne`;
-    if (normalized.length > 100) return `${fieldLabel} muze mit maximalne 100 znaku`;
+    if (!normalized) return `${fieldLabel} je povinné`;
+    if (normalized.length > 100) return `${fieldLabel} může mít maximálně 100 znaků`;
     if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
-      return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky`;
+      return `${fieldLabel} může obsahovat jen písmena, čísla, mezery a pomlčky`;
     }
     return null;
   };
@@ -91,7 +91,7 @@ export default function EditRide() {
       const odj = splitISO(j?.cas_odjezdu);
       const prij = splitISO(j?.cas_prijezdu);
 
-      // Serazeni drzi canonicalni poradi trasy i kdyz backend vratil pole v jinem poradi.
+      // Seřazení drží kanonické pořadí trasy, i když backend vrátil pole v jiném pořadí.
       const stops = (j?.mezistanice || [])
         .slice()
         .sort((a, b) => (a.poradi ?? 0) - (b.poradi ?? 0))
@@ -113,7 +113,7 @@ export default function EditRide() {
         mezistanice: stops,
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, "Nepodarilo se nacist jízdu."));
+      setError(getApiErrorMessage(e, "Nepodařilo se načíst jízdu."));
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,7 @@ export default function EditRide() {
       await fetchRide();
       setShowSelectCar(false);
     } catch (e) {
-      setError(getApiErrorMessage(e, "Nepodarilo se zmenit auto."));
+      setError(getApiErrorMessage(e, "Nepodařilo se změnit auto."));
     }
   };
 
@@ -148,7 +148,7 @@ export default function EditRide() {
     e.preventDefault();
     setError("");
 
-    // Editace sdili stejnou zakladni validaci trasy a casu jako vytvareni nove jizdy.
+    // Editace sdílí stejnou základní validaci trasy a času jako vytváření nové jízdy.
     const odkudError = validateLocationField(form.odkud, "Odkud");
     if (odkudError) {
       setError(odkudError);
@@ -176,22 +176,22 @@ export default function EditRide() {
     const pocetMist = Number(form.pocet_mist);
 
     if (!departureDate || Number.isNaN(departureDate.getTime())) {
-      setError("Zadej platny datum a cas odjezdu.");
+      setError("Zadej platné datum a čas odjezdu.");
       return;
     }
 
     if (!arrivalDate || Number.isNaN(arrivalDate.getTime())) {
-      setError("Zadej platny datum a cas prijezdu.");
+      setError("Zadej platné datum a čas příjezdu.");
       return;
     }
 
     if (arrivalDate <= departureDate) {
-      setError("Prijezd musi byt po odjezdu.");
+      setError("Příjezd musí být po odjezdu.");
       return;
     }
 
     if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
-      setError("Pocet mist musi byt cele cislo vetsi nez 0.");
+      setError("Počet míst musí být celé číslo větší než 0.");
       return;
     }
 
@@ -208,7 +208,7 @@ export default function EditRide() {
         cas_odjezdu: departureIso,
         cas_prijezdu: arrivalIso,
         pocet_mist: pocetMist,
-        // Poradi zastavek urcuje jejich poradi v poli, proto je serializujeme explicitne.
+        // Pořadí zastávek určuje jejich pořadí v poli, proto je serializujeme explicitně.
         mezistanice: form.mezistanice
           .map((s) => ({
             text: s.text.trim(),
@@ -221,16 +221,16 @@ export default function EditRide() {
       await axios.put(`${API}/jizdy/${id}`, payload, { headers });
       navigate("/moje-jizdy");
     } catch (e) {
-      setError(getApiErrorMessage(e, "Nepodarilo se ulozit zmeny."));
+      setError(getApiErrorMessage(e, "Nepodařilo se uložit změny."));
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="edit-ride-loading">Nacitam...</div>;
+  if (loading) return <div className="edit-ride-loading">Načítám...</div>;
 
   const autoText = ride?.auto?.smazane
-    ? "Smazane auto"
+    ? "Smazané auto"
     : `${ride?.auto?.znacka ?? ""} ${ride?.auto?.model ?? ""}${
         ride?.auto?.spz ? ` (${ride.auto.spz})` : ""
       }`.trim();
@@ -257,7 +257,7 @@ export default function EditRide() {
 
         {ride?.auto?.smazane && (
           <div className="edit-warning">
-            Toto auto bylo smazano. Vyber prosim jine auto pro tuto jízdu.
+            Toto auto bylo smazáno. Vyber prosím jiné auto pro tuto jízdu.
           </div>
         )}
       </div>
@@ -312,7 +312,7 @@ export default function EditRide() {
 
         <div className="edit-grid">
           <div className="edit-input">
-            <label htmlFor="datum_prijezdu">Datum prijezdu</label>
+            <label htmlFor="datum_prijezdu">Datum příjezdu</label>
             <input
               id="datum_prijezdu"
               type="date"
@@ -350,7 +350,7 @@ export default function EditRide() {
             </button>
           </div>
 
-          {form.mezistanice.length === 0 && <div className="stops-empty">Zadne mezistanice</div>}
+          {form.mezistanice.length === 0 && <div className="stops-empty">Žádné mezistanice</div>}
 
           <div className="stops-list">
             {form.mezistanice.map((s, idx) => (
@@ -373,7 +373,7 @@ export default function EditRide() {
 
         <div className="edit-actions">
           <button type="submit" className="btn-success" disabled={saving}>
-            {saving ? "Ukladam..." : "Uložit"}
+            {saving ? "Ukládám..." : "Uložit"}
           </button>
         </div>
       </form>

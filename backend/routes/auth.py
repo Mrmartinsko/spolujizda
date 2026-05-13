@@ -20,13 +20,13 @@ logger = getLogger(__name__)
 
 
 def _get_frontend_url():
-    """Vrati frontend URL bez koncoveho lomitka pro skladani odkazu v emailech."""
+    """Vrátí frontend URL bez koncového lomítka pro skládání odkazů v emailech."""
     return os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    """Zaregistruje uzivatele a pripravi email verification pred prvnim loginem."""
+    """Zaregistruje uživatele a připraví email verification před prvním loginem."""
     data, error = get_json_data()
     if error:
         return error
@@ -51,25 +51,25 @@ def register():
     if bio_error:
         return error_response(bio_error)
 
-    # Email sjednocujeme na lower-case, aby se duplicity neschovaly za ruzne varianty zapisu.
+    # Email sjednocujeme na lower-case, aby se duplicity neschovaly za různé varianty zápisu.
     email = email.lower()
     bio = bio or ""
 
     if not validate_email(email):
-        return error_response("Neplatny format emailu")
+        return error_response("Neplatný formát emailu")
 
     if not validate_password(heslo):
-        return error_response("Heslo musi mit alespon 6 znaku")
+        return error_response("Heslo musí mít alespoň 6 znaků")
 
     if not validate_phone(telefon):
-        return error_response("Telefon musi byt ve formatu napr. +420 123 456 789")
+        return error_response("Telefon musí být ve formátu např. +420 123 456 789")
 
     if Uzivatel.query.filter_by(email=email).first():
-        return error_response("Uzivatel s timto emailem jiz existuje")
+        return error_response("Uživatel s tímto emailem již existuje")
 
     existing_profile = Profil.query.filter(db.func.lower(Profil.jmeno) == jmeno.lower()).first()
     if existing_profile:
-        return error_response("Toto uzivatelske jmeno je jiz obsazene.")
+        return error_response("Toto uživatelské jméno je již obsazené.")
 
     try:
         uzivatel = Uzivatel(email=email, heslo=heslo)
@@ -92,7 +92,7 @@ def register():
 
         return jsonify(
             {
-                "message": "Registrace probehla. Over email, nez se prihlasis.",
+                "message": "Registrace proběhla. Ověř email, než se přihlásíš.",
                 "requires_email_verification": True,
                 "email": email,
             }
@@ -100,13 +100,13 @@ def register():
 
     except Exception:
         db.session.rollback()
-        logger.exception("Chyba pri registraci")
-        return error_response("Chyba pri registraci", 500)
+        logger.exception("Chyba při registraci")
+        return error_response("Chyba při registraci", 500)
 
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    """Prihlasi jen overeneho uzivatele a vrati JWT pro dalsi API volani."""
+    """Přihlásí jen ověřeného uživatele a vrátí JWT pro další API volání."""
     data, error = get_json_data()
     if error:
         return error
@@ -124,12 +124,12 @@ def login():
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
     if not uzivatel or not uzivatel.check_heslo(heslo):
-        return jsonify({"error": "Spatne prihlasovaci udaje"}), 401
+        return jsonify({"error": "Špatné přihlašovací údaje"}), 401
 
     if not uzivatel.email_verified:
         return jsonify(
             {
-                "error": "Email neni overen",
+                "error": "Email není ověřen",
                 "requires_email_verification": True,
                 "email": email,
             }
@@ -139,7 +139,7 @@ def login():
 
     return jsonify(
         {
-            "message": "Uspesne prihlasen",
+            "message": "Úspěšně přihlášen",
             "access_token": access_token,
             "uzivatel": uzivatel.to_dict(),
         }
@@ -148,7 +148,7 @@ def login():
 
 @auth_bp.route("/resend-verification", methods=["POST"])
 def resend_verification():
-    """Znovu posle overovaci email nebo znovu pouzije stale platny token."""
+    """Znovu pošle ověřovací email nebo znovu použije stále platný token."""
     data, error = get_json_data()
     if error:
         return error
@@ -161,13 +161,13 @@ def resend_verification():
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
     if not uzivatel:
-        return jsonify({"message": "Pokud ucet existuje, overovaci email byl odeslan"}), 200
+        return jsonify({"message": "Pokud účet existuje, ověřovací email byl odeslán"}), 200
 
     if uzivatel.email_verified:
-        return jsonify({"message": "Email uz je overen"}), 200
+        return jsonify({"message": "Email už je ověřen"}), 200
 
     try:
-        # Kdyz je puvodni token porad platny, nema smysl vytvaret dalsi aktivni odkaz.
+        # Když je původní token pořád platný, nemá smysl vytvářet další aktivní odkaz.
         if (
             uzivatel.email_verification_token
             and uzivatel.email_verification_expires_at
@@ -183,31 +183,31 @@ def resend_verification():
         verify_url = f"{_get_frontend_url()}/verify-email/{token}"
         send_verification_email(email, verify_url)
 
-        return jsonify({"message": "Pokud ucet existuje, overovaci email byl odeslan"}), 200
+        return jsonify({"message": "Pokud účet existuje, ověřovací email byl odeslán"}), 200
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri odesilani overovaciho emailu"}), 500
+        return jsonify({"error": "Chyba při odesílání ověřovacího emailu"}), 500
 
 
 @auth_bp.route("/verify-email/<token>", methods=["GET"])
 def verify_email(token):
-    """Potvrdi email pomoci jednorazoveho tokenu s expiraci."""
+    """Potvrdí email pomocí jednorázového tokenu s expirací."""
     if not token:
-        return jsonify({"error": "Chybi token"}), 400
+        return jsonify({"error": "Chybí token"}), 400
 
     uzivatel = Uzivatel.query.filter_by(email_verification_token=token).first()
     if not uzivatel:
-        return jsonify({"error": "Neplatny nebo pouzity token"}), 400
+        return jsonify({"error": "Neplatný nebo použitý token"}), 400
 
     if uzivatel.email_verified:
-        return jsonify({"message": "Email uz je overen"}), 200
+        return jsonify({"message": "Email už je ověřen"}), 200
 
     if (
         not uzivatel.email_verification_expires_at
         or uzivatel.email_verification_expires_at < utc_now()
     ):
-        return jsonify({"error": "Token vyprsel"}), 400
+        return jsonify({"error": "Token vypršel"}), 400
 
     try:
         uzivatel.email_verified = True
@@ -215,16 +215,16 @@ def verify_email(token):
         uzivatel.email_verification_token = None
         uzivatel.email_verification_expires_at = None
         db.session.commit()
-        return jsonify({"message": "Email uspesne overen"}), 200
+        return jsonify({"message": "Email úspěšně ověřen"}), 200
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri overeni emailu"}), 500
+        return jsonify({"error": "Chyba při ověření emailu"}), 500
 
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
-    """Spusti bezpecny reset hesla bez prozrazeni existence uctu."""
+    """Spustí bezpečný reset hesla bez prozrazení existence účtu."""
     data, error = get_json_data()
     if error:
         return error
@@ -235,10 +235,10 @@ def forgot_password():
     email = email.lower()
 
     if not validate_email(email):
-        return jsonify({"error": "Neplatny format emailu"}), 400
+        return jsonify({"error": "Neplatný formát emailu"}), 400
 
-    # Stejna zprava pro existujici i neexistujici email omezuje enumeraci uctu.
-    safe_message = "Pokud ucet existuje, poslali jsme email s instrukcemi pro obnovu hesla."
+    # Stejná zpráva pro existující i neexistující email omezuje enumeraci účtů.
+    safe_message = "Pokud účet existuje, poslali jsme email s instrukcemi pro obnovu hesla."
     uzivatel = Uzivatel.query.filter_by(email=email).first()
 
     if not uzivatel:
@@ -257,31 +257,31 @@ def forgot_password():
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri zpracovani zadosti o reset hesla"}), 500
+        return jsonify({"error": "Chyba při zpracování žádosti o reset hesla"}), 500
 
 
 @auth_bp.route("/reset-password/<token>", methods=["GET"])
 def verify_reset_password_token(token):
-    """Overi, ze reset token stale existuje a jeste nevyprsel."""
+    """Ověří, že reset token stále existuje a ještě nevypršel."""
     if not token:
-        return jsonify({"error": "Chybi token"}), 400
+        return jsonify({"error": "Chybí token"}), 400
 
     uzivatel = Uzivatel.query.filter_by(password_reset_token=token).first()
     if not uzivatel:
-        return jsonify({"error": "Neplatny nebo jiz pouzity token"}), 400
+        return jsonify({"error": "Neplatný nebo již použitý token"}), 400
 
     if (
         not uzivatel.password_reset_expires_at
         or uzivatel.password_reset_expires_at < utc_now()
     ):
-        return jsonify({"error": "Token vyprsel"}), 400
+        return jsonify({"error": "Token vypršel"}), 400
 
-    return jsonify({"message": "Token je platny"}), 200
+    return jsonify({"message": "Token je platný"}), 200
 
 
 @auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
-    """Nastavi nove heslo a zneplatni pouzity reset token."""
+    """Nastaví nové heslo a zneplatní použitý reset token."""
     data, error = get_json_data()
     if error:
         return error
@@ -296,43 +296,43 @@ def reset_password():
 
     uzivatel = Uzivatel.query.filter_by(password_reset_token=token).first()
     if not uzivatel:
-        return jsonify({"error": "Neplatny nebo jiz pouzity token"}), 400
+        return jsonify({"error": "Neplatný nebo již použitý token"}), 400
 
     if (
         not uzivatel.password_reset_expires_at
         or uzivatel.password_reset_expires_at < utc_now()
     ):
-        return jsonify({"error": "Token vyprsel"}), 400
+        return jsonify({"error": "Token vypršel"}), 400
 
     if not validate_password(new_password):
-        return jsonify({"error": "Nove heslo musi mit alespon 6 znaku"}), 400
+        return jsonify({"error": "Nové heslo musí mít alespoň 6 znaků"}), 400
 
     try:
         uzivatel.set_heslo(new_password)
         uzivatel.password_reset_token = None
         uzivatel.password_reset_expires_at = None
         db.session.commit()
-        return jsonify({"message": "Heslo bylo uspesne obnoveno"}), 200
+        return jsonify({"message": "Heslo bylo úspěšně obnoveno"}), 200
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri obnoveni hesla"}), 500
+        return jsonify({"error": "Chyba při obnovení hesla"}), 500
 
 
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
-    """Vrati aktualne prihlaseneho uzivatele pro obnovu session ve frontendu."""
+    """Vrátí aktuálně přihlášeného uživatele pro obnovu session ve frontendu."""
     uzivatel_id = get_jwt_identity()
     uzivatel = db.session.get(Uzivatel, int(uzivatel_id))
 
     if not uzivatel:
-        return jsonify({"error": "Uzivatel nenalezen"}), 404
+        return jsonify({"error": "Uživatel nenalezen"}), 404
 
     if not uzivatel.email_verified:
         return jsonify(
             {
-                "error": "Email neni overen",
+                "error": "Email není ověřen",
                 "requires_email_verification": True,
                 "email": uzivatel.email,
             }
@@ -344,7 +344,7 @@ def get_current_user():
 @auth_bp.route("/change-password", methods=["POST"])
 @jwt_required()
 def change_password():
-    """Zmeni heslo jen po kontrole puvodniho hesla aktualniho uzivatele."""
+    """Změní heslo jen po kontrole původního hesla aktuálního uživatele."""
     uzivatel_id = get_jwt_identity()
     data, error = get_json_data()
     if error:
@@ -360,19 +360,19 @@ def change_password():
 
     uzivatel = db.session.get(Uzivatel, int(uzivatel_id))
     if not uzivatel:
-        return jsonify({"error": "Uzivatel nenalezen"}), 404
+        return jsonify({"error": "Uživatel nenalezen"}), 404
 
     if not uzivatel.check_heslo(stare_heslo):
-        return jsonify({"error": "Neplatne stare heslo"}), 401
+        return jsonify({"error": "Neplatné staré heslo"}), 401
 
     if not validate_password(nove_heslo):
-        return jsonify({"error": "Nove heslo musi mit alespon 6 znaku"}), 400
+        return jsonify({"error": "Nové heslo musí mít alespoň 6 znaků"}), 400
 
     try:
         uzivatel.set_heslo(nove_heslo)
         db.session.commit()
-        return jsonify({"message": "Heslo uspesne zmeneno"}), 200
+        return jsonify({"message": "Heslo úspěšně změněno"}), 200
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri zmene hesla"}), 500
+        return jsonify({"error": "Chyba při změně hesla"}), 500

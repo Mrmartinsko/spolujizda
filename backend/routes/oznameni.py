@@ -24,15 +24,15 @@ def ziskat_oznameni():
 def oznacit_prectene(oznameni_id):
     oznameni = db.session.get(Oznameni, oznameni_id)
     if not oznameni:
-        return error_response("Oznameni nenalezeno", 404)
+        return error_response("Oznámení nenalezeno", 404)
 
     current_user_id = int(get_jwt_identity())
     if oznameni.prijemce_id != current_user_id:
-        return error_response("Pristup odepren", 403)
+        return error_response("Přístup odepřen", 403)
 
     oznameni.precteno = True
     db.session.commit()
-    return jsonify({"message": "Oznameni oznaceno jako prectene"})
+    return jsonify({"message": "Oznámení označeno jako přečtené"})
 
 
 @oznameni_bp.route("/poslat", methods=["POST"])
@@ -84,7 +84,7 @@ def poslat_oznameni():
         return (
             jsonify(
                 {
-                    "message": "Oznameni bylo odeslano",
+                    "message": "Oznámení bylo odesláno",
                     "oznameni_id": nove_oznameni.id,
                     "oznameni": serialize_notification(nove_oznameni),
                 }
@@ -93,7 +93,7 @@ def poslat_oznameni():
         )
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri odesilani oznameni", 500)
+        return error_response("Chyba při odesílání oznámení", 500)
 
 
 @oznameni_bp.route("/neprectena", methods=["GET"])

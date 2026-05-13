@@ -15,18 +15,18 @@ auta_bp = Blueprint("auta", __name__)
 
 
 def _get_aktivni_jizdy_auta(auto_id):
-    """Vrati aktivni jizdy navazane na auto, ktere brani jeho primemu smazani."""
+    """Vrátí aktivní jízdy navázané na auto, které brání jeho přímému smazání."""
     return Jizda.query.filter(Jizda.auto_id == auto_id, Jizda.status == "aktivni").all()
 
 
 def _soft_delete_auto(auto, profil_id):
-    """Oznaci auto jako smazane a pripadne prehodi primarni vlajku na jine auto."""
+    """Označí auto jako smazané a případně přehodí primární vlajku na jiné auto."""
     bylo_primarni = auto.primarni
     auto.smazane = True
     auto.primarni = False
 
     if bylo_primarni:
-        # Po smazani primarniho auta chceme zachovat jedno vychozi auto i do budoucna.
+        # Po smazání primárního auta chceme zachovat jedno výchozí auto i do budoucna.
         nove_primarni = Auto.query.filter(
             Auto.profil_id == profil_id,
             Auto.smazane == false(),
@@ -37,7 +37,7 @@ def _soft_delete_auto(auto, profil_id):
 
 
 def _normalize_auto_payload(data, *, partial=False):
-    """Sjednoti a zvaliduje payload auta pro vytvoreni i castecne upravy."""
+    """Sjednotí a zvaliduje payload auta pro vytvoření i částečné úpravy."""
     normalized = {}
 
     if not partial or "znacka" in data:
@@ -65,21 +65,21 @@ def _normalize_auto_payload(data, *, partial=False):
         if field_name in data:
             value = data.get(field_name)
             if not isinstance(value, bool):
-                return None, f"Pole {field_name} musi byt true nebo false"
+                return None, f"Pole {field_name} musí být true nebo false"
             normalized[field_name] = value
 
     if normalized.get("spz") and not validate_spz(normalized["spz"]):
-        return None, "Neplatny format SPZ"
+        return None, "Neplatný formát SPZ"
 
     return normalized, None
 
 
 def get_uzivatel_a_profil():
-    """Vrati prihlaseneho uzivatele s profilem nebo hotovou chybovou odpoved."""
+    """Vrátí přihlášeného uživatele s profilem nebo hotovou chybovou odpověď."""
     uzivatel_id = int(get_jwt_identity())
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
-        return None, error_response("Uzivatel nenalezen", 404), None
+        return None, error_response("Uživatel nenalezen", 404), None
     if not uzivatel.profil:
         return None, error_response("Profil nenalezen", 404), None
     return uzivatel, None, None
@@ -88,7 +88,7 @@ def get_uzivatel_a_profil():
 @auta_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_auta():
-    """Vrati aktivni auta prihlaseneho uzivatele s primarnim autem na zacatku."""
+    """Vrátí aktivní auta přihlášeného uživatele s primárním autem na začátku."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -104,7 +104,7 @@ def get_moje_auta():
 @auta_bp.route("/moje-nove", methods=["POST"])
 @jwt_required()
 def create_auto():
-    """Vytvori auto uzivatele a podle potreby nastavi primarni auto."""
+    """Vytvoří auto uživatele a podle potřeby nastaví primární auto."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -141,22 +141,22 @@ def create_auto():
             Auto.primarni.is_(True),
             Auto.smazane == false(),
         ).first()
-        # Prvni aktivni auto ma byt primarni i kdyz to klient neposle explicitne.
+        # První aktivní auto má být primární, i když to klient nepošle explicitně.
         if not auto.primarni and not ma_primarni:
             auto.primarni = True
 
         db.session.add(auto)
         db.session.commit()
-        return jsonify({"message": "Auto uspesne pridano", "auto": auto.to_dict()}), 201
+        return jsonify({"message": "Auto úspěšně přidáno", "auto": auto.to_dict()}), 201
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri vytvareni auta", 500)
+        return error_response("Chyba při vytváření auta", 500)
 
 
 @auta_bp.route("/<int:auto_id>", methods=["PUT"])
 @jwt_required()
 def update_auto(auto_id):
-    """Upravi vlastni auto a hlida konzistenci primarniho auta v garazi."""
+    """Upraví vlastní auto a hlídá konzistenci primárního auta v garáži."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -191,16 +191,16 @@ def update_auto(auto_id):
             ).update({"primarni": False})
 
         db.session.commit()
-        return jsonify({"message": "Auto uspesne aktualizovano", "auto": auto.to_dict()})
+        return jsonify({"message": "Auto úspěšně aktualizováno", "auto": auto.to_dict()})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri aktualizaci auta", 500)
+        return error_response("Chyba při aktualizaci auta", 500)
 
 
 @auta_bp.route("/<int:auto_id>", methods=["DELETE"])
 @jwt_required()
 def delete_auto(auto_id):
-    """Smaze auto pouze pokud na nem nezustaly aktivni jizdy."""
+    """Smaže auto pouze pokud na něm nezůstaly aktivní jízdy."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -215,21 +215,21 @@ def delete_auto(auto_id):
 
     aktivni_jizdy = _get_aktivni_jizdy_auta(auto.id)
     if aktivni_jizdy:
-        return error_response("Toto auto ma aktivni jizdy, je treba jej nahradit", 409)
+        return error_response("Toto auto má aktivní jízdy, je třeba jej nahradit", 409)
 
     try:
         _soft_delete_auto(auto, uzivatel.profil.id)
         db.session.commit()
-        return jsonify({"message": "Auto bylo uspesne smazano"})
+        return jsonify({"message": "Auto bylo úspěšně smazáno"})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri mazani auta", 500)
+        return error_response("Chyba při mazání auta", 500)
 
 
 @auta_bp.route("/<int:auto_id>/nastavit-primarni", methods=["POST"])
 @jwt_required()
 def nastavit_primarni(auto_id):
-    """Prehodi primarni auto uzivatele bez zmeny ostatnich detailu."""
+    """Přehodí primární auto uživatele bez změny ostatních detailů."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -251,16 +251,16 @@ def nastavit_primarni(auto_id):
 
         auto.primarni = True
         db.session.commit()
-        return jsonify({"message": "Auto nastaveno jako primarni", "auto": auto.to_dict()})
+        return jsonify({"message": "Auto nastaveno jako primární", "auto": auto.to_dict()})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri nastavovani primarniho auta", 500)
+        return error_response("Chyba při nastavování primárního auta", 500)
 
 
 @auta_bp.route("/replace/<int:stare_auto_id>", methods=["POST"])
 @jwt_required()
 def replace_auto(stare_auto_id):
-    """Prevede aktivni jizdy na jine auto a puvodni bezpecne skryje."""
+    """Převede aktivní jízdy na jiné auto a původní bezpečně skryje."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -275,7 +275,7 @@ def replace_auto(stare_auto_id):
 
     aktivni_jizdy = _get_aktivni_jizdy_auta(stare_auto.id)
     if not aktivni_jizdy:
-        return error_response("Toto auto nema zadne aktivni jizdy")
+        return error_response("Toto auto nemá žádné aktivní jízdy")
 
     data, error = get_json_data()
     if error:
@@ -291,7 +291,7 @@ def replace_auto(stare_auto_id):
         Auto.smazane == false(),
     ).first()
     if not nove_auto:
-        return error_response("Nove auto neexistuje nebo nepatri uzivateli", 404)
+        return error_response("Nové auto neexistuje nebo nepatří uživateli", 404)
 
     try:
         for jizda in aktivni_jizdy:
@@ -301,18 +301,18 @@ def replace_auto(stare_auto_id):
         db.session.commit()
         return jsonify(
             {
-                "message": f"Auto u {len(aktivni_jizdy)} aktivnich jizd bylo nahrazeno a stare auto smazano"
+                "message": f"Auto u {len(aktivni_jizdy)} aktivních jízd bylo nahrazeno a staré auto smazáno"
             }
         )
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri nahrazeni auta", 500)
+        return error_response("Chyba při nahrazení auta", 500)
 
 
 @auta_bp.route("/<int:auto_id>/zrusit-aktivni-jizdy", methods=["POST"])
 @jwt_required()
 def zrusit_aktivni_jizdy_auta(auto_id):
-    """Zrusi aktivni jizdy auta a nasledne auto oznaci jako smazane."""
+    """Zruší aktivní jízdy auta a následně auto označí jako smazané."""
     uzivatel, err, code = get_uzivatel_a_profil()
     if err:
         return err, code
@@ -327,7 +327,7 @@ def zrusit_aktivni_jizdy_auta(auto_id):
 
     aktivni_jizdy = _get_aktivni_jizdy_auta(auto.id)
     if not aktivni_jizdy:
-        return error_response("Toto auto nema zadne aktivni jizdy")
+        return error_response("Toto auto nemá žádné aktivní jízdy")
 
     try:
         for jizda in aktivni_jizdy:
@@ -337,9 +337,9 @@ def zrusit_aktivni_jizdy_auta(auto_id):
         db.session.commit()
         return jsonify(
             {
-                "message": f"Bylo zruseno {len(aktivni_jizdy)} aktivnich jizd a auto bylo smazano"
+                "message": f"Bylo zrušeno {len(aktivni_jizdy)} aktivních jízd a auto bylo smazáno"
             }
         )
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri ruseni aktivnich jizd auta", 500)
+        return error_response("Chyba při rušení aktivních jízd auta", 500)

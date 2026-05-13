@@ -19,28 +19,28 @@ MAX_DELKA_JMENA_PASAZERA = 80
 
 
 def _validate_dalsi_pasazeri(raw_pasazeri, pocet_mist):
-    """Overi seznam doprovodu tak, aby odpovidal poctu rezervovanych mist."""
+    """Ověří seznam doprovodu tak, aby odpovídal počtu rezervovaných míst."""
     if raw_pasazeri is None:
         raw_pasazeri = []
 
     if not isinstance(raw_pasazeri, list):
-        return None, "Dalsi pasazeri musi byt seznam jmen"
+        return None, "Další pasažéři musí být seznam jmen"
 
     expected_count = max(0, pocet_mist - 1)
     if len(raw_pasazeri) != expected_count:
-        return None, "Pocet jmen dalsich pasazeru musi odpovidat poctu rezervovanych mist"
+        return None, "Počet jmen dalších pasažérů musí odpovídat počtu rezervovaných míst"
 
     normalized = []
     for jmeno in raw_pasazeri:
         if not isinstance(jmeno, str):
-            return None, "Kazde jmeno dalsiho pasazera musi byt text"
+            return None, "Každé jméno dalšího pasažéra musí být text"
 
         trimmed = jmeno.strip()
         if not trimmed:
-            return None, "Jmena dalsich pasazeru nesmi byt prazdna"
+            return None, "Jména dalších pasažérů nesmí být prázdná"
 
         if len(trimmed) > MAX_DELKA_JMENA_PASAZERA:
-            return None, f"Jmeno dalsiho pasazera muze mit maximalne {MAX_DELKA_JMENA_PASAZERA} znaku"
+            return None, f"Jméno dalšího pasažéra může mít maximálně {MAX_DELKA_JMENA_PASAZERA} znaků"
 
         normalized.append(trimmed)
 
@@ -48,9 +48,9 @@ def _validate_dalsi_pasazeri(raw_pasazeri, pocet_mist):
 
 
 def _get_user_display_name(uzivatel):
-    """Vrati jmeno vhodne do notifikaci i kdyz uzivatel nema kompletni profil."""
+    """Vrátí jméno vhodné do notifikací i když uživatel nemá kompletní profil."""
     if not uzivatel:
-        return "Uzivatel"
+        return "Uživatel"
 
     profil = uzivatel.profil
     if not profil:
@@ -64,14 +64,14 @@ def _get_user_display_name(uzivatel):
 @rezervace_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_rezervace():
-    """Vytvori rezervaci jen pokud neporusi kapacitu ani navazujici business pravidla."""
+    """Vytvoří rezervaci jen pokud neporuší kapacitu ani navazující business pravidla."""
     uzivatel_id = int(get_jwt_identity())
     data, error = get_json_data()
     if error:
         return error
 
     if "jizda_id" not in data:
-        return error_response("ID jizdy je povinne")
+        return error_response("ID jízdy je povinné")
 
     jizda_id, ride_error = parse_positive_int(data.get("jizda_id"), "jizda_id")
     if ride_error:
@@ -92,28 +92,28 @@ def create_rezervace():
     if chyba_dalsich_pasazeru:
         return jsonify({"error": chyba_dalsich_pasazeru}), 400
 
-    # Dokud uzivatel nedokonci povinne hodnoceni predchozi jizdy, dalsi rezervaci nepustime.
+    # Dokud uživatel nedokončí povinné hodnocení předchozí jízdy, další rezervaci nepustíme.
     pending = sync_pending_ratings_for_user(uzivatel_id, create_notifications=True)
     if pending:
         return jsonify(
             {
-                "error": "Nejdriv ohodnot ridice z predchozi jizdy.",
+                "error": "Nejdřív ohodnoť řidiče z předchozí jízdy.",
                 "pending": pending,
             }
         ), 403
 
     jizda = db.session.get(Jizda, jizda_id)
     if not jizda:
-        return error_response("Jizda nenalezena", 404)
+        return error_response("Jízda nenalezena", 404)
 
     if jizda.status in {"zrusena", "dokoncena"}:
-        return error_response("Rezervaci lze vytvorit jen pro aktivni jizdu")
+        return error_response("Rezervaci lze vytvořit jen pro aktivní jízdu")
 
     muze, zprava = jizda.muze_rezervovat(uzivatel_id, pocet_mist)
     if not muze:
         return error_response(zprava)
 
-    # Jedna aktivni rezervace na stejnou jizdu staci, dalsi by jen komplikovala kapacitu i UI.
+    # Jedna aktivní rezervace na stejnou jízdu stačí, další by jen komplikovala kapacitu i UI.
     existujici = (
         Rezervace.query.filter_by(uzivatel_id=uzivatel_id, jizda_id=jizda_id)
         .filter(Rezervace.status.in_(["cekajici", "prijata"]))
@@ -121,7 +121,7 @@ def create_rezervace():
     )
 
     if existujici:
-        return jsonify({"error": "Jiz mate aktivni rezervaci na tuto jizdu"}), 400
+        return jsonify({"error": "Již máte aktivní rezervaci na tuto jízdu"}), 400
 
     try:
         rezervace = Rezervace(
@@ -138,7 +138,7 @@ def create_rezervace():
         passenger_name = _get_user_display_name(rezervace.uzivatel)
         vytvorit_oznameni(
             jizda.ridic_id,
-            f"Prisla nova rezervace od {passenger_name} na jizdu {jizda.odkud} -> {jizda.kam}.",
+            f"Přišla nová rezervace od {passenger_name} na jízdu {jizda.odkud} -> {jizda.kam}.",
             "rezervace_nova",
             kategorie="rezervace",
             odesilatel_id=uzivatel_id,
@@ -152,21 +152,21 @@ def create_rezervace():
         annotate_waiting_queue_positions([rezervace])
 
         return jsonify(
-            {"message": "Rezervace uspesne vytvorena", "rezervace": rezervace.to_dict()}
+            {"message": "Rezervace úspěšně vytvořena", "rezervace": rezervace.to_dict()}
         ), 201
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri vytvareni rezervace"}), 500
+        return jsonify({"error": "Chyba při vytváření rezervace"}), 500
 
 
 @rezervace_bp.route("/<int:rezervace_id>/prijmout", methods=["POST"])
 @jwt_required()
 def prijmout_rezervaci(rezervace_id):
-    """Prijme cekajici rezervaci pod zamkem, aby se kapacita nerozbila soubehem."""
+    """Přijme čekající rezervaci pod zámkem, aby se kapacita nerozbila souběhem."""
     uzivatel_id = int(get_jwt_identity())
 
-    # with_for_update chrani kapacitu pred soubeznymi pokusy o prijeti vice rezervaci.
+    # with_for_update chrání kapacitu před souběžnými pokusy o přijetí více rezervací.
     rezervace = (
         Rezervace.query.filter_by(id=rezervace_id)
         .with_for_update()
@@ -175,28 +175,28 @@ def prijmout_rezervaci(rezervace_id):
     jizda = Jizda.query.filter_by(id=rezervace.jizda_id).with_for_update().first()
 
     if rezervace.jizda.ridic_id != uzivatel_id:
-        return error_response("Nemate opravneni prijmout tuto rezervaci", 403)
+        return error_response("Nemáte oprávnění přijmout tuto rezervaci", 403)
 
     if rezervace.status != "cekajici":
-        return error_response("Rezervace jiz byla zpracovana")
+        return error_response("Rezervace již byla zpracována")
 
     try:
         if not jizda:
             db.session.rollback()
-            return error_response("Jizda nenalezena", 404)
+            return error_response("Jízda nenalezena", 404)
 
         if jizda.status in {"zrusena", "dokoncena"}:
             db.session.rollback()
-            return error_response("Rezervaci lze prijmout jen u aktivni jizdy")
+            return error_response("Rezervaci lze přijmout jen u aktivní jízdy")
 
         if not jizda.ma_dostatek_volnych_mist(rezervace.pocet_mist):
             db.session.rollback()
-            return error_response("Jizda je plne obsazena")
+            return error_response("Jízda je plně obsazena")
 
         rezervace.prijmout()
         vytvorit_oznameni(
             rezervace.uzivatel_id,
-            f"Ridic prijal tvoji rezervaci na jizdu {jizda.odkud} -> {jizda.kam}.",
+            f"Řidič přijal tvoji rezervaci na jízdu {jizda.odkud} -> {jizda.kam}.",
             "rezervace_prijata",
             kategorie="rezervace",
             odesilatel_id=uzivatel_id,
@@ -209,34 +209,34 @@ def prijmout_rezervaci(rezervace_id):
         db.session.commit()
         annotate_waiting_queue_positions([rezervace])
 
-        return jsonify({"message": "Rezervace prijata", "rezervace": rezervace.to_dict()})
+        return jsonify({"message": "Rezervace přijata", "rezervace": rezervace.to_dict()})
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri prijimani rezervace"}), 500
+        return jsonify({"error": "Chyba při přijímání rezervace"}), 500
 
 
 @rezervace_bp.route("/<int:rezervace_id>/odmitnout", methods=["POST"])
 @jwt_required()
 def odmitnout_rezervaci(rezervace_id):
-    """Odmitne cekajici rezervaci a informuje pasazera o vysledku."""
+    """Odmítne čekající rezervaci a informuje pasažéra o výsledku."""
     uzivatel_id = int(get_jwt_identity())
     rezervace = Rezervace.query.get_or_404(rezervace_id)
 
     if rezervace.jizda.ridic_id != uzivatel_id:
-        return error_response("Nemate opravneni odmitnout tuto rezervaci", 403)
+        return error_response("Nemáte oprávnění odmítnout tuto rezervaci", 403)
 
     if rezervace.status != "cekajici":
-        return error_response("Rezervace jiz byla zpracovana")
+        return error_response("Rezervace již byla zpracována")
 
     if rezervace.jizda.status in {"zrusena", "dokoncena"}:
-        return error_response("Rezervaci lze odmitnout jen u aktivni jizdy")
+        return error_response("Rezervaci lze odmítnout jen u aktivní jízdy")
 
     try:
         rezervace.odmitnout()
         vytvorit_oznameni(
             rezervace.uzivatel_id,
-            f"Ridic odmitl tvoji rezervaci na jizdu {rezervace.jizda.odkud} -> {rezervace.jizda.kam}.",
+            f"Řidič odmítl tvoji rezervaci na jízdu {rezervace.jizda.odkud} -> {rezervace.jizda.kam}.",
             "rezervace_odmitnuta",
             kategorie="rezervace",
             odesilatel_id=uzivatel_id,
@@ -249,30 +249,30 @@ def odmitnout_rezervaci(rezervace_id):
         db.session.commit()
         annotate_waiting_queue_positions([rezervace])
 
-        return jsonify({"message": "Rezervace odmitnuta", "rezervace": rezervace.to_dict()})
+        return jsonify({"message": "Rezervace odmítnuta", "rezervace": rezervace.to_dict()})
 
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri odmitani rezervace"}), 500
+        return jsonify({"error": "Chyba při odmítání rezervace"}), 500
 
 
 @rezervace_bp.route("/<int:rezervace_id>/zrusit", methods=["DELETE"])
 @jwt_required()
 def zrusit_rezervaci(rezervace_id):
-    """Umozni pasazerovi opustit aktivni jizdu jen s dostatecnym predstihem."""
+    """Umožní pasažérovi opustit aktivní jízdu jen s dostatečným předstihem."""
     user_id = int(get_jwt_identity())
     rez = Rezervace.query.get_or_404(rezervace_id)
 
     if rez.uzivatel_id != user_id:
-        return error_response("Nemas opravneni rusit tuto rezervaci.", 403)
+        return error_response("Nemáš oprávnění rušit tuto rezervaci.", 403)
 
     jizda = rez.jizda
     if jizda.status != "aktivni":
-        return error_response("Jizda neni aktivni, nelze ji opustit.")
+        return error_response("Jízda není aktivní, nelze ji opustit.")
 
     now = utc_now()
     if now > (jizda.cas_odjezdu - timedelta(hours=1)):
-        return error_response("Jizdu lze opustit nejpozdeji 1 hodinu pred odjezdem.")
+        return error_response("Jízdu lze opustit nejpozději 1 hodinu před odjezdem.")
 
     rez.status = "zrusena"
     pasazer = next((u for u in jizda.pasazeri if u.id == user_id), None)
@@ -280,13 +280,13 @@ def zrusit_rezervaci(rezervace_id):
         jizda.pasazeri.remove(pasazer)
 
     db.session.commit()
-    return jsonify({"message": "Rezervace byla zrusena a jizdu jste opustil."}), 200
+    return jsonify({"message": "Rezervace byla zrušena a jízdu jste opustil."}), 200
 
 
 @rezervace_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_rezervace():
-    """Vrati odeslane i prijate rezervace v jednom payloadu pro prehledovou obrazovku."""
+    """Vrátí odeslané i přijaté rezervace v jednom payloadu pro přehledovou obrazovku."""
     uzivatel_id = int(get_jwt_identity())
 
     moje_rezervace = Rezervace.query.filter_by(uzivatel_id=uzivatel_id).all()
@@ -317,12 +317,12 @@ def get_moje_rezervace():
 @rezervace_bp.route("/jizda/<int:jizda_id>", methods=["GET"])
 @jwt_required()
 def get_rezervace_jizdy(jizda_id):
-    """Vrati seznam rezervaci jen ridici dane jizdy."""
+    """Vrátí seznam rezervací jen řidiči dané jízdy."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemate opravneni zobrazit rezervace teto jizdy"}), 403
+        return jsonify({"error": "Nemáte oprávnění zobrazit rezervace této jízdy"}), 403
 
     rezervace = Rezervace.query.filter_by(jizda_id=jizda_id).all()
     annotate_waiting_queue_positions(rezervace)

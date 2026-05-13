@@ -50,10 +50,10 @@ def get_jizda_chat(jizda_id):
     uzivatel_id = int(get_jwt_identity())
     jizda = db.session.get(Jizda, jizda_id)
     if not jizda:
-        return error_response("Jizda nenalezena", 404)
+        return error_response("Jízda nenalezena", 404)
 
     if jizda.ridic_id != uzivatel_id and not any(p.id == uzivatel_id for p in jizda.pasazeri):
-        return error_response("Nemate pristup k tomuto chatu", 403)
+        return error_response("Nemáte přístup k tomuto chatu", 403)
 
     chat = Chat.query.filter_by(jizda_id=jizda_id).first()
     if not chat:
@@ -76,11 +76,11 @@ def get_jizda_chat(jizda_id):
 def get_osobni_chat(druhy_uzivatel_id):
     uzivatel_id = int(get_jwt_identity())
     if uzivatel_id == druhy_uzivatel_id:
-        return error_response("Nemuzete chatovat sami se sebou")
+        return error_response("Nemůžete chatovat sami se sebou")
 
     druhy_uzivatel = db.session.get(Uzivatel, druhy_uzivatel_id)
     if not druhy_uzivatel:
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
 
     chat = Chat.query.filter(
         Chat.jizda_id.is_(None),
@@ -91,7 +91,7 @@ def get_osobni_chat(druhy_uzivatel_id):
     if not chat:
         aktualni_uzivatel = db.session.get(Uzivatel, uzivatel_id)
         if not aktualni_uzivatel:
-            return error_response("Uzivatel nenalezen", 404)
+            return error_response("Uživatel nenalezen", 404)
 
         chat = Chat()
         chat.ucastnici.append(aktualni_uzivatel)
@@ -125,7 +125,7 @@ def odeslat_zpravu(chat_id):
     if not chat:
         return error_response("Chat nenalezen", 404)
     if not chat.muze_pristupovat(uzivatel_id):
-        return error_response("Nemate pristup k tomuto chatu", 403)
+        return error_response("Nemáte přístup k tomuto chatu", 403)
 
     try:
         zprava = Zprava(chat_id=chat_id, odesilatel_id=uzivatel_id, text=text)
@@ -134,7 +134,7 @@ def odeslat_zpravu(chat_id):
 
         odesilatel = db.session.get(Uzivatel, uzivatel_id)
         jmeno_odesilatele = odesilatel.profil.jmeno if odesilatel and odesilatel.profil else (
-            odesilatel.email if odesilatel else "Uzivatel"
+            odesilatel.email if odesilatel else "Uživatel"
         )
 
         for ucastnik in chat.ucastnici:
@@ -143,10 +143,10 @@ def odeslat_zpravu(chat_id):
 
             if chat.jizda_id:
                 zprava_oznameni = (
-                    f"Nova zprava od {jmeno_odesilatele} v chatu jizdy {chat.jizda.odkud} -> {chat.jizda.kam}"
+                    f"Nová zpráva od {jmeno_odesilatele} v chatu jízdy {chat.jizda.odkud} -> {chat.jizda.kam}"
                 )
             else:
-                zprava_oznameni = f"Nova zprava od {jmeno_odesilatele}"
+                zprava_oznameni = f"Nová zpráva od {jmeno_odesilatele}"
 
             vytvorit_oznameni(
                 ucastnik.id,
@@ -158,10 +158,10 @@ def odeslat_zpravu(chat_id):
                 jizda_id=chat.jizda_id,
             )
 
-        return jsonify({"message": "Zprava odeslana", "zprava": zprava.to_dict()}), 201
+        return jsonify({"message": "Zpráva odeslána", "zprava": zprava.to_dict()}), 201
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri odesilani zpravy", 500)
+        return error_response("Chyba při odesílání zprávy", 500)
 
 
 @chat_bp.route("/<int:chat_id>/zpravy", methods=["GET"])
@@ -172,15 +172,15 @@ def get_zpravy(chat_id):
     per_page = request.args.get("per_page", 20, type=int)
 
     if page is None or page <= 0:
-        return error_response("Parametr page musi byt kladne cele cislo")
+        return error_response("Parametr page musí být kladné celé číslo")
     if per_page is None or per_page <= 0:
-        return error_response("Parametr per_page musi byt kladne cele cislo")
+        return error_response("Parametr per_page musí být kladné celé číslo")
 
     chat = db.session.get(Chat, chat_id)
     if not chat:
         return error_response("Chat nenalezen", 404)
     if not chat.muze_pristupovat(uzivatel_id):
-        return error_response("Nemate pristup k tomuto chatu", 403)
+        return error_response("Nemáte přístup k tomuto chatu", 403)
 
     zpravy_pagination = (
         Zprava.query.filter_by(chat_id=chat_id)
@@ -208,7 +208,7 @@ def get_moje_chaty():
     uzivatel_id = int(get_jwt_identity())
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
 
     chaty_jizd = [chat for chat in uzivatel.chaty if chat.jizda_id is not None]
     osobni_chaty = [chat for chat in uzivatel.chaty if chat.jizda_id is None]
@@ -240,17 +240,17 @@ def smazat_zpravu(zprava_id):
     uzivatel_id = int(get_jwt_identity())
     zprava = db.session.get(Zprava, zprava_id)
     if not zprava:
-        return error_response("Zprava nenalezena", 404)
+        return error_response("Zpráva nenalezena", 404)
     if zprava.odesilatel_id != uzivatel_id:
-        return error_response("Nemate opravneni smazat tuto zpravu", 403)
+        return error_response("Nemáte oprávnění smazat tuto zprávu", 403)
 
     try:
         db.session.delete(zprava)
         db.session.commit()
-        return jsonify({"message": "Zprava smazana"})
+        return jsonify({"message": "Zpráva smazána"})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri mazani zpravy", 500)
+        return error_response("Chyba při mazání zprávy", 500)
 
 
 @chat_bp.route("/osobni/<int:chat_id>", methods=["DELETE"])
@@ -262,13 +262,13 @@ def delete_osobni_chat(chat_id):
         return error_response("Chat nenalezen", 404)
 
     if chat.jizda_id is not None or uzivatel_id not in [user.id for user in chat.ucastnici]:
-        return error_response("Nepovoleny pristup", 403)
+        return error_response("Nepovolený přístup", 403)
 
     try:
         Zprava.query.filter_by(chat_id=chat.id).delete()
         db.session.delete(chat)
         db.session.commit()
-        return jsonify({"message": "Chat byl smazan"}), 200
+        return jsonify({"message": "Chat byl smazán"}), 200
     except Exception:
         db.session.rollback()
-        return error_response("Nepodarilo se smazat chat", 500)
+        return error_response("Nepodařilo se smazat chat", 500)

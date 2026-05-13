@@ -16,7 +16,7 @@ hodnoceni_bp = Blueprint("hodnoceni", __name__)
 @hodnoceni_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_hodnoceni():
-    """Vytvoreni hodnoceni pouze mezi ucastniky dokoncene jizdy."""
+    """Vytvoření hodnocení pouze mezi účastníky dokončené jízdy."""
     autor_id = int(get_jwt_identity())
     data, error = get_json_data()
     if error:
@@ -25,7 +25,7 @@ def create_hodnoceni():
     required_fields = ["jizda_id", "cilovy_uzivatel_id", "role", "znamka"]
     for field in required_fields:
         if field not in data:
-            return error_response(f"Pole {field} je povinne")
+            return error_response(f"Pole {field} je povinné")
 
     jizda_id, ride_error = parse_positive_int(data.get("jizda_id"), "jizda_id")
     if ride_error:
@@ -48,31 +48,31 @@ def create_hodnoceni():
     try:
         znamka = int(data["znamka"])
     except (TypeError, ValueError):
-        return error_response("Znamka musi byt cislo od 1 do 5")
+        return error_response("Známka musí být číslo od 1 do 5")
 
     if autor_id == cilovy_uzivatel_id:
-        return error_response("Nemuzete hodnotit sebe sama")
+        return error_response("Nemůžete hodnotit sebe sama")
     if role not in {"ridic", "pasazer"}:
-        return error_response('Role musi byt "ridic" nebo "pasazer"')
+        return error_response('Role musí být "ridic" nebo "pasazer"')
     if znamka < 1 or znamka > 5:
-        return error_response("Znamka musi byt cislo od 1 do 5")
+        return error_response("Známka musí být číslo od 1 do 5")
 
     jizda = db.session.get(Jizda, jizda_id)
     if not jizda:
-        return error_response("Jizda nenalezena", 404)
+        return error_response("Jízda nenalezena", 404)
 
-    # Po prijezdu prepneme status na dokoncena, aby slo hodnoceni vytvorit hned.
+    # Po příjezdu přepneme status na dokoncena, aby šlo hodnocení vytvořit hned.
     now = utc_now()
     if jizda.status == "aktivni" and jizda.cas_prijezdu and jizda.cas_prijezdu <= now:
         jizda.status = "dokoncena"
         db.session.commit()
 
     if jizda.status != "dokoncena":
-        return error_response("Hodnotit lze az po dokonceni jizdy")
+        return error_response("Hodnotit lze až po dokončení jízdy")
 
     cilovy_uzivatel = db.session.get(Uzivatel, cilovy_uzivatel_id)
     if not cilovy_uzivatel:
-        return error_response("Cilovy uzivatel nenalezen", 404)
+        return error_response("Cílový uživatel nenalezen", 404)
 
     autor_is_driver = autor_id == jizda.ridic_id
     autor_is_passenger = any(p.id == autor_id for p in jizda.pasazeri)
@@ -80,17 +80,17 @@ def create_hodnoceni():
     target_is_passenger = any(p.id == cilovy_uzivatel_id for p in jizda.pasazeri)
 
     if not (autor_is_driver or autor_is_passenger):
-        return error_response("Tuto jizdu jste nejel", 403)
+        return error_response("Tuto jízdu jste nejel", 403)
     if not (target_is_driver or target_is_passenger):
-        return error_response("Cilovy uzivatel nebyl ucastnikem teto jizdy")
+        return error_response("Cílový uživatel nebyl účastníkem této jízdy")
 
-    # Ridice hodnoti jen pasazer, pasazera naopak pouze ridic dane jizdy.
+    # Řidiče hodnotí jen pasažér, pasažéra naopak pouze řidič dané jízdy.
     if role == "ridic":
         if not autor_is_passenger or not target_is_driver:
-            return error_response("Ridice muze hodnotit pouze pasazer z teto jizdy")
+            return error_response("Řidiče může hodnotit pouze pasažér z této jízdy")
     else:
         if not autor_is_driver or not target_is_passenger:
-            return error_response("Pasazera muze hodnotit pouze ridic z teto jizdy")
+            return error_response("Pasažéra může hodnotit pouze řidič z této jízdy")
 
     existujici = Hodnoceni.query.filter_by(
         autor_id=autor_id,
@@ -99,7 +99,7 @@ def create_hodnoceni():
         role=role,
     ).first()
     if existujici:
-        return error_response("Hodnoceni pro tuto jizdu uz existuje")
+        return error_response("Hodnocení pro tuto jízdu už existuje")
 
     try:
         hodnoceni = Hodnoceni(
@@ -121,17 +121,17 @@ def create_hodnoceni():
         db.session.commit()
 
         return jsonify(
-            {"message": "Hodnoceni uspesne pridano", "hodnoceni": hodnoceni.to_dict()}
+            {"message": "Hodnocení úspěšně přidáno", "hodnoceni": hodnoceni.to_dict()}
         ), 201
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri vytvareni hodnoceni", 500)
+        return error_response("Chyba při vytváření hodnocení", 500)
 
 
 @hodnoceni_bp.route("/pending", methods=["GET"])
 @jwt_required()
 def pending_hodnoceni():
-    """Vrati dokoncene jizdy, kde ma uzivatel stale nevyresene hodnoceni."""
+    """Vrátí dokončené jízdy, kde má uživatel stále nevyřešené hodnocení."""
     uzivatel_id = int(get_jwt_identity())
     pending = sync_pending_ratings_for_user(uzivatel_id, create_notifications=True)
     return jsonify({"pending": pending})
@@ -140,11 +140,11 @@ def pending_hodnoceni():
 @hodnoceni_bp.route("/uzivatel/<int:uzivatel_id>", methods=["GET"])
 @jwt_required()
 def get_hodnoceni_uzivatele(uzivatel_id):
-    """Vrati hodnoceni konkretniho uzivatele a souhrnne statistiky podle role."""
+    """Vrátí hodnocení konkrétního uživatele a souhrnné statistiky podle role."""
     role = request.args.get("role")
 
     if not db.session.get(Uzivatel, uzivatel_id):
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
 
     query = Hodnoceni.query.filter_by(cilovy_uzivatel_id=uzivatel_id)
     if role in {"ridic", "pasazer"}:
@@ -173,7 +173,7 @@ def get_hodnoceni_uzivatele(uzivatel_id):
 @hodnoceni_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_hodnoceni():
-    """Vrati oddelene prijata a udelena hodnoceni prihlaseneho uzivatele."""
+    """Vrátí odděleně přijatá a udělená hodnocení přihlášeného uživatele."""
     uzivatel_id = int(get_jwt_identity())
 
     dostana = (
@@ -198,14 +198,14 @@ def get_moje_hodnoceni():
 @hodnoceni_bp.route("/<int:hodnoceni_id>", methods=["PUT"])
 @jwt_required()
 def update_hodnoceni(hodnoceni_id):
-    """Umozni autorovi upravit znamku nebo komentar bez zmeny vazby na jizdu."""
+    """Umožní autorovi upravit známku nebo komentář bez změny vazby na jízdu."""
     uzivatel_id = int(get_jwt_identity())
     hodnoceni = db.session.get(Hodnoceni, hodnoceni_id)
     if not hodnoceni:
-        return error_response("Hodnoceni nenalezeno", 404)
+        return error_response("Hodnocení nenalezeno", 404)
 
     if hodnoceni.autor_id != uzivatel_id:
-        return error_response("Nemate opravneni upravovat toto hodnoceni", 403)
+        return error_response("Nemáte oprávnění upravovat toto hodnocení", 403)
 
     data, error = get_json_data()
     if error:
@@ -216,10 +216,10 @@ def update_hodnoceni(hodnoceni_id):
             try:
                 znamka = int(data["znamka"])
             except (TypeError, ValueError):
-                return error_response("Znamka musi byt cislo od 1 do 5")
+                return error_response("Známka musí být číslo od 1 do 5")
 
             if znamka < 1 or znamka > 5:
-                return error_response("Znamka musi byt cislo od 1 do 5")
+                return error_response("Známka musí být číslo od 1 do 5")
             hodnoceni.znamka = znamka
 
         if "komentar" in data:
@@ -231,31 +231,31 @@ def update_hodnoceni(hodnoceni_id):
         db.session.commit()
         return jsonify(
             {
-                "message": "Hodnoceni uspesne aktualizovano",
+                "message": "Hodnocení úspěšně aktualizováno",
                 "hodnoceni": hodnoceni.to_dict(),
             }
         )
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri aktualizaci hodnoceni", 500)
+        return error_response("Chyba při aktualizaci hodnocení", 500)
 
 
 @hodnoceni_bp.route("/<int:hodnoceni_id>", methods=["DELETE"])
 @jwt_required()
 def delete_hodnoceni(hodnoceni_id):
-    """Smaze hodnoceni pouze jeho autorovi, aby nesla menit cizi zpetna vazba."""
+    """Smaže hodnocení pouze jeho autorovi, aby nešla měnit cizí zpětná vazba."""
     uzivatel_id = int(get_jwt_identity())
     hodnoceni = db.session.get(Hodnoceni, hodnoceni_id)
     if not hodnoceni:
-        return error_response("Hodnoceni nenalezeno", 404)
+        return error_response("Hodnocení nenalezeno", 404)
 
     if hodnoceni.autor_id != uzivatel_id:
-        return error_response("Nemate opravneni smazat toto hodnoceni", 403)
+        return error_response("Nemáte oprávnění smazat toto hodnocení", 403)
 
     try:
         db.session.delete(hodnoceni)
         db.session.commit()
-        return jsonify({"message": "Hodnoceni uspesne smazano"})
+        return jsonify({"message": "Hodnocení úspěšně smazáno"})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri mazani hodnoceni", 500)
+        return error_response("Chyba při mazání hodnocení", 500)

@@ -11,16 +11,16 @@ import Card from '../components/ui/Card';
 import './MyRidesPage.css';
 
 const TEXT = {
-  loadError: 'Jizdy se nepodarilo nacist.',
-  loading: 'Nacitam vase jízdy...',
+  loadError: 'Jízdy se nepodařilo načíst.',
+  loading: 'Načítám vaše jízdy...',
   eyebrow: 'Moje jízdy',
   title: 'Přehled všech tras, které nabízíte jako řidič',
-  active: 'Aktivni',
+  active: 'Aktivní',
   all: 'Všechny',
   completed: 'Dokončené',
   canceled: 'Zrušené',
   emptyTitle: 'V tomto filtru zatím nic není',
-  emptyText: 'Pokud chcete pridat novou trasu, muzete ji nabidnout behem chvile.',
+  emptyText: 'Pokud chcete přidat novou trasu, můžete ji nabídnout během chvíle.',
   createRide: 'Nabídnout jízdu',
   quickStats: 'Rychlé statistiky',
   totalRides: 'Celkem jízd',

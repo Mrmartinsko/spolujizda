@@ -29,7 +29,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
         const filteredCars = (response.data || []).filter((auto) => auto.id !== autoId);
         setAvailableCars(filteredCars);
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Chyba pri nacitani aut.'));
+        setError(getApiErrorMessage(err, 'Chyba při načítaní aut.'));
         setAvailableCars([]);
       } finally {
         setLoading(false);
@@ -52,7 +52,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
       if (onCarReplaced) onCarReplaced();
       onClose();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Chyba pri nahrazovani auta.'));
+      setError(getApiErrorMessage(err, 'Chyba při nahrazování auta.'));
     }
   };
 
@@ -82,7 +82,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
       setAvailableCars((prev) => [...prev, response.data.auto]);
       setNewCar({ znacka: '', model: '', spz: '', barva: '' });
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Chyba pri pridavani auta.'));
+      setError(getApiErrorMessage(err, 'Chyba při přidávání auta.'));
     } finally {
       setAdding(false);
     }
@@ -102,7 +102,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
       if (onCarReplaced) onCarReplaced();
       onClose();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Chyba pri ruseni aktivnich jízd.'));
+      setError(getApiErrorMessage(err, 'Chyba při rušení aktivních jízd.'));
     } finally {
       setCancellingRides(false);
     }
@@ -131,7 +131,7 @@ const ReplaceCar = ({ autoId, aktivniJizdyCount = 0, onClose, onCarReplaced }) =
         </div>
 
         {loading ? (
-          <div className="replace-loading-state">Nacitani dostupnych aut...</div>
+          <div className="replace-loading-state">Načítaní dostupných aut...</div>
         ) : (
           <>
             {error && <p className="error-message">{error}</p>}

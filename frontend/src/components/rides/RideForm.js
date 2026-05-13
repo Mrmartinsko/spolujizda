@@ -145,11 +145,11 @@ const RideForm = ({ onRideCreated }) => {
 
   const validateLocationField = (value, fieldLabel) => {
     const normalized = (value || '').trim();
-    // Frontend kopiruje zakladni limity backendu, aby uzivatel dostal chybu co nejdriv.
-    if (!normalized) return `${fieldLabel} je povinne.`;
-    if (normalized.length > 100) return `${fieldLabel} muze mit maximalne 100 znaku.`;
+    // Frontend kopíruje základní limity backendu, aby uživatel dostal chybu co nejdřív.
+    if (!normalized) return `${fieldLabel} je povinné.`;
+    if (normalized.length > 100) return `${fieldLabel} může mít maximálně 100 znaků.`;
     if (/[^\p{L}\p{N}\s-]/gu.test(normalized)) {
-      return `${fieldLabel} muze obsahovat jen pismena, cisla, mezery a pomlcky.`;
+      return `${fieldLabel} může obsahovat jen písmena, čísla, mezery a pomlčky.`;
     }
     return null;
   };
@@ -166,7 +166,7 @@ const RideForm = ({ onRideCreated }) => {
         if (userCars.length === 0) {
           setNoCars(true);
         } else {
-          // Kdyz auto existuje, predvyplnime primarni volbu a formular muze zustat jednou obrazovkou.
+          // Když auto existuje, předvyplníme primární volbu a formulář může zůstat jednou obrazovkou.
           setFormData((prev) => ({
             ...prev,
             auto_id: userCars.find((car) => car.primarni)?.id || userCars[0].id,
@@ -209,7 +209,7 @@ const RideForm = ({ onRideCreated }) => {
       return;
     }
 
-    // Duplicity hlidame podle place_id, jinak aspon podle textu pro rucne zadane zastavky.
+    // Duplicity hlídáme podle place_id, jinak aspoň podle textu pro ručně zadané zastávky.
     const exists = mezistanice.some((m) =>
       m.place_id && novaMezistanice.place_id
         ? m.place_id === novaMezistanice.place_id
@@ -249,7 +249,7 @@ const RideForm = ({ onRideCreated }) => {
   };
 
   const resetForm = () => {
-    // Po uspesnem vytvoreni nechavame predvybrane primarni auto, aby slo rychle zalozit dalsi jizdu.
+    // Po úspěšném vytvoření necháváme předvybrané primární auto, aby šlo rychle založit další jízdu.
     setFormData({
       odkud: '',
       odkud_place_id: null,
@@ -272,7 +272,7 @@ const RideForm = ({ onRideCreated }) => {
     setError('');
     setSuccess('');
 
-    // Datumy validujeme i na klientu, aby uzivatel nemusel cekat na backend odpoved kvuli zjevne chybe.
+    // Datumy validujeme i na klientu, aby uživatel nemusel čekat na odpověď backendu kvůli zjevné chybě.
     const odkud = formData.odkud.trim();
     const kam = formData.kam.trim();
     const departureDate = formData.casOdjezdu ? new Date(formData.casOdjezdu) : null;
@@ -316,7 +316,7 @@ const RideForm = ({ onRideCreated }) => {
     }
 
     if (departureDate <= new Date()) {
-      setError('Odjezd musi byt v budoucnu.');
+      setError('Odjezd musí být v budoucnu.');
       return;
     }
 
@@ -326,12 +326,12 @@ const RideForm = ({ onRideCreated }) => {
     }
 
     if (Number.isNaN(cena) || cena < 0) {
-      setError('Cena musi byt kladne cislo nebo nula.');
+      setError('Cena musí být kladné číslo nebo nula.');
       return;
     }
 
     if (!Number.isInteger(pocetMist) || pocetMist <= 0) {
-      setError('Pocet mist musi byt cele cislo vetsi nez 0.');
+      setError('Počet míst musí být celé číslo větší než 0.');
       return;
     }
 
@@ -356,7 +356,7 @@ const RideForm = ({ onRideCreated }) => {
       pocet_mist: pocetMist,
     };
 
-    // Prazdne mezistanice neposilame, backend pak dostane jednodussi a konzistentni payload.
+    // Prázdné mezistanice neposíláme, backend pak dostane jednodušší a konzistentní payload.
     if (payload.mezistanice.length === 0) {
       delete payload.mezistanice;
     }
@@ -456,7 +456,7 @@ const RideForm = ({ onRideCreated }) => {
                 onChange={handleNovaMezistaniceChange}
                 hideLabel
                 wrapperClassName="mezistanice-autocomplete"
-                placeholder="Napriklad Jihlava"
+                placeholder="Například Jihlava"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -492,7 +492,7 @@ const RideForm = ({ onRideCreated }) => {
                         onClick={() => posunDolu(i)}
                         disabled={i === mezistanice.length - 1}
                       >
-                        Dolu
+                        Dolů
                       </Button>
                       <Button type="button" variant="danger" size="sm" onClick={() => smazatMezistanici(i)}>
                         Odebrat
@@ -530,7 +530,7 @@ const RideForm = ({ onRideCreated }) => {
           <div className="ride-form__grid ride-form__grid--two">
             <div className="field-group">
               <label className="field-label" htmlFor="pocetMist">
-                Volna mista
+                Volná místa
               </label>
               <input id="pocetMist" className="ui-input" type="number" name="pocetMist" value={formData.pocetMist} onChange={handleChange} required min="1" max="8" />
             </div>
@@ -553,7 +553,7 @@ const RideForm = ({ onRideCreated }) => {
           <div className="ride-form__footer">
             <p className="field-hint">Po vytvoření jízdy se rezervace i změny budou dál spravovat z přehledu Moje jízdy.</p>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Vytvarim jizdu...' : 'Nabídnout jízdu'}
+              {loading ? 'Vytvářím jízdu...' : 'Nabídnout jízdu'}
             </Button>
           </div>
         </form>

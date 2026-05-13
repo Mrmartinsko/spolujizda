@@ -32,7 +32,7 @@ const formatTime = (dateString) => {
   const time = date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
   if (isToday) return time;
-  if (isYesterday) return 'Vcera';
+  if (isYesterday) return 'Včera';
   return date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' });
 };
 
@@ -67,7 +67,7 @@ const MojeOsobniChaty = () => {
       setChaty(sortChatsByLatest(response.data.osobni_chaty || []));
       setError('');
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'Chaty se nepodarilo nacist.'));
+      setError(getApiErrorMessage(requestError, 'Chaty se nepodařilo načíst.'));
     } finally {
       setLoading(false);
       setListRefreshing(false);
@@ -113,7 +113,7 @@ const MojeOsobniChaty = () => {
         navigate('/moje-chaty', { replace: true });
       }
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'Chat se nepodarilo smazat.'));
+      setError(getApiErrorMessage(requestError, 'Chat se nepodařilo smazat.'));
     }
   };
 
@@ -121,7 +121,7 @@ const MojeOsobniChaty = () => {
     return (
       <div className="chat-workspace-loading">
         <div className="chat-workspace-loading__spinner" />
-        <p>Nacitam chaty...</p>
+        <p>Načítám chaty...</p>
       </div>
     );
   }
@@ -132,7 +132,7 @@ const MojeOsobniChaty = () => {
         <div className="chat-sidebar__header">
           <div>
             <h1>Chaty</h1>
-            <p>Posledni konverzace mate vzdy nahore.</p>
+            <p>Poslední konverzace máte vždy nahoře.</p>
           </div>
           {listRefreshing && <span className="chat-sidebar__refresh">Aktualizuji...</span>}
         </div>
@@ -148,9 +148,9 @@ const MojeOsobniChaty = () => {
             {chaty.map((chat) => {
               const druhyUzivatel = chat.ucastnici?.find((u) => u.id !== user.id);
               const druhyUzivatelId = druhyUzivatel?.id;
-              const username = resolveUsername(druhyUzivatel) || `Uzivatel #${druhyUzivatelId}`;
+              const username = resolveUsername(druhyUzivatel) || `Uživatel #${druhyUzivatelId}`;
               const posledniZprava = chat.posledni_zprava;
-              const previewText = posledniZprava?.text || 'Zatim bez zpravy';
+              const previewText = posledniZprava?.text || 'Zatím bez zprávy';
               const previewPrefix =
                 posledniZprava?.odesilatel?.id === user.id
                   ? 'Vy: '
@@ -212,7 +212,7 @@ const MojeOsobniChaty = () => {
               <MessageCircleMore size={24} />
             </div>
             <h2>Vyberte konverzaci</h2>
-            <p>Vlevo otevrete chat a navazete tam, kde jste naposledy skoncili.</p>
+            <p>Vlevo otevřete chat a navážete tam, kde jste naposledy skončili.</p>
           </div>
         )}
       </section>

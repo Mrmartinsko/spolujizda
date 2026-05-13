@@ -47,16 +47,16 @@ const RideSearch = ({ onSearchResults }) => {
     const kam = (searchData.kam || '').trim();
     const pocetPasazeru = Number(searchData.pocet_pasazeru);
 
-    // Zakladni kombinace trasy, data a poctu mist je povinna, jinak by backend vracel moc siroke vysledky.
+    // Základní kombinace trasy, data a počtu míst je povinná, jinak by backend vracel moc široké výsledky.
     if (!odkud || !kam || !searchData.datum) {
-      setError('Vyplnte odkud, kam a datum odjezdu.');
+      setError('Vyplňte odkud, kam a datum odjezdu.');
       setHasSearched(true);
       setSearchResults([]);
       return;
     }
 
     if (!Number.isInteger(pocetPasazeru) || pocetPasazeru <= 0) {
-      setError('Zadejte platny pocet mist.');
+      setError('Zadejte platný počet míst.');
       setHasSearched(true);
       setSearchResults([]);
       return;
@@ -79,20 +79,20 @@ const RideSearch = ({ onSearchResults }) => {
       });
 
       const data = Array.isArray(response.data) ? response.data : [];
-      // Backend vraci i typ shody, ktery si nechavame pro pripadne odliseni full a partial match.
+      // Backend vrací i typ shody, který si necháváme pro případné odlišení full a partial match.
       const fetchedRides = data.map((item) => ({
         ...item.ride,
         match_type: item.match_type,
       }));
 
       const now = new Date();
-      // Jde o obranny filtr pro pripad, ze backend vrati uz neaktualni zaznam tesne po odjezdu.
+      // Jde o obranný filtr pro případ, že backend vrátí už neaktuální záznam těsně po odjezdu.
       const aktualniJizdy = fetchedRides.filter((ride) => new Date(ride.cas_odjezdu) > now);
 
       setSearchResults(aktualniJizdy);
       if (onSearchResults) onSearchResults(aktualniJizdy);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Vyhledavani jízd se nepovedlo.'));
+      setError(getApiErrorMessage(err, 'Vyhledávání jízd se nepovedlo.'));
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -159,7 +159,7 @@ const RideSearch = ({ onSearchResults }) => {
 
             <Button type="submit" className="ride-search__submit" disabled={loading}>
               <Search size={16} />
-              {loading ? 'Hledam...' : 'Vyhledat'}
+              {loading ? 'Hledám...' : 'Vyhledat'}
             </Button>
           </div>
         </form>
@@ -169,13 +169,13 @@ const RideSearch = ({ onSearchResults }) => {
         <div className="results-section">
           <div className="section-heading">
             <div>
-              <h2>Vysledky vyhledavani</h2>
-              <p className="ride-search__results-copy">{searchResults.length} odpovidajicich jízd</p>
+              <h2>Výsledky vyhledávání</h2>
+              <p className="ride-search__results-copy">{searchResults.length} odpovídajících jízd</p>
             </div>
           </div>
 
           {loading ? (
-            <Card className="no-results">Nacitam vysledky...</Card>
+            <Card className="no-results">Načítám výsledky...</Card>
           ) : searchResults.length > 0 ? (
             <RideList
               rides={searchResults}
@@ -184,7 +184,7 @@ const RideSearch = ({ onSearchResults }) => {
             />
           ) : (
             <Card className="no-results">
-              Zadna vhodna jízda se ted nenasla. Zkuste jiny cas, trasu nebo nabidnete vlastni spoj.
+              Žádná vhodná jízda se teď nenašla. Zkuste jiný čas, trasu nebo nabídněte vlastní spoj.
             </Card>
           )}
         </div>

@@ -44,12 +44,12 @@ const OhodnotitPage = () => {
     setError("");
 
     if (!znamka || znamka < 1 || znamka > 5) {
-      setError("Vyber prosim znamku 1-5.");
+      setError("Vyber prosím známku 1-5.");
       return;
     }
 
     if (!token) {
-      setError("Nejsi prihlaseny.");
+      setError("Nejsi přihlášený.");
       return;
     }
 
@@ -85,14 +85,14 @@ const OhodnotitPage = () => {
         navigate("/", { replace: true });
       }
     } catch (e) {
-      setError(getApiErrorMessage(e, "Chyba pri odesilani hodnoceni."));
+      setError(getApiErrorMessage(e, "Chyba při odesílání hodnocení."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const RideInfo = () => {
-    if (loading) return <p className="rate-muted">Nacitam jízdu...</p>;
+    if (loading) return <p className="rate-muted">Načítám jízdu...</p>;
     if (!ride) return null;
 
     const odkud = ride.odkud || ride.jizda?.odkud;
@@ -107,7 +107,7 @@ const OhodnotitPage = () => {
         </div>
         <div className="rate-ride-meta">
           {odjezd ? <>Odjezd: {new Date(odjezd).toLocaleString("cs-CZ")}</> : null}
-          {prijezd ? <> | Prijezd: {new Date(prijezd).toLocaleString("cs-CZ")}</> : null}
+          {prijezd ? <> | Příjezd: {new Date(prijezd).toLocaleString("cs-CZ")}</> : null}
         </div>
       </div>
     );
@@ -116,9 +116,9 @@ const OhodnotitPage = () => {
   return (
     <div className="rate-page">
       <div className="rate-card">
-        <h2>Ohodnotit ridice</h2>
+        <h2>Ohodnotit řidiče</h2>
         <p className="rate-muted">
-          Zabere to par vterin. Hodnoceni pomaha ostatnim vybrat spolehlivou spolujizdu.
+          Zabere to pár vteřin. Hodnocení pomáhá ostatním vybrat spolehlivou spolujízdu.
         </p>
 
         <RideInfo />
@@ -133,24 +133,24 @@ const OhodnotitPage = () => {
                 onMouseEnter={() => setHover(n)}
                 onMouseLeave={() => setHover(0)}
                 onClick={() => setZnamka(n)}
-                aria-label={`${n} hvezdicek`}
+                aria-label={`${n} hvězdiček`}
               >
                 *
               </button>
             ))}
             <span className="rate-value">
-              {znamka ? `${znamka}/5` : "Vyber znamku"}
+              {znamka ? `${znamka}/5` : "Vyber známku"}
             </span>
           </div>
 
           <label className="rate-label" htmlFor="komentar">
-            Komentar (volitelne)
+            Komentář (volitelně)
             <textarea
               id="komentar"
               className="rate-textarea"
               value={komentar}
               onChange={(e) => setKomentar(e.target.value)}
-              placeholder="Napriklad super komunikace, jel vcas..."
+              placeholder="Například super komunikace, jel včas..."
               rows={4}
               maxLength={500}
             />
@@ -165,11 +165,11 @@ const OhodnotitPage = () => {
               onClick={() => navigate("/", { replace: true })}
               disabled={submitting}
             >
-              Ted ne
+              Teď ne
             </button>
 
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "Odesilam..." : "Odeslat hodnoceni"}
+              {submitting ? "Odesílám..." : "Odeslat hodnocení"}
             </button>
           </div>
         </form>

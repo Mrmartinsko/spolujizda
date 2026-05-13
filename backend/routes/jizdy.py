@@ -32,27 +32,27 @@ LOCATION_ALLOWED_RE = re.compile(r"[^A-Za-zÀ-ž0-9\s-]")
 
 
 def _validate_location_field(value, field_name):
-    """Overi text lokace a vrati jeho sanitizovanou podobu pro dalsi ulozeni."""
+    """Ověří text lokace a vrátí jeho sanitizovanou podobu pro další uložení."""
     if not isinstance(value, str):
-        return False, f"Pole {field_name} musi byt text"
+        return False, f"Pole {field_name} musí být text"
 
     normalized = sanitize_location_text(value)
     if not normalized:
-        return False, f"Pole {field_name} je povinne"
+        return False, f"Pole {field_name} je povinné"
     if len(normalized) > 100:
-        return False, f"Pole {field_name} muze mit maximalne 100 znaku"
+        return False, f"Pole {field_name} může mít maximálně 100 znaků"
     if LOCATION_ALLOWED_RE.search(normalized):
-        return False, f"Pole {field_name} muze obsahovat jen pismena, cisla, mezery a pomlcky"
+        return False, f"Pole {field_name} může obsahovat jen písmena, čísla, mezery a pomlčky"
 
     return True, normalized
 
 
 def _extract_location_payload(data, field_name, *, required):
-    """Sjednoti textovou lokaci a volitelny place_id do jednoho payloadu."""
+    """Sjednotí textovou lokaci a volitelný place_id do jednoho payloadu."""
     raw_text = data.get(field_name)
     if raw_text is None:
         if required:
-            return False, f"Pole {field_name} je povinne"
+            return False, f"Pole {field_name} je povinné"
         return True, None
 
     ok, text_value = _validate_location_field(raw_text, field_name)
@@ -65,7 +65,7 @@ def _extract_location_payload(data, field_name, *, required):
     if place_id and not city:
         return False, f"Pole {field_name} obsahuje neplatnou lokalitu"
 
-    # Pokud mame place_id z autocomplete, bereme canonical display_name z backendu.
+    # Pokud máme place_id z autocomplete, bereme canonical display_name z backendu.
     if city:
         return True, {
             "text": city["display_name"],
@@ -81,12 +81,12 @@ def _extract_location_payload(data, field_name, *, required):
 
 
 def _validate_mezistanice_list(data):
-    """Prevede mezistanice ze stringu nebo objektu na jednotny seznam zastavek."""
+    """Převede mezistanice ze stringu nebo objektu na jednotný seznam zastávek."""
     raw_stops = data.get("mezistanice", [])
     if raw_stops is None:
         return True, []
     if not isinstance(raw_stops, list):
-        return False, "mezistanice musi byt seznam"
+        return False, "mezistanice musí být seznam"
 
     normalized_stops = []
     for item in raw_stops:
@@ -102,7 +102,7 @@ def _validate_mezistanice_list(data):
             continue
 
         if not isinstance(item, dict):
-            return False, "mezistanice musi byt seznam textu nebo objektu"
+            return False, "mezistanice musí být seznam textů nebo objektů"
 
         stop_payload = {
             "mezistanice": item.get("text") or item.get("misto"),
@@ -117,12 +117,12 @@ def _validate_mezistanice_list(data):
 
 
 def _get_auto_label(auto):
-    """Vrati kratky lidsky citelny popis auta pro notifikace a porovnani zmen."""
+    """Vrátí krátký lidsky čitelný popis auta pro notifikace a porovnání změn."""
     if not auto:
         return None
 
     if getattr(auto, "smazane", False):
-        return "Smazane auto"
+        return "Smazané auto"
 
     znacka = getattr(auto, "znacka", None) or ""
     model = getattr(auto, "model", None) or ""
@@ -132,7 +132,7 @@ def _get_auto_label(auto):
 
 
 def _collect_important_ride_changes(jizda, previous_state):
-    """Vypise jen ty zmeny jizdy, ktere maji smysl oznamit pasazerum."""
+    """Vypíše jen ty změny jízdy, které mají smysl oznámit pasažérům."""
     changed_labels = []
 
     if previous_state["odkud"] != jizda.odkud:
@@ -140,9 +140,9 @@ def _collect_important_ride_changes(jizda, previous_state):
     if previous_state["kam"] != jizda.kam:
         changed_labels.append("kam")
     if previous_state["cas_odjezdu"] != jizda.cas_odjezdu:
-        changed_labels.append("cas odjezdu")
+        changed_labels.append("čas odjezdu")
     if previous_state["cas_prijezdu"] != jizda.cas_prijezdu:
-        changed_labels.append("cas prijezdu")
+        changed_labels.append("čas příjezdu")
     if previous_state["auto_label"] != _get_auto_label(jizda.auto):
         changed_labels.append("auto")
 
@@ -150,7 +150,7 @@ def _collect_important_ride_changes(jizda, previous_state):
 
 
 def _route_points_for_ride(ride):
-    """Slozi celou trasu do poradi odkud -> mezistanice -> kam pro vyhledavani."""
+    """Složí celou trasu do pořadí odkud -> mezistanice -> kam pro vyhledávání."""
     points = [{
         "role": "odkud",
         "position": 0,
@@ -177,7 +177,7 @@ def _route_points_for_ride(ride):
 
 
 def _matches_query_point(point, query):
-    """Porovna hledanou lokaci bud pres place_id, nebo fallbackem pres text."""
+    """Porovná hledanou lokaci buď přes place_id, nebo fallbackem přes text."""
     if not query:
         return False
 
@@ -191,7 +191,7 @@ def _matches_query_point(point, query):
 
 
 def _build_search_query_payload(text_key, place_id_key):
-    """Pripravi query payload z URL parametru jen pokud uzivatel vyplnil nejaky filtr."""
+    """Připraví query payload z URL parametru jen pokud uživatel vyplnil nějaký filtr."""
     text_value = (request.args.get(text_key) or "").strip()
     place_id_value = (request.args.get(place_id_key) or "").strip() or None
     if not text_value and not place_id_value:
@@ -203,7 +203,7 @@ def _build_search_query_payload(text_key, place_id_key):
 
 
 def _classify_ride_match(ride, odkud_query, kam_query):
-    """Rozlisi full a partial match podle poradi bodu na trase."""
+    """Rozliší full a partial match podle pořadí bodů na trase."""
     route_points = _route_points_for_ride(ride)
     odkud_candidates = [point for point in route_points if point["role"] != "kam"]
     kam_candidates = [point for point in route_points if point["role"] != "odkud"]
@@ -224,7 +224,7 @@ def _classify_ride_match(ride, odkud_query, kam_query):
 
     if odkud_query and kam_query:
         if has_odkud_match and has_kam_match:
-            # Full match plati jen tehdy, kdyz hledane odkud lezi na trase pred hledanym kam.
+            # Full match platí jen tehdy, když hledané odkud leží na trase před hledaným kam.
             if any(i < j for i in odkud_positions for j in kam_positions):
                 return "full"
             return None
@@ -238,17 +238,16 @@ def _classify_ride_match(ride, odkud_query, kam_query):
 
 
 def _filter_rides_by_volna_mista(jizdy, pocet_pasazeru):
-    """Odstrani jizdy, ktere nemaji dostatek volnych mist pro zadany pocet pasazeru."""
+    """Odstraní jízdy, které nemají dostatek volných míst pro zadaný počet pasažérů."""
     return [jizda for jizda in jizdy if jizda.ma_dostatek_volnych_mist(pocet_pasazeru)]
 
 
 @jizdy_bp.route("/", methods=["GET"])
 def get_jizdy():
-    """Simple listing filter.
-
-    This endpoint intentionally stays as a lighter filter than /vyhledat.
-    If place_id is present, it uses exact place matching. Otherwise it falls
-    back to text search for simple browsing.
+    """Jednoduchý filtr výpisu.
+    Tento endpoint záměrně zůstává jednodušší než /vyhledat.
+    Pokud je přítomné place_id, používá přesné porovnání místa.
+    Jinak se pro jednoduché procházení vrací k textovému vyhledávání.
     """
     odkud = request.args.get("odkud")
     kam = request.args.get("kam")
@@ -308,7 +307,7 @@ def get_jizdy():
             datum_obj = datetime.strptime(datum, "%Y-%m-%d").date()
             query = query.filter(db.func.date(Jizda.cas_odjezdu) == datum_obj)
         except ValueError:
-            return jsonify({"error": "Neplatny format data (YYYY-MM-DD)"}), 400
+            return jsonify({"error": "Neplatný formát data (YYYY-MM-DD)"}), 400
 
     jizdy = query.order_by(Jizda.cas_odjezdu).all()
     jizdy = _filter_rides_by_volna_mista(jizdy, pocet_pasazeru)
@@ -320,14 +319,14 @@ def get_jizdy():
 def get_jizda(jizda_id):
     jizda = db.session.get(Jizda, jizda_id)
     if not jizda:
-        return error_response("Jizda nenalezena", 404)
+        return error_response("Jízda nenalezena", 404)
     return jsonify({"jizda": jizda.to_dict()})
 
 
 @jizdy_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_jizda():
-    """Vytvori novou jizdu ridice po kontrole auta, casu a kapacity."""
+    """Vytvoří novou jízdu řidiče po kontrole auta, času a kapacity."""
     uzivatel_id = int(get_jwt_identity())
     data, error = get_json_data()
     if error:
@@ -345,7 +344,7 @@ def create_jizda():
 
     for field in required_fields:
         if field not in data:
-            return error_response(f"Pole {field} je povinne")
+            return error_response(f"Pole {field} je povinné")
 
     auto_id, auto_error = parse_positive_int(data.get("auto_id"), "auto_id")
     if auto_error:
@@ -357,7 +356,7 @@ def create_jizda():
         smazane=False,
     ).first()
     if not auto:
-        return error_response("Auto nenalezeno nebo nepatri uzivateli", 404)
+        return error_response("Auto nenalezeno nebo nepatří uživateli", 404)
 
     ok, odkud = _extract_location_payload(data, "odkud", required=True)
     if not ok:
@@ -389,11 +388,11 @@ def create_jizda():
             return error_response(seats_error)
 
         if cas_odjezdu >= cas_prijezdu:
-            return error_response("Cas odjezdu musi byt pred casem prijezdu")
+            return error_response("Čas odjezdu musí být před časem příjezdu")
         if cas_odjezdu <= utc_now():
-            return error_response("Cas odjezdu musi byt v budoucnosti")
+            return error_response("Čas odjezdu musí být v budoucnosti")
 
-        # Ridic by nemel mit dve prakticky soubezne jizdy, proto hlidame i kratkou rezervu.
+        # Řidič by neměl mít dvě prakticky souběžné jízdy, proto hlídáme i krátkou rezervu.
         existing_rides = Jizda.query.filter_by(
             ridic_id=uzivatel_id,
             status="aktivni",
@@ -407,7 +406,7 @@ def create_jizda():
                 cas_odjezdu < (existing_end + timedelta(minutes=5))
                 and cas_prijezdu > (existing_start - timedelta(minutes=5))
             ):
-                return error_response("Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut.", 409)
+                return error_response("Časy jízd se nesmí krýt a musí mezi nimi být alespoň 5 minut.", 409)
 
         jizda = Jizda(
             ridic_id=uzivatel_id,
@@ -437,25 +436,25 @@ def create_jizda():
             ))
 
         db.session.commit()
-        return jsonify({"message": "Jizda uspesne vytvorena", "jizda": jizda.to_dict()}), 201
+        return jsonify({"message": "Jízda úspěšně vytvořena", "jizda": jizda.to_dict()}), 201
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri vytvareni jizdy", 500)
+        return error_response("Chyba při vytváření jízdy", 500)
 
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["PUT"])
 @jwt_required()
 def update_jizda(jizda_id):
-    """Upravi aktivni jizdu ridice bez poruseni kapacity a casovych pravidel."""
+    """Upraví aktivní jízdu řidiče bez porušení kapacity a časových pravidel."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemate opravneni upravovat tuto jizdu"}), 403
+        return jsonify({"error": "Nemáte oprávnění upravovat tuto jízdu"}), 403
     if jizda.status != "aktivni":
-        return error_response("Lze upravovat pouze aktivni jizdy")
+        return error_response("Lze upravovat pouze aktivní jízdy")
     if jizda.cas_odjezdu and jizda.cas_odjezdu <= utc_now():
-        return error_response("Jizdu uz nelze upravit, protoze uz odjela")
+        return error_response("Jízdu už nelze upravit, protože už odjela")
 
     data, error = get_json_data()
     if error:
@@ -480,7 +479,7 @@ def update_jizda(jizda_id):
                 smazane=False,
             ).first()
             if not auto:
-                return error_response("Auto nenalezeno nebo nepatri uzivateli", 404)
+                return error_response("Auto nenalezeno nebo nepatří uživateli", 404)
             jizda.auto_id = auto.id
 
         if "odkud" in data:
@@ -500,16 +499,16 @@ def update_jizda(jizda_id):
             jizda.kam_address = kam["address"]
 
         if "cena" in data:
-            return error_response("Cenu existujici jizdy nelze menit")
+            return error_response("Cenu existující jízdy nelze měnit")
 
         if "pocet_mist" in data:
             new_pocet_mist, seats_error = parse_positive_int(data.get("pocet_mist"), "pocet_mist")
             if seats_error:
                 return error_response(seats_error)
 
-            # Kapacitu nenechame snizit pod jiz prijata rezervovana mista.
+            # Kapacitu nenecháme snížit pod již přijatá rezervovaná místa.
             if new_pocet_mist < jizda.get_pocet_prijatych_mist():
-                return error_response("Pocet mist nemuze byt mensi nez pocet jiz prijatych pasazeru")
+                return error_response("Počet míst nemůže být menší než počet již přijatých pasažérů")
             jizda.pocet_mist = new_pocet_mist
 
         new_cas_odjezdu = jizda.cas_odjezdu
@@ -526,9 +525,9 @@ def update_jizda(jizda_id):
 
         if new_cas_odjezdu and new_cas_prijezdu:
             if new_cas_odjezdu >= new_cas_prijezdu:
-                return error_response("Cas odjezdu musi byt pred casem prijezdu")
+                return error_response("Čas odjezdu musí být před časem příjezdu")
             if new_cas_odjezdu <= utc_now():
-                return error_response("Cas odjezdu musi byt v budoucnosti")
+                return error_response("Čas odjezdu musí být v budoucnosti")
 
             existing_rides = Jizda.query.filter_by(
                 ridic_id=uzivatel_id,
@@ -545,13 +544,13 @@ def update_jizda(jizda_id):
                     new_cas_odjezdu < (existing_end + timedelta(minutes=5))
                     and new_cas_prijezdu > (existing_start - timedelta(minutes=5))
                 ):
-                    return error_response("Casy jizd se nesmi kryt a musi mezi nimi byt alespon 5 minut.", 409)
+                    return error_response("Časy jízd se nesmí krýt a musí mezi nimi být alespoň 5 minut.", 409)
 
         jizda.cas_odjezdu = new_cas_odjezdu
         jizda.cas_prijezdu = new_cas_prijezdu
 
         if "mezistanice" in data:
-            # Mezistanice se ukladaji jako cele nove poradi, aby zustala konzistence trasy.
+            # Mezistanice se ukládají jako celé nové pořadí, aby zůstala konzistence trasy.
             ok, mezistanice = _validate_mezistanice_list(data)
             if not ok:
                 return jsonify({"error": mezistanice}), 400
@@ -570,12 +569,12 @@ def update_jizda(jizda_id):
         changed_labels = _collect_important_ride_changes(jizda, previous_state)
 
         if changed_labels:
-            # Pasazery upozornujeme jen na zmeny, ktere maji realny dopad na domluvu cesty.
+            # Pasažéry upozorňujeme jen na změny, které mají reálný dopad na domluvu cesty.
             labels_text = ", ".join(changed_labels)
             for pasazer in jizda.pasazeri:
                 vytvorit_oznameni(
                     pasazer.id,
-                    f"Ridic upravil jizdu {jizda.odkud} -> {jizda.kam}. Zmenilo se: {labels_text}.",
+                    f"Řidič upravil jízdu {jizda.odkud} -> {jizda.kam}. Změnilo se: {labels_text}.",
                     "jizda_zmena",
                     kategorie="jizdy",
                     odesilatel_id=uzivatel_id,
@@ -585,35 +584,35 @@ def update_jizda(jizda_id):
                 )
 
         db.session.commit()
-        return jsonify({"message": "Jizda uspesne aktualizovana", "jizda": jizda.to_dict()})
+        return jsonify({"message": "Jízda úspěšně aktualizována", "jizda": jizda.to_dict()})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri aktualizaci jizdy", 500)
+        return error_response("Chyba při aktualizaci jízdy", 500)
 
 
 @jizdy_bp.route("/<int:jizda_id>", methods=["DELETE"])
 @jwt_required()
 def delete_jizda(jizda_id):
-    """Zrusi jizdu ridice pres sdileny helper, aby se aplikovala stejna pravidla vsude."""
+    """Zruší jízdu řidiče přes sdílený helper, aby se aplikovala stejná pravidla všude."""
     uzivatel_id = int(get_jwt_identity())
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.ridic_id != uzivatel_id:
-        return jsonify({"error": "Nemate opravneni zrusit tuto jizdu"}), 403
+        return jsonify({"error": "Nemáte oprávnění zrušit tuto jízdu"}), 403
 
     try:
         zrusit_jizdu(jizda)
         db.session.commit()
-        return jsonify({"message": "Jizda uspesne zrusena"})
+        return jsonify({"message": "Jízda úspěšně zrušena"})
     except Exception:
         db.session.rollback()
-        return jsonify({"error": "Chyba pri ruseni jizdy"}), 500
+        return jsonify({"error": "Chyba při rušení jízdy"}), 500
 
 
 @jizdy_bp.route("/moje", methods=["GET"])
 @jwt_required()
 def get_moje_jizdy():
-    """Vrati jizdy ridice i pasazera a dodela automaticke dokonceni po prijezdu."""
+    """Vrátí jízdy řidiče i pasažéra a dodělá automatické dokončení po příjezdu."""
     uzivatel_id = int(get_jwt_identity())
 
     jizdy_ridic = Jizda.query.filter_by(ridic_id=uzivatel_id).all()
@@ -622,7 +621,7 @@ def get_moje_jizdy():
     vsechny_jizdy = jizdy_ridic + list(jizdy_pasazer)
 
     changed = False
-    # Dokonceni delame lazy pri cteni, aby se stare aktivni jizdy samy dorovnaly i bez cron jobu.
+    # Dokončení děláme lazy při čtení, aby se staré aktivní jízdy samy dorovnaly i bez cron jobu.
     for jizda in vsechny_jizdy:
         if jizda.status == "aktivni" and jizda.cas_prijezdu < datetime.now():
             jizda.status = "dokoncena"
@@ -636,7 +635,7 @@ def get_moje_jizdy():
 
 @jizdy_bp.route("/vyhledat", methods=["GET"])
 def vyhledat_jizdy():
-    """Vrati jizdy serazene tak, aby full match mel prednost pred partial match."""
+    """Vrátí jízdy seřazené tak, aby full match měl přednost před partial match."""
     datum = (request.args.get("datum") or "").strip()
     pocet_pasazeru = request.args.get("pocet_pasazeru", type=int) or 1
     odkud_query = _build_search_query_payload("odkud", "odkud_place_id")
@@ -648,13 +647,13 @@ def vyhledat_jizdy():
             datum_obj = datetime.strptime(datum, "%Y-%m-%d").date()
             query = query.filter(db.func.date(Jizda.cas_odjezdu) == datum_obj)
         except ValueError:
-            return jsonify({"error": "Neplatny format data (YYYY-MM-DD)"}), 400
+            return jsonify({"error": "Neplatný formát data (YYYY-MM-DD)"}), 400
 
     all_rides = query.all()
     full_match = []
     partial_match = []
 
-    # Full a partial match drzi frontend oddelene, ale backend urcuje prioritu vysledku.
+    # Full a partial match drží frontend odděleně, ale backend určuje prioritu výsledku.
     for ride in all_rides:
         match_type = _classify_ride_match(ride, odkud_query, kam_query)
         if match_type == "full":
@@ -694,31 +693,31 @@ def nejnovejsi_jizdy():
 @jizdy_bp.route("/<int:jizda_id>/pasazeri/<int:pasazer_id>", methods=["DELETE"])
 @jwt_required()
 def vyhodit_pasazera(jizda_id, pasazer_id):
-    """Umoznuje ridici odebrat pasazera jen u aktivni jizdy a s casovou rezervou."""
+    """Umožňuje řidiči odebrat pasažéra jen u aktivní jízdy a s časovou rezervou."""
     jizda = Jizda.query.get_or_404(jizda_id)
 
     if jizda.status != "aktivni":
-        return jsonify({"error": "Pasazery lze vyhazovat jen u aktivni jizdy."}), 400
+        return jsonify({"error": "Pasažéry lze vyhazovat jen u aktivní jízdy."}), 400
 
     try:
         current_user_id = int(get_jwt_identity())
     except (TypeError, ValueError):
-        return jsonify({"error": "Neplatna identita uzivatele v tokenu."}), 401
+        return jsonify({"error": "Neplatná identita uživatele v tokenu."}), 401
 
     if jizda.ridic_id != current_user_id:
-        return jsonify({"error": "Nemas opravneni vyhazovat pasazery z teto jizdy."}), 403
+        return jsonify({"error": "Nemáš oprávnění vyhazovat pasažéry z této jízdy."}), 403
 
     now = datetime.now()
     limit_time = jizda.cas_odjezdu - timedelta(hours=1)
     if now > limit_time:
-        return jsonify({"error": "Pasazera lze vyhodit nejpozdeji 1 hodinu pred odjezdem."}), 400
+        return jsonify({"error": "Pasažéra lze vyhodit nejpozději 1 hodinu před odjezdem."}), 400
 
     if pasazer_id == jizda.ridic_id:
-        return jsonify({"error": "Ridice nelze vyhodit z vlastni jizdy."}), 400
+        return jsonify({"error": "Řidiče nelze vyhodit z vlastní jízdy."}), 400
 
     pasazer = next((u for u in jizda.pasazeri if u.id == pasazer_id), None)
     if not pasazer:
-        return jsonify({"error": "Uzivatel neni pasazerem teto jizdy."}), 404
+        return jsonify({"error": "Uživatel není pasažérem této jízdy."}), 404
 
     jizda.pasazeri.remove(pasazer)
     rez = Rezervace.query.filter_by(jizda_id=jizda_id, uzivatel_id=pasazer_id).first()
@@ -727,4 +726,4 @@ def vyhodit_pasazera(jizda_id, pasazer_id):
         rez.updated_at = datetime.now()
 
     db.session.commit()
-    return jsonify({"message": "Pasazer byl vyhozen."}), 200
+    return jsonify({"message": "Pasažér byl vyhozen."}), 200

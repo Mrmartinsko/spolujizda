@@ -48,7 +48,7 @@ def sync_pending_ratings_for_user(uzivatel_id, *, create_notifications=False):
         if create_notifications:
             vytvorit_oznameni(
                 uzivatel_id,
-                f"Mas nevyresene hodnoceni ridice pro jizdu {jizda.odkud} -> {jizda.kam}.",
+                f"Máš nevyřešené hodnocení řidiče pro jízdu {jizda.odkud} -> {jizda.kam}.",
                 "hodnoceni_ceka",
                 kategorie="hodnoceni",
                 target_path=f"/ohodnotit/{jizda.id}/{jizda.ridic_id}",

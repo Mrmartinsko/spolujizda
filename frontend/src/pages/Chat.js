@@ -17,7 +17,7 @@ const Chat = () => {
   const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
-    // Seznam konverzaci stahneme pri vstupu na stranku, detail se obnovi znovu po zavreni chatu.
+    // Seznam konverzací stáhneme při vstupu na stránku, detail se obnoví znovu po zavření chatu.
     fetchMojeChaty();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -31,7 +31,7 @@ const Chat = () => {
       setChaty(response.data.osobni_chaty || []);
       setError('');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Chyba pri nacitani chatu.'));
+      setError(getApiErrorMessage(err, 'Chyba při načítání chatu.'));
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ const Chat = () => {
     setSearchQuery(query);
     const normalizedQuery = query.trim();
 
-    // Dve pismena jsou minimum, aby hledani nespoustelo hlucne a malo uzitecne dotazy.
+    // Dvě písmena jsou minimum, aby hledání nespouštělo hlučné a málo užitečné dotazy.
     if (normalizedQuery.length < 2) {
       setSearchResults([]);
       return;
@@ -63,7 +63,7 @@ const Chat = () => {
   const openChatWithUser = (otherUser) => {
     setSelectedChat({
       otherUserId: otherUser.id,
-      otherUserName: otherUser.jmeno || otherUser.profil?.jmeno || 'Neznamy uzivatel',
+      otherUserName: otherUser.jmeno || otherUser.profil?.jmeno || 'Neznámý uživatel',
     });
     setShowChat(true);
     setSearchQuery('');
@@ -71,13 +71,13 @@ const Chat = () => {
   };
 
   const openExistingChat = (chat) => {
-    // U osobniho chatu vzdy hledame "toho druheho", ne aktualne prihlaseneho uzivatele.
+    // U osobního chatu vždy hledáme "toho druhého", ne aktuálně přihlášeného uživatele.
     const otherUser = chat.ucastnici?.find((item) => item.id !== user?.id);
     if (!otherUser) return;
 
     setSelectedChat({
       otherUserId: otherUser.id,
-      otherUserName: otherUser.profil?.jmeno || 'Neznamy uzivatel',
+      otherUserName: otherUser.profil?.jmeno || 'Neznámý uživatel',
     });
     setShowChat(true);
   };
@@ -95,8 +95,8 @@ const Chat = () => {
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 
-    if (diffInHours < 1) return 'pred chvili';
-    if (diffInHours < 24) return `pred ${Math.floor(diffInHours)} h`;
+    if (diffInHours < 1) return 'před chvílí';
+    if (diffInHours < 24) return `před ${Math.floor(diffInHours)} h`;
     return date.toLocaleDateString('cs-CZ');
   };
 
@@ -104,12 +104,12 @@ const Chat = () => {
     return (
       <div className="chat-page">
         <div className="chat-sidebar">
-          <h1>Zpravy</h1>
-          <div className="loading">Nacitam chaty...</div>
+          <h1>Zprávy</h1>
+          <div className="loading">Načítám chaty...</div>
         </div>
         <div className="chat-main">
           <div className="no-chat-selected">
-            <p>Nacitam...</p>
+            <p>Načítám...</p>
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@ const Chat = () => {
     <div className="chat-page">
       <div className="chat-sidebar">
         <div className="chat-header">
-          <h1>Zpravy</h1>
+          <h1>Zprávy</h1>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -129,7 +129,7 @@ const Chat = () => {
           <div className="search-box">
             <input
               type="text"
-              placeholder="Vyhledat uzivatele..."
+              placeholder="Vyhledat uživatele..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
@@ -139,7 +139,7 @@ const Chat = () => {
 
           {searchResults.length > 0 && (
             <div className="search-results">
-              <h4>Najit uzivatele:</h4>
+              <h4>Najít uživatele:</h4>
               {searchResults.slice(0, 5).map((searchUser) => (
                 <div
                   key={searchUser.id}
@@ -176,8 +176,8 @@ const Chat = () => {
           <h3>Konverzace</h3>
           {chaty.length === 0 ? (
             <div className="no-chats">
-              <p>Zatim nemate zadne konverzace</p>
-              <p>Zacnete psat nekomu pomoci vyhledavani vyse</p>
+              <p>Zatím nemáte žádné konverzace</p>
+              <p>Začněte psát někomu pomocí vyhledávání výše</p>
             </div>
           ) : (
             chaty.map((chat) => {
@@ -210,7 +210,7 @@ const Chat = () => {
                   <div className="chat-info">
                     <div className="chat-top">
                       <span className="chat-name">
-                        {otherUser?.profil?.jmeno || 'Neznamy uzivatel'}
+                        {otherUser?.profil?.jmeno || 'Neznámý uživatel'}
                       </span>
                       {lastMessage?.cas && (
                         <span className="chat-time">
@@ -238,8 +238,8 @@ const Chat = () => {
         {!showChat ? (
           <div className="no-chat-selected">
             <div className="welcome-message">
-              <h2>Vitejte v chatech</h2>
-              <p>Vyberte konverzaci ze seznamu vlevo nebo vyhledejte noveho uzivatele.</p>
+              <h2>Vítejte v chatech</h2>
+              <p>Vyberte konverzaci ze seznamu vlevo nebo vyhledejte nového uživatele.</p>
             </div>
           </div>
         ) : (

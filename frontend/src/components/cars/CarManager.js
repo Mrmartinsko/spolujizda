@@ -37,7 +37,7 @@ const CarManager = () => {
       setAuta(response.data);
       setError('');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Auta se nepodarilo nacist.'));
+      setError(getApiErrorMessage(err, 'Auta se nepodařilo načíst.'));
     }
   };
 
@@ -66,7 +66,7 @@ const CarManager = () => {
     };
 
     if (!normalizedFormData.znacka || !normalizedFormData.model) {
-      setError('Znacka a model jsou povinne.');
+      setError('Značka a model jsou povinné.');
       return;
     }
 
@@ -88,7 +88,7 @@ const CarManager = () => {
       setEditing(null);
       fetchAuta();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Auto se nepodarilo ulozit.'));
+      setError(getApiErrorMessage(err, 'Auto se nepodařilo uložit.'));
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ const CarManager = () => {
           aktivniJizdyCount: err.response?.data?.pocet_aktivnich_jizd || 0,
         });
       } else {
-        setError(getApiErrorMessage(err, 'Auto se nepodarilo smazat.'));
+        setError(getApiErrorMessage(err, 'Auto se nepodařilo smazat.'));
       }
     }
   };
@@ -156,7 +156,7 @@ const CarManager = () => {
               <h2 className="ui-card__title">Moje auta</h2>
               <p className="ui-card__subtitle">Primární auto bude předvyplněné při tvorbě jízdy.</p>
             </div>
-            <Badge variant="primary">{auta.length} vozu</Badge>
+            <Badge variant="primary">{auta.length} vozů</Badge>
           </div>
 
           {auta.length === 0 ? (
@@ -244,7 +244,7 @@ const CarManager = () => {
 
             <div className="form-actions">
               <Button type="submit" disabled={loading}>
-                {loading ? 'Ukladam...' : editing ? 'Ulozit zmeny' : 'Přidat auto'}
+                {loading ? 'Ukládám...' : editing ? 'Uložit změny' : 'Přidat auto'}
               </Button>
               {editing && (
                 <Button type="button" variant="secondary" onClick={cancelEdit} disabled={loading}>

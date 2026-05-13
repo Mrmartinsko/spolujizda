@@ -16,7 +16,7 @@ def get_muj_profil():
     uzivatel_id = int(get_jwt_identity())
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
     return jsonify({"uzivatel": uzivatel.to_dict()})
 
 
@@ -26,7 +26,7 @@ def update_profil():
     uzivatel_id = int(get_jwt_identity())
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
     if not uzivatel.profil:
         return error_response("Profil nenalezen", 404)
 
@@ -47,7 +47,7 @@ def update_profil():
                 ).first()
             )
             if existing_profile:
-                return error_response("Toto uzivatelske jmeno je jiz obsazene.", 409)
+                return error_response("Toto uživatelské jméno je již obsazené.", 409)
             uzivatel.profil.jmeno = jmeno
 
         if "bio" in data:
@@ -64,11 +64,11 @@ def update_profil():
 
         db.session.commit()
         return jsonify(
-            {"message": "Profil uspesne aktualizovan", "uzivatel": uzivatel.to_dict()}
+            {"message": "Profil úspěšně aktualizován", "uzivatel": uzivatel.to_dict()}
         )
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri aktualizaci profilu", 500)
+        return error_response("Chyba při aktualizaci profilu", 500)
 
 
 @uzivatele_bp.route("/<int:uzivatel_id>", methods=["GET"])
@@ -80,17 +80,17 @@ def get_uzivatel_profil(uzivatel_id):
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
     ).first()
     if blokace:
-        return error_response("Uzivatel je blokovan", 403)
+        return error_response("Uživatel je blokován", 403)
 
     blokace_opacne = Blokace.query.filter_by(
         blokujici_id=uzivatel_id, blokovany_id=current_user_id
     ).first()
     if blokace_opacne:
-        return error_response("Nemate pristup k tomuto profilu", 403)
+        return error_response("Nemáte přístup k tomuto profilu", 403)
 
     uzivatel = db.session.get(Uzivatel, uzivatel_id)
     if not uzivatel:
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
 
     profil_data = uzivatel.to_dict()
     if uzivatel.profil:
@@ -104,13 +104,13 @@ def get_uzivatel_profil(uzivatel_id):
 def hledat_uzivatele():
     query = (request.args.get("q") or "").strip()
     if len(query) < 2:
-        return error_response("Vyhledavaci dotaz musi mit alespon 2 znaky")
+        return error_response("Vyhledávací dotaz musí mít alespoň 2 znaky")
     if len(query) > 50:
-        return error_response("Vyhledavaci dotaz muze mit maximalne 50 znaku")
+        return error_response("Vyhledávací dotaz může mít maximálně 50 znaků")
 
     current_user_id = int(get_jwt_identity())
 
-    # Vyhledavani jede pres partial match, aby vratilo i uzivatele podle casti jmena.
+    # Vyhledávání jede přes partial match, aby vrátilo i uživatele podle části jména.
     uzivatele = (
         db.session.query(Uzivatel)
         .join(Profil)
@@ -146,24 +146,24 @@ def hledat_uzivatele():
 def blokovat_uzivatele(uzivatel_id):
     current_user_id = int(get_jwt_identity())
     if current_user_id == uzivatel_id:
-        return error_response("Nemuzete blokovat sebe sama")
+        return error_response("Nemůžete blokovat sebe sama")
     if not db.session.get(Uzivatel, uzivatel_id):
-        return error_response("Uzivatel nenalezen", 404)
+        return error_response("Uživatel nenalezen", 404)
 
     existujici_blokace = Blokace.query.filter_by(
         blokujici_id=current_user_id, blokovany_id=uzivatel_id
     ).first()
     if existujici_blokace:
-        return error_response("Uzivatel je jiz blokovan")
+        return error_response("Uživatel je již blokován")
 
     try:
         blokace = Blokace(blokujici_id=current_user_id, blokovany_id=uzivatel_id)
         db.session.add(blokace)
         db.session.commit()
-        return jsonify({"message": "Uzivatel uspesne blokovan"})
+        return jsonify({"message": "Uživatel úspěšně blokován"})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri blokovani uzivatele", 500)
+        return error_response("Chyba při blokování uživatele", 500)
 
 
 @uzivatele_bp.route("/<int:uzivatel_id>/odblokovat", methods=["DELETE"])
@@ -179,10 +179,10 @@ def odblokovat_uzivatele(uzivatel_id):
     try:
         db.session.delete(blokace)
         db.session.commit()
-        return jsonify({"message": "Uzivatel uspesne odblokovan"})
+        return jsonify({"message": "Uživatel úspěšně odblokován"})
     except Exception:
         db.session.rollback()
-        return error_response("Chyba pri odblokovani uzivatele", 500)
+        return error_response("Chyba při odblokování uživatele", 500)
 
 
 @uzivatele_bp.route("/blokovani", methods=["GET"])

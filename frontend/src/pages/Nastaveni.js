@@ -31,17 +31,17 @@ const Nastaveni = () => {
     e.preventDefault();
 
     if (!passwordData.stare_heslo || !passwordData.nove_heslo || !passwordData.potvrzeni_hesla) {
-      setError('Vyplnte vsechna pole.');
+      setError('Vyplňte všechna pole.');
       return;
     }
 
     if (passwordData.nove_heslo !== passwordData.potvrzeni_hesla) {
-      setError('Nova hesla se neshoduji.');
+      setError('Nová hesla se neshodují.');
       return;
     }
 
     if (passwordData.nove_heslo.length < 6) {
-      setError('Nove heslo musi mit alespon 6 znaku.');
+      setError('Nové heslo musí mít alespoň 6 znaků.');
       return;
     }
 
@@ -55,14 +55,14 @@ const Nastaveni = () => {
         nove_heslo: passwordData.nove_heslo,
       });
 
-      setMessage('Heslo bylo uspesne zmeneno.');
+      setMessage('Heslo bylo úspěšně změněno.');
       setPasswordData({
         stare_heslo: '',
         nove_heslo: '',
         potvrzeni_hesla: '',
       });
     } catch (requestError) {
-      setError(requestError.response?.data?.error || 'Zmena hesla se nepovedla.');
+      setError(requestError.response?.data?.error || 'Změna hesla se nepovedla.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ const Nastaveni = () => {
           </div>
 
           <Button type="submit" disabled={loading}>
-            {loading ? 'Ukladam zmenu...' : 'Uložit nové heslo'}
+            {loading ? 'Ukládám změnu...' : 'Uložit nové heslo'}
           </Button>
         </form>
       </Card>

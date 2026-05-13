@@ -20,7 +20,7 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
         });
         setCars(res.data || []);
       } catch (e) {
-        setError(getApiErrorMessage(e, "Chyba pri nacitani aut."));
+        setError(getApiErrorMessage(e, "Chyba při načítání aut."));
       } finally {
         setLoading(false);
       }
@@ -35,12 +35,12 @@ const SelectCarModal = ({ currentAutoId, onClose, onSelect }) => {
         <h2>Vyber auto pro jízdu</h2>
 
         {loading ? (
-          <p>Nacitani aut...</p>
+          <p>Načítání aut...</p>
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : (
           <div className="available-cars available-cars--scroll">
-            {cars.length === 0 && <p>Nemas zadne auto.</p>}
+            {cars.length === 0 && <p>Nemáš žádné auto.</p>}
 
             {cars.map((auto) => (
               <div key={auto.id} className="available-car">

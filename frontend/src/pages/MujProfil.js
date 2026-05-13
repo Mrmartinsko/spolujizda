@@ -33,7 +33,7 @@ const MujProfil = () => {
       try {
         if (!user?.id) return;
         const token = localStorage.getItem('token');
-        // Jeden endpoint vraci jak seznam komentaru, tak agregovane statistiky pro profil.
+        // Jeden endpoint vrací jak seznam komentářů, tak agregované statistiky pro profil.
         const response = await axios.get(`http://localhost:5000/api/hodnoceni/uzivatel/${user.id}?role=ridic`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -76,17 +76,17 @@ const MujProfil = () => {
     const trimmedBio = (formData.bio || '').trim();
 
     if (!trimmedJmeno) {
-      setError('Uzivatelske jmeno je povinne.');
+      setError('Uživatelské jméno je povinné.');
       return;
     }
 
     if (trimmedJmeno.length > 50) {
-      setError('Uzivatelske jmeno muze mit maximalne 50 znaku.');
+      setError('Uživatelské jméno může mít maximálně 50 znaků.');
       return;
     }
 
     if (trimmedBio.length > 500) {
-      setError('Bio muze mit maximalne 500 znaku.');
+      setError('Bio může mít maximálně 500 znaků.');
       return;
     }
 
@@ -113,14 +113,14 @@ const MujProfil = () => {
         setSuccess('Profil byl upraven.');
       }
     } catch (saveError) {
-      setError(getApiErrorMessage(saveError, 'Profil se nepodarilo ulozit.'));
+      setError(getApiErrorMessage(saveError, 'Profil se nepodařilo uložit.'));
     } finally {
       setLoading(false);
     }
   };
 
   const renderStars = (value) => {
-    // Hvezdy jsou jen vizualni zkratka ke stejnemu ciselne zobrazenemu prumeru.
+    // Hvězdy jsou jen vizuální zkratka ke stejnému číselně zobrazenému průměru.
     const rounded = Math.round(value || 0);
     return '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
   };
@@ -128,7 +128,7 @@ const MujProfil = () => {
   const prumerRidic = hodRidic?.statistiky?.prumer || 0;
   const celkemRidic = hodRidic?.statistiky?.celkem || 0;
   const allComments = hodRidic?.hodnoceni || [];
-  // Na profilu ukazujeme jen kratky vyrez komentaru, zbytek je mozne rozbalit na vyzadani.
+  // Na profilu ukazujeme jen krátký výřez komentářů, zbytek je možné rozbalit na vyžádání.
   const visibleComments = showAllComments ? allComments : allComments.slice(0, 3);
 
   return (
@@ -172,7 +172,7 @@ const MujProfil = () => {
                     <label className="field-label" htmlFor="bio">
                       Bio
                     </label>
-                    <textarea className="ui-input" id="bio" name="bio" value={formData.bio} onChange={handleInputChange} rows="4" maxLength={500} placeholder="Napiste kratce neco o sobe..." />
+                    <textarea className="ui-input" id="bio" name="bio" value={formData.bio} onChange={handleInputChange} rows="4" maxLength={500} placeholder="Napište krátce něco o sobě..." />
                   </div>
                 </>
               ) : (
@@ -254,10 +254,10 @@ const MujProfil = () => {
         {editMode && (
           <div className="muj-profil-actions">
             <Button type="button" onClick={handleSaveChanges} disabled={loading}>
-              {loading ? 'Ukladam...' : 'Ulozit zmeny'}
+              {loading ? 'Ukládám...' : 'Uložit změny'}
             </Button>
             <Button type="button" variant="secondary" onClick={handleCancelEdit} disabled={loading}>
-              Zrusit
+              Zrušit
             </Button>
           </div>
         )}

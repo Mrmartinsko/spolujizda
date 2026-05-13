@@ -29,7 +29,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
   useEffect(() => {
     if (!rides?.length) return;
     const initialExpanded = {};
-    // Aktivni nebo primo fokusovana jizda se rozbali sama, aby se uzivatel hned dostal k detailu.
+    // Aktivní nebo přímo fokusovaná jízda se rozbalí sama, aby se uživatel hned dostal k detailu.
     rides.forEach((ride) => {
       if (ride.status === 'aktivni' || (focusRideId && ride.id === focusRideId)) initialExpanded[ride.id] = true;
     });
@@ -40,7 +40,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
     if (!focusRideId || !shouldOpenReservations || !rides?.length) return;
     const targetRide = rides.find((ride) => ride.id === focusRideId);
     if (!targetRide) return;
-    // Odkazy z notifikaci umi otevrit rovnou spravu rezervaci konkretni jizdy.
+    // Odkazy z notifikací umí otevřít rovnou správu rezervací konkrétní jízdy.
     setExpanded((prev) => ({ ...prev, [focusRideId]: true }));
     if (targetRide.ridic_id === user?.id) {
       setShowReservations((prev) => ({ ...prev, [focusRideId]: true }));
@@ -51,7 +51,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
 
   useEffect(() => {
     if (!user || !rides?.length) return;
-    // Rezervace ridice dotahujeme az po rozbaleni karty, aby seznam jizd nezdrzovalo zbytecne nacitani.
+    // Rezervace řidiče dotahujeme až po rozbalení karty, aby seznam jízd nezdržovalo zbytečné načítání.
     rides.forEach((ride) => {
       if (ride.ridic_id === user.id && expanded[ride.id] && rezervace[ride.id] === undefined) fetchReservations(ride.id);
     });
@@ -117,7 +117,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
       if (field !== 'pocet_mist') return { ...prev, [field]: value };
       const parsedValue = Number(value);
       const nextCount = Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : value;
-      // Pocet doprovodnych jmen se odvozuje z poctu mist, aby formular zustal konzistentni.
+      // Počet doprovodných jmen se odvozuje z počtu míst, aby formulář zůstal konzistentní.
       const companionCount = Number.isInteger(parsedValue) && parsedValue > 1 ? parsedValue - 1 : 0;
       const dalsiPasazeri = prev.dalsi_pasazeri.slice(0, companionCount);
       while (dalsiPasazeri.length < companionCount) dalsiPasazeri.push('');
@@ -143,7 +143,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
   };
 
   const toggleReservations = async (ride) => {
-    // Spravu rezervaci ma smysl ukazat jen ridici pred odjezdem, pak uz nelze seznam bezpecne menit.
+    // Správu rezervací má smysl ukázat jen řidiči před odjezdem, pak už nelze seznam bezpečně měnit.
     const canManageReservations = user && ride.ridic_id === user.id && ride.status === 'aktivni' && hasNotDepartedYet(ride);
     if (!canManageReservations) return;
     const isShowing = showReservations[ride.id];
@@ -218,7 +218,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
 
   const renderPassengerBlockContent = (ride, rezervaceJizdy, canKickPassengersUi, isDriver) => {
     const prijateRezervaceJizdy = rezervaceJizdy.filter((r) => r.status === 'prijata');
-    // Ridic po nacteni rezervaci vidi potvrzene zadosti, ostatni jen finalni seznam pasazeru.
+    // Řidič po načtení rezervací vidí potvrzené žádosti, ostatní jen finální seznam pasažérů.
     const hasPassengers = isDriver && rezervace[ride.id] !== undefined ? prijateRezervaceJizdy.length > 0 : Array.isArray(ride.pasazeri) && ride.pasazeri.length > 0;
     if (!hasPassengers) return <span>Žádní pasažéři</span>;
     return (
@@ -277,7 +277,7 @@ const RideList = ({ rides, onRideUpdate, onRideCancelled, defaultReservationMist
         const canManageReservations = isDriver && isActive && notDeparted;
         const rezervaceJizdy = rezervace[ride.id] || [];
         const prijataMista = rezervaceJizdy.filter((r) => r.status === 'prijata').reduce((sum, r) => sum + (Number(r.pocet_mist) || 1), 0);
-        // Pokud uz rezervace mame, prepocitame kapacitu z prijatych zadosti misto starsi hodnoty z listingu.
+        // Pokud už rezervace máme, přepočítáme kapacitu z přijatých žádostí místo starší hodnoty z listingu.
         const volnaMistaProRezervace = rezervace[ride.id] !== undefined ? Math.max(0, ride.pocet_mist - prijataMista) : Math.max(0, ride.volna_mista ?? 0);
         const canKickPassengersUi = isDriver && isActive && canKickByTime(ride);
         const useManagementCompact = compactMode === 'management';
